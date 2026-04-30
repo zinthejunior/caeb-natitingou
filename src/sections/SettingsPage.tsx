@@ -11,6 +11,7 @@ import { usePWAInstall } from '@/hooks/usePWAInstall';
 interface SettingsPageProps {
   user: User | null;
   onLogout: () => void;
+  onChangePassword?: (oldPassword: string, newPassword: string) => Promise<boolean>;
 }
 
 const Toggle = ({ active, onToggle }: { active: boolean; onToggle: () => void }) => (
@@ -43,7 +44,7 @@ const ToggleRow = ({ label, active, onToggle }: { label: string; active: boolean
   </div>
 );
 
-export function SettingsPage({ user, onLogout }: SettingsPageProps) {
+export function SettingsPage({ user, onLogout, onChangePassword }: SettingsPageProps) {
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   const [notifications, setNotifications] = useState(() => {
     const saved = localStorage.getItem('caeb_settings_notifications');
@@ -64,6 +65,7 @@ export function SettingsPage({ user, onLogout }: SettingsPageProps) {
     const next = !darkMode;
     setDarkMode(next);
     document.documentElement.classList.toggle('dark', next);
+    localStorage.setItem('caeb_theme', next ? 'dark' : 'light');
     toast.success(next ? 'Mode sombre activé' : 'Mode clair activé');
   };
 
@@ -83,15 +85,20 @@ export function SettingsPage({ user, onLogout }: SettingsPageProps) {
       toast.error('Le mot de passe doit faire au moins 6 caractères');
       return;
     }
-    
-    // Simulation d'appel API
-    toast.loading('Mise à jour du mot de passe...');
-    setTimeout(() => {
-      toast.dismiss();
+    if (!onChangePassword) {
+      toast.error('Fonctionnalité indisponible');
+      return;
+    }
+    const toastId = toast.loading('Mise à jour du mot de passe...');
+    const success = await onChangePassword(passData.old, passData.new);
+    toast.dismiss(toastId);
+    if (success) {
       toast.success('Mot de passe mis à jour avec succès');
       setIsChangingPassword(false);
       setPassData({ old: '', new: '', confirm: '' });
-    }, 1500);
+    } else {
+      toast.error('Ancien mot de passe incorrect');
+    }
   };
 
   const handleComingSoon = (feature: string) => {

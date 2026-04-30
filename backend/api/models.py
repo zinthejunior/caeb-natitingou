@@ -7,25 +7,20 @@ class User(AbstractUser):
         ('non_membre', 'Non-membre'),
         ('membre', 'Membre'),
     ]
-    NIVEAU_ETUDE_CHOICES = [
-        ('école', 'École'),
-        ('lycée', 'Lycée'),
-        ('étudiant', 'Étudiant'),
-        ('professionnel', 'Professionnel'),
-        ('autre', 'Autre'),
-    ]
     
-    id = models.CharField(max_length=20, primary_key=True)
+    id = models.CharField(max_length=40, primary_key=True)
     type_compte = models.CharField(max_length=20, choices=TYPE_COMPTE_CHOICES, default='non_membre')
     date_naissance = models.DateField(null=True, blank=True)
-    niveau_etude = models.CharField(max_length=20, choices=NIVEAU_ETUDE_CHOICES, null=True, blank=True)
-    classe = models.CharField(max_length=50, null=True, blank=True)
-    genre_prefere = models.CharField(max_length=100, null=True, blank=True)
-    sous_genre_prefere = models.CharField(max_length=100, null=True, blank=True)
+    niveau_etude = models.CharField(max_length=50, null=True, blank=True)
+    classe = models.CharField(max_length=100, null=True, blank=True)
+    genre_prefere = models.CharField(max_length=255, null=True, blank=True)
+    sous_genre_prefere = models.CharField(max_length=255, null=True, blank=True)
     score_confiance = models.DecimalField(max_digits=4, decimal_places=3, default=0.000)
     profil_complet = models.BooleanField(default=False)
     vecteur_profil = models.JSONField(null=True, blank=True)
     date_inscription = models.DateTimeField(auto_now_add=True)
+    favorites = models.JSONField(default=list, blank=True)
+    intentions = models.JSONField(default=list, blank=True)
     
     # Champs surchargés pour éviter les conflits ou correspondre au schéma
     first_name = models.CharField(max_length=100)
@@ -33,6 +28,7 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.username})"
+
 
 class Book(models.Model):
     CATEGORIE_AGE_CHOICES = [
@@ -239,3 +235,41 @@ class Reservation(models.Model):
     def __str__(self):
         return f"Réservation de {self.user.username} pour {self.livre.titre}"
 
+
+class ClubContactMessage(models.Model):
+    """Message envoyé depuis le formulaire de contact d'un club."""
+    club = models.ForeignKey(ReadingClub, on_delete=models.CASCADE, related_name='contact_messages')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='contact_messages')
+    nom = models.CharField(max_length=100)
+    email = models.EmailField()
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Message de {self.nom} pour {self.club.name}"
+
+
+class ChatSession(models.Model):
+    """Session de chat IA liée à un utilisateur."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_sessions')
+    titre = models.CharField(max_length=200, default='Nouvelle conversation')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Chat de {self.user.username} — {self.titre}"
+
+
+class ChatMessage(models.Model):
+    """Message individuel dans une session de chat."""
+    ROLE_CHOICES = [('user', 'Utilisateur'), ('assistant', 'Assistant')]
+    session = models.ForeignKey(ChatSession, on_delete=models.CASCADE, related_name='messages')
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"[{self.role}] {self.content[:50]}"

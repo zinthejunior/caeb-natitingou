@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import type { User, Book } from '@/types';
-import { useBooks } from '@/hooks/useData';
+import { useBooks, createChatSession, addChatMessage } from '@/hooks/useData';
 
 interface ChatMessage {
   id: string;
@@ -141,6 +141,7 @@ export function AIChatPage({ user, onNavigate }: AIChatPageProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const sessionIdRef = useRef<number | null>(null);
 
   const catalogSample = books.slice(0, 10).map(b =>
     `- "${b.title}" de ${b.author} (${b.genre}, ${b.year ?? ''}) — ${b.synopsis?.slice(0, 80) ?? ''}…`
@@ -187,6 +188,19 @@ export function AIChatPage({ user, onNavigate }: AIChatPageProps) {
     if (inputRef.current) inputRef.current.style.height = 'auto';
     setIsLoading(true);
 
+    // Créer une session BDD si c'est le premier message
+    if (!sessionIdRef.current) {
+      try {
+        const session = await createChatSession(trimmed.slice(0, 60));
+        sessionIdRef.current = session.id;
+      } catch { /* non bloquant */ }
+    }
+
+    // Sauvegarder le message utilisateur en BDD
+    if (sessionIdRef.current) {
+      try { await addChatMessage(sessionIdRef.current, 'user', trimmed); } catch { /* non bloquant */ }
+    }
+
     try {
       const history = buildHistory([...messages, userMsg]);
       const systemPrompt = buildSystemPrompt(userName, catalogSample);
@@ -207,14 +221,21 @@ export function AIChatPage({ user, onNavigate }: AIChatPageProps) {
         }
 
         const bookRefs = extractBookRefs(responseText, books);
-        setMessages(prev => [...prev, {
+        const assistantMsg: ChatMessage = {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
           content: responseText,
           timestamp: new Date(),
           rating: null,
           bookRefs: bookRefs.length > 0 ? bookRefs : undefined,
-        }]);
+        };
+        setMessages(prev => [...prev, assistantMsg]);
+
+        // Sauvegarder la réponse en BDD
+        if (sessionIdRef.current) {
+          try { await addChatMessage(sessionIdRef.current, 'assistant', responseText); } catch { /* non bloquant */ }
+        }
+
         setIsLoading(false);
         return;
       }
@@ -272,6 +293,7 @@ export function AIChatPage({ user, onNavigate }: AIChatPageProps) {
 
   const clearHistory = () => {
     setMessages([]);
+    sessionIdRef.current = null;
     toast.success('Conversation effacée');
   };
 

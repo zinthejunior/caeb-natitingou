@@ -28,7 +28,7 @@ export interface User {
   firstName: string;
   lastName:  string;
   email:     string;
-  type_compte : 'membre'|'non-membre'|'anonyme';
+  type_compte : 'membre'|'non_membre'|'anonyme';
   pseudo?:   string;
   username?: string; // Ajouté pour compatibilité avec certains composants
   bio?:      string;
@@ -59,6 +59,7 @@ export interface User {
   favorites:      string[];     // IDs de livres
   stats:          UserStats;
   followedClubs:  string[];     // IDs de clubs
+  intentions?:    string[];     // Intentions de l'utilisateur
 }
 
 

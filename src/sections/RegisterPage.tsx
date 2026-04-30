@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { genreList, educationLevels, classesParNiveau } from '@/data/constants';
+import { genreList, educationLevels, classesParNiveau, intentionsList } from '@/data/constants';
 
 interface RegisterPageProps {
   onRegister: (data: {
@@ -17,6 +17,7 @@ interface RegisterPageProps {
     preferredGenres: string[];
     classe?: string;
     sous_genre_prefere?: string[];
+    intentions?: string[];
     profil_complet?: boolean;
   }) => Promise<boolean>;
   onBack: () => void;
@@ -40,6 +41,7 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
       classe: '',
       classeCustom: '',
       sous_genre_prefere: [] as string[],
+      intentions: [] as string[],
     };
   });
 
@@ -76,7 +78,7 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
   const [acceptTerms, setAcceptTerms] = useState(false);
 
   const updateField = (field: string, value: string | string[]) =>
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
   const getAllSousGenres = (genres: string[]) => {
     return genres.flatMap(g => SOUS_GENRES_PAR_GENRE[g] || []);
   };
@@ -108,6 +110,7 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
 
       classe: formData.classe === 'Autre' ? formData.classeCustom : (formData.classe || undefined),
       sous_genre_prefere: formData.sous_genre_prefere,
+      intentions: formData.intentions,
       profil_complet: !!(
         formData.educationLevel &&
         (classesParNiveau[formData.educationLevel]?.length === 0 || formData.classe) &&
@@ -180,7 +183,7 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
                 onChange={(e) => updateField('birthDate', e.target.value)} className={inputClass} />
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="education" className={labelClass}>Niveau d'études</label>
+              <label htmlFor="education" className={labelClass}>Statut</label>
               <Select onValueChange={(value) => updateField('educationLevel', value)}>
                 <SelectTrigger className={inputClass}>
                   <SelectValue placeholder="Sélectionnez votre niveau" />
@@ -217,8 +220,10 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
               </div>
             ) : formData.educationLevel && (
               <div className="space-y-1.5">
-                <label htmlFor="classe" className={labelClass}>Classe / Filière</label>
-                <Input id="classe" placeholder="Ex: Profession, Autre..." value={formData.classe}
+                <label htmlFor="classe" className={labelClass}>
+                  {['Professionnel', 'Autre'].includes(formData.educationLevel) ? 'Métier' : 'Classe / Filière'}
+                </label>
+                <Input id="classe" placeholder={`Précisez votre ${['Professionnel', 'Autre'].includes(formData.educationLevel) ? 'métier' : 'classe/filière'}...`} value={formData.classe}
                   onChange={(e) => updateField('classe', e.target.value)} className={inputClass} />
               </div>
             )}
@@ -233,38 +238,31 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
               <p className="text-sm text-muted">Sélectionnez vos genres favoris pour des recommandations personnalisées</p>
               {/* Genre préféré — sélection unique */}
               <div className="space-y-3">
-                <label className={labelClass}>Genre préféré</label>
-                <p className="text-sm text-muted">Choisissez le genre qui vous correspond le mieux</p>
+                <label className={labelClass}>Genres préférés</label>
+                <p className="text-sm text-muted">Choisissez les genres qui vous correspondent le mieux</p>
                 <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
-                  {genreList.map((genre) => (
+                  {genreList.map((genre: string) => (
                     <button key={genre} type="button"
                       onClick={() => {
-                        const currentGenres = formData.preferredGenres;
-
-                        let newGenres;
-
-                        if (currentGenres.includes(genre)) {
-                          newGenres = currentGenres.filter(g => g !== genre);
-                        } else {
-                          newGenres = [...currentGenres, genre];
-                        }
-
-                        const validSousGenres = getAllSousGenres(newGenres);
-
-                        const filteredSousGenres = formData.sous_genre_prefere.filter(sg =>
-                          validSousGenres.includes(sg)
-                        );
-
-                        setFormData(prev => ({
-                          ...prev,
-                          preferredGenres: newGenres,
-                          sous_genre_prefere: filteredSousGenres,
-                        }));
+                        const toggleGenre = (genre: string) => {
+                          setFormData((prev: any) => {
+                            const newGenres = prev.preferredGenres.includes(genre)
+                              ? prev.preferredGenres.filter((g: string) => g !== genre)
+                              : [...prev.preferredGenres, genre];
+                            const validSousGenres = getAllSousGenres(newGenres);
+                            return {
+                              ...prev,
+                              preferredGenres: newGenres,
+                              sous_genre_prefere: prev.sous_genre_prefere.filter((sg: string) => validSousGenres.includes(sg))
+                            };
+                          });
+                        };
+                        toggleGenre(genre);
                       }} className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 border flex items-center gap-1.5 ${formData.preferredGenres.includes(genre)
                           ? 'bg-[var(--library-accent)] text-[var(--library-on-accent)] border-[var(--library-accent)] shadow-soft'
                           : 'surface-alt border-[var(--border-color)] text-primary hover:border-[var(--library-accent)]/50'
                         }`}>
-                      {formData.preferredGenres[0] === genre && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
+                      {formData.preferredGenres.includes(genre) && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
                       {genre}
                     </button>
                   ))}
@@ -274,24 +272,20 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
               {/* Sous-genre — apparaît après le choix du genre */}
               {formData.preferredGenres[0] && SOUS_GENRES_PAR_GENRE[formData.preferredGenres[0]] && (
                 <div className="space-y-3">
-                  <label className={labelClass}>Sous-genre préféré</label>
+                  <label className={labelClass}>Sous-genres préférés</label>
                   <div className="flex flex-wrap gap-2">
-                    {SOUS_GENRES_PAR_GENRE[formData.preferredGenres[0]].map((sg) => (
+                    {SOUS_GENRES_PAR_GENRE[formData.preferredGenres[0]].map((sg: string) => (
                       <button key={sg} type="button"
                         onClick={() => {
-                          const current = formData.sous_genre_prefere;
-
-                          if (current.includes(sg)) {
-                            updateField(
-                              'sous_genre_prefere',
-                              current.filter(s => s !== sg)
-                            );
-                          } else {
-                            updateField(
-                              'sous_genre_prefere',
-                              [...current, sg]
-                            );
-                          } formData.sous_genre_prefere.includes(sg)
+                          const toggleSubGenre = (subGenre: string) => {
+                            setFormData((prev: any) => ({
+                              ...prev,
+                              sous_genre_prefere: prev.sous_genre_prefere.includes(subGenre)
+                                ? prev.sous_genre_prefere.filter((g: string) => g !== subGenre)
+                                : [...prev.sous_genre_prefere, subGenre]
+                            }));
+                          };
+                          toggleSubGenre(sg);
                         }}
                         className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${formData.sous_genre_prefere.includes(sg)
                             ? 'bg-[var(--library-accent)] text-[var(--library-on-accent)] border-[var(--library-accent)] shadow-soft'
@@ -304,6 +298,36 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
                   </div>
                 </div>
               )}
+
+              {/* Intentions (Optionnel) */}
+              <div className="space-y-3 pt-4 border-t border-[var(--border-color)]">
+                <label className={labelClass}>Pourquoi rejoignez-vous la CAEB ? (Optionnel)</label>
+                <p className="text-sm text-muted">Cela nous aide à améliorer nos services.</p>
+                <div className="flex flex-wrap gap-2">
+                  {intentionsList.map((intention: string) => (
+                    <button key={intention} type="button"
+                      onClick={() => {
+                        const toggleIntention = (intention: string) => {
+                          setFormData((prev: any) => ({
+                            ...prev,
+                            intentions: prev.intentions.includes(intention)
+                              ? prev.intentions.filter((i: string) => i !== intention)
+                              : [...prev.intentions, intention]
+                          }));
+                        };
+                        toggleIntention(intention);
+                      }}
+                      className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${formData.intentions?.includes(intention)
+                          ? 'bg-[var(--library-accent)] text-[var(--library-on-accent)] border-[var(--library-accent)] shadow-soft'
+                          : 'surface-alt border-[var(--border-color)] text-primary hover:border-[var(--library-accent)]/50'
+                        }`}>
+                      {formData.intentions?.includes(intention) && <Check className="w-3.5 h-3.5 inline mr-1" />}
+                      {intention}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
             </div>
             <div className="pt-4 border-t border-[var(--border-color)]">
               <div className="flex items-start gap-3">

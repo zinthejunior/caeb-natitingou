@@ -5,7 +5,7 @@ import {
   Crown, Lock, TrendingUp, User as UserIcon,
   GraduationCap, Heart, CheckCircle2, AlertCircle, X
 } from 'lucide-react';
-import { genreList, educationLevels, sousGenresParGenre, classesParNiveau } from '@/data/constants';
+import { genreList, educationLevels, sousGenresParGenre, classesParNiveau, intentionsList } from '@/data/constants';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
@@ -265,8 +265,9 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
     educationLevel: user?.educationLevel || '',
     classe: (user as any)?.classe || '',
     classeCustom: '',
-    genre: user?.preferredGenres?.[0] || '',
-    sous_genre: (user as any)?.sous_genre_prefere || '',
+    genres: user?.preferredGenres || [],
+    sous_genres: user?.sous_genre_prefere || [],
+    intentions: (user as any)?.intentions || [],
   });
   const { borrows = [] } = useBorrows();
   const { reservations = [] } = useReservations();
@@ -314,8 +315,9 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
       pseudo: formData.pseudo,
       educationLevel: formData.educationLevel as any,
       classe: formData.classe === 'Autre' ? formData.classeCustom : formData.classe,
-      preferredGenres: formData.genre ? [formData.genre] : [],
-      sous_genre_prefere: formData.sous_genre,
+      preferredGenres: formData.genres,
+      sous_genre_prefere: formData.sous_genres,
+      intentions: formData.intentions,
     } as any);
 
     if (success) {
@@ -701,7 +703,7 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-primary">Niveau d'études</label>
+                  <label className="text-sm font-semibold text-primary">Statut</label>
                   <select value={formData.educationLevel} onChange={e => setFormData(f => ({...f, educationLevel: e.target.value, classe: ''}))}
                     className="w-full px-4 py-2 surface border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-accent/20 outline-none">
                     <option value="">Sélectionner...</option>
@@ -724,30 +726,74 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                   </div>
                 ) : formData.educationLevel ? (
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-primary">Classe / Filière</label>
+                    <label className="text-sm font-semibold text-primary">
+                      {['Professionnel', 'Autre'].includes(formData.educationLevel) ? 'Métier' : 'Classe / Filière'}
+                    </label>
                     <input type="text" value={formData.classe} onChange={e => setFormData(f => ({...f, classe: e.target.value}))}
-                      placeholder="Ex: Profession, Autre..."
+                      placeholder={`Ex: ${['Professionnel', 'Autre'].includes(formData.educationLevel) ? 'Profession' : 'Classe, Filière'}...`}
                       className="w-full px-4 py-2 surface border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-accent/20 outline-none" />
                   </div>
                 ) : null}
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-4 pt-2">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-primary">Genre préféré</label>
-                  <select value={formData.genre} onChange={e => setFormData(f => ({...f, genre: e.target.value, sous_genre: ''}))}
-                    className="w-full px-4 py-2 surface border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-accent/20 outline-none">
-                    <option value="">Sélectionner...</option>
-                    {genreList.map(g => <option key={g} value={g}>{g}</option>)}
-                  </select>
+                  <label className="text-sm font-semibold text-primary">Genres préférés</label>
+                  <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
+                    {genreList.map((g: string) => (
+                      <button key={g} type="button"
+                        onClick={() => {
+                          const current = formData.genres || [];
+                          const updated = current.includes(g) ? current.filter((i: string) => i !== g) : [...current, g];
+                          setFormData(f => ({ ...f, genres: updated, sous_genres: [] }));
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${formData.genres?.includes(g)
+                          ? 'bg-[var(--library-accent)] text-[var(--library-on-accent)] border-[var(--library-accent)] shadow-sm'
+                          : 'surface-alt text-primary border-[var(--border-color)] hover:border-[var(--library-accent)]/50'}`}>
+                        {g}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-primary">Sous-genre préféré</label>
-                  <select value={formData.sous_genre} onChange={e => setFormData(f => ({...f, sous_genre: e.target.value}))}
-                    className="w-full px-4 py-2 surface border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-accent/20 outline-none">
-                    <option value="">Sélectionner...</option>
-                    {formData.genre && sousGenresParGenre[formData.genre]?.map(sg => <option key={sg} value={sg}>{sg}</option>)}
-                  </select>
+
+                {formData.genres?.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-primary">Sous-genres préférés</label>
+                    <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
+                      {formData.genres.flatMap(genre => sousGenresParGenre[genre] || []).map((sg: string) => (
+                        <button key={sg} type="button"
+                          onClick={() => {
+                            const current = formData.sous_genres || [];
+                            const updated = current.includes(sg) ? current.filter((i: string) => i !== sg) : [...current, sg];
+                            setFormData(f => ({ ...f, sous_genres: updated }));
+                          }}
+                          className={`px-3 py-1.5 rounded-full text-sm transition-colors border ${formData.sous_genres?.includes(sg)
+                            ? 'bg-[var(--library-accent)]/15 text-[var(--library-accent)] border-[var(--library-accent)]/30 font-medium'
+                            : 'surface-alt text-muted border-[var(--border-color)] hover:border-[var(--library-accent)]/50'}`}>
+                          {sg}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="space-y-2 pt-2 border-t border-[var(--border-color)]">
+                  <label className="text-sm font-semibold text-primary">Intention (Pourquoi avez-vous rejoint la CAEB ?)</label>
+                  <div className="flex flex-wrap gap-2 p-1">
+                    {intentionsList.map((intention: string) => (
+                      <button key={intention} type="button"
+                        onClick={() => {
+                          const current = formData.intentions || [];
+                          const updated = current.includes(intention) ? current.filter((i: string) => i !== intention) : [...current, intention];
+                          setFormData(f => ({ ...f, intentions: updated }));
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-sm transition-all border ${formData.intentions?.includes(intention)
+                            ? 'bg-[var(--library-accent)] text-[var(--library-on-accent)] border-[var(--library-accent)] shadow-sm'
+                            : 'surface-alt border-[var(--border-color)] text-primary hover:border-[var(--library-accent)]/50'}`}>
+                        {intention}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -782,7 +828,7 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                   Plus tard
                 </Button>
               </div>
-              <p className="text-[10px] text-muted uppercase tracking-widest font-bold">CAEB NATITINGOU — BIBLIOTHÈQUE NUMÉRIQUE</p>
+              <p className="text-[10px] text-muted uppercase tracking-widest font-bold">CAEB NATITINGOU — BIBLIOTHÈQUE</p>
             </div>
           </div>
         </div>

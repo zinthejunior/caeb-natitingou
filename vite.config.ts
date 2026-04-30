@@ -16,7 +16,7 @@ export default defineConfig({
       manifest: {
         name: 'CAEB Natitingou',
         short_name: 'CAEB',
-        description: 'Bibliothèque numérique de la CAEB Natitingou',
+        description: 'Plateforme de la bibliothèque CAEB Natitingou',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',

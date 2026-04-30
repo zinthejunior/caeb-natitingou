@@ -64,7 +64,18 @@ export default function App() {
 
   // ── State ────────────────────────────────────────────────────────────
 
-  const { user, isAuthenticated, login, register, logout, updateUser } = useAuth();
+  const { user, isAuthenticated, login, register, logout, updateUser, changePassword } = useAuth();
+
+  // ── Thème persisté ───────────────────────────────────────────────────
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('caeb_theme');
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
   const parseHash = () => {
     const hash = window.location.hash.slice(1);
     if (!hash) return { view: 'landing' as View, params: {} };
@@ -89,9 +100,9 @@ export default function App() {
 
   useEffect(() => {
     if (isAuthenticated && (currentView === 'landing' || currentView === 'login' || currentView === 'register')) {
-      navigateTo('home');
+      navigateTo('home', undefined, true);
     } else if (!isAuthenticated && PROTECTED_VIEWS.includes(currentView)) {
-      navigateTo('landing');
+      navigateTo('landing', undefined, true);
     }
   }, [isAuthenticated, currentView]);
 
@@ -105,7 +116,7 @@ export default function App() {
 
   // ── Navigation ───────────────────────────────────────────────────────
 
-  const navigateTo = useCallback((view: View, params?: NavParams) => {
+  const navigateTo = useCallback((view: View, params?: NavParams, replace = false) => {
     setCurrentView(view);
     setNavParams(params ?? {});
     
@@ -116,7 +127,11 @@ export default function App() {
     }
     
     if (window.location.hash !== hash) {
-      window.history.pushState(null, '', hash);
+      if (replace) {
+        window.history.replaceState(null, '', hash);
+      } else {
+        window.history.pushState(null, '', hash);
+      }
     }
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -337,6 +352,7 @@ export default function App() {
           <SettingsPage
             user={user}
             onLogout={handleLogout}
+            onChangePassword={changePassword}
           />
         );
 

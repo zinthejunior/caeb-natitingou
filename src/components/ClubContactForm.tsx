@@ -3,6 +3,7 @@ import { X, Mail, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import type { ClubManager } from '@/types';
+import { sendClubContact } from '@/hooks/useData';
 
 interface ClubContactFormProps {
   club: {
@@ -38,18 +39,23 @@ export function ClubContactForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.message.trim()) {
+      toast.error('Veuillez écrire un message.');
+      return;
+    }
     setIsSubmitting(true);
-
-    // Simuler l'envoi du formulaire
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    toast.success('Formulaire envoyé avec succès !', {
-      description: `Le responsable du club "${club.name}" recevra votre demande d'adhésion.`,
-    });
-
-    setIsSubmitting(false);
-    onSubmit();
-    onClose();
+    try {
+      await sendClubContact(club.id, formData.name, formData.email, formData.message);
+      toast.success('Message envoyé avec succès !', {
+        description: `Le responsable du club "${club.name}" recevra votre demande.`,
+      });
+      onSubmit();
+      onClose();
+    } catch {
+      toast.error('Erreur lors de l\'envoi. Vérifiez votre connexion.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

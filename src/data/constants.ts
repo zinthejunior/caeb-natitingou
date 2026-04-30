@@ -44,3 +44,13 @@ export const sousGenresParGenre: Record<string, string[]> = {
   "Fantastique": ["Épique", "Urbain", "Horreur", "Science-fiction", "Contemporain"],
   "Autre": [],
 };
+
+export const intentionsList = [
+  "Emprunter des livres physiques",
+  "Consulter le catalogue en ligne",
+  "Participer aux clubs de lecture",
+  "Assister aux événements et conférences",
+  "Travailler/Étudier sur place",
+  "Découvrir de nouveaux auteurs",
+  "Autre"
+];
