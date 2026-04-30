@@ -1,0 +1,371 @@
+/* App-specific styles */
+
+/* Hide scrollbar for horizontal scroll containers */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe area padding for bottom navigation */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Custom progress bar styling - Elegant Blue Gradient */
+[data-slot="progress-indicator"] {
+  background: linear-gradient(90deg, #0052CC 0%, #0066E0 50%, #2E7DD9 100%);
+}
+
+/* Smooth transitions for all interactive elements - Elegant fluid motion */
+button, a, input, textarea, select {
+  transition: all 0.35s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Focus styles - Professional Blue Ring */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #0052CC;
+  outline-offset: 2px;
+}
+
+/* Card hover lift effect - Subtle and sophisticated */
+.hover-lift {
+  transition: transform 0.4s cubic-bezier(0.4, 0.0, 0.2, 1), 
+              box-shadow 0.4s cubic-bezier(0.4, 0.0, 0.2, 1),
+              filter 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px -8px rgba(0, 82, 204, 0.15);
+  filter: brightness(1.01);
+}
+
+/* Image loading placeholder - Blue shimmer */
+.img-loading {
+  background: linear-gradient(90deg, #f0f4f9 25%, #e8eef7 50%, #f0f4f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Badge pulsing animation - Blue glow pulse */
+.badge-pulse {
+  animation: badge-pulse-custom 2.5s ease-in-out infinite;
+}
+
+@keyframes badge-pulse-custom {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(0, 82, 204, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(0, 82, 204, 0);
+  }
+}
+
+/* Tab active indicator animation - Blue underline */
+.tab-indicator {
+  position: relative;
+  overflow: hidden;
+}
+
+.tab-indicator::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0052CC, #0066E0);
+  transition: width 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  border-radius: 2px;
+}
+
+.tab-indicator.active::after {
+  width: 100%;
+}
+
+/* Enhanced hover effect for tab items */
+.tab-item {
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.tab-item:hover {
+  color: #0052CC;
+}
+
+/* Bottom sheet styling */
+[data-slot="sheet-content"] {
+  border-top-left-radius: 1.5rem;
+  border-top-right-radius: 1.5rem;
+  animation: slide-up-modal 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+@keyframes slide-up-modal {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Toast styling - Blue accent */
+[data-sonner-toast] {
+  --normal-bg: var(--library-surface);
+  --normal-border: rgba(0, 82, 204, 0.08);
+  --normal-text: var(--library-text);
+  --success-bg: #f0f9f6;
+  --success-border: #0052CC;
+  --success-text: #0D0D0D;
+  --error-bg: #fef5f5;
+  --error-border: #c94a4a;
+  --error-text: #3a1515;
+  animation: toast-slide-in 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive typography */
+@media (max-width: 640px) {
+  h1 {
+    font-size: 1.75rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+  }
+  
+  h3 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* ============================================
+   PREMIUM ANIMATION & EFFECTS - Blue & White Theme
+   ============================================ */
+
+/* Smooth page transitions - Fade in effect */
+.page-transition {
+  animation: page-fade-in 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Elegant floating cards */
+.float-card {
+  animation: float-smooth 4s ease-in-out infinite;
+}
+
+@keyframes float-smooth {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+/* Refined glow effect - Blue glow */
+.glow-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.glow-effect::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: radial-gradient(circle, rgba(0, 82, 204, 0.15) 0%, transparent 70%);
+  animation: glow-rotate 8s linear infinite;
+}
+
+@keyframes glow-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Smooth expansion/collapse */
+.expand-collapse {
+  transition: max-height 0.4s cubic-bezier(0.4, 0.0, 0.2, 1),
+              opacity 0.4s cubic-bezier(0.4, 0.0, 0.2, 1),
+              padding 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Refined skeleton loading - Blue shimmer */
+.skeleton-loading {
+  background: linear-gradient(90deg, 
+    var(--library-surface-weak) 0%,
+    var(--library-surface-alt) 50%,
+    var(--library-surface-weak) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 2s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% {
+    background-position: 200% 0;
+  }
+  50% {
+    background-position: -200% 0;
+  }
+}
+
+/* Elegant input focus effect - Blue glow */
+input:focus {
+  box-shadow: 0 0 0 4px rgba(0, 82, 204, 0.1),
+              0 0 0 2px rgba(0, 82, 204, 0.5);
+}
+
+textarea:focus {
+  box-shadow: 0 0 0 4px rgba(0, 82, 204, 0.1),
+              0 0 0 2px rgba(0, 82, 204, 0.5);
+}
+
+/* Smooth scale on click */
+.press-effect {
+  transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.press-effect:active {
+  transform: scale(0.98);
+}
+
+/* Elegant fade-in for list items */
+.list-item-fade {
+  animation: list-item-entrance 0.4s cubic-bezier(0.4, 0.0, 0.2, 1) backwards;
+}
+
+@keyframes list-item-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Add stagger delay for multiple items */
+.list-item-fade:nth-child(1) { animation-delay: 0.1s; }
+.list-item-fade:nth-child(2) { animation-delay: 0.2s; }
+.list-item-fade:nth-child(3) { animation-delay: 0.3s; }
+.list-item-fade:nth-child(4) { animation-delay: 0.4s; }
+.list-item-fade:nth-child(5) { animation-delay: 0.5s; }
+
+/* Refined backdrop blur for modals */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+  animation: backdrop-fade 0.3s ease-out;
+}
+
+@keyframes backdrop-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Elegant divider with gradient - Blue gradient */
+.elegant-divider {
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%,
+    #0052CC 50%,
+    transparent 100%);
+}
+
+/* Smooth underline animation for links - Blue underline */
+.underline-animate {
+  position: relative;
+  text-decoration: none;
+}
+
+.underline-animate::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #0052CC, #0066E0);
+  transition: width 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.underline-animate:hover::after {
+  width: 100%;
+}
+

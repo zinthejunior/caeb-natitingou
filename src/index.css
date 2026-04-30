@@ -1,0 +1,1142 @@
+/* ============================================================
+   CAEB NATITINGOU — Design System
+   ============================================================
+   Mode clair  : Bleu institutionnel + Blanc (identité logo CAEB)
+   Mode sombre : Chocolat/Marron profond + Or/Jaune (bâtiment CAEB)
+
+   Polices :
+   - Playfair Display → titres (élégance éditoriale)
+   - Poppins          → corps de texte (lisibilité moderne)
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   A/ TOKENS — MODE CLAIR
+   Bleu institutionnel + Blanc dominant
+   Inspiré du logo CAEB : bleu vif sur blanc pur
+   ============================================================ */
+@layer base {
+  :root {
+    /* ── Fond & Surfaces ── */
+    --library-bg:            #F0F5FF;   /* Blanc très légèrement bleuté — fond global */
+    --library-surface:       #FFFFFF;   /* Blanc pur — cartes, modales */
+    --library-surface-alt:   #EAF0FF;   /* Bleu glacé — surfaces alternatives */
+    --library-surface-weak:  #DDEAFF;   /* Bleu très pâle — éléments secondaires */
+
+    /* ── Couleurs CAEB (logo : bleu + blanc) ── */
+    --library-primary:       #1A56DB;   /* Bleu principal CAEB — boutons, liens actifs */
+    --library-primary-dark:  #1240A8;   /* Bleu foncé — hover, pressed */
+    --library-primary-light: #3B82F6;   /* Bleu moyen — badges, highlights */
+    --library-primary-pale:  #BFDBFE;   /* Bleu pâle — backgrounds de badges */
+
+    /* ── Accent & Interactivité ── */
+    --library-accent:        #1A56DB;   /* = primary en light mode */
+    --library-accent-alt:    #2563EB;   /* Variante vibrante */
+    --library-accent-light:  #60A5FA;   /* Pour hover sur fond sombre */
+    --library-accent-sky:    #93C5FD;   /* Très clair — highlights subtils */
+
+    /* ── Textes ── */
+    --library-text:          #0A0F1E;   /* Quasi-noir bleuté — texte principal */
+    --library-text-muted:    #1E3A5F;   /* Bleu foncé — texte secondaire */
+    --library-muted:         #4B6B8A;   /* Bleu-gris — texte tertiaire/placeholders */
+
+    /* ── Bordures ── */
+    --border-color:          #C7D9F5;   /* Bleu pâle — bordures standard */
+    --border-strong:         #93B8EC;   /* Bleu moyen — bordures visibles */
+
+    /* ── Textes sur fonds colorés ── */
+    --library-on-accent:     #FFFFFF;   /* Blanc sur bleu */
+    --library-on-light-text: #0A0F1E;
+    --library-on-image-text: #FFFFFF;
+    --library-accent-secondary: #FFFFFF; /* Texte sur boutons d'accent */
+
+    /* ── Ombres (teintées bleu pour cohérence) ── */
+    --shadow-xs:      0 1px 3px rgba(26, 86, 219, 0.06);
+    --shadow-subtle:  0 2px 8px rgba(26, 86, 219, 0.08);
+    --shadow-soft:    0 4px 16px rgba(26, 86, 219, 0.10);
+    --shadow-medium:  0 8px 32px rgba(26, 86, 219, 0.13);
+    --shadow-elevated:0 16px 48px rgba(26, 86, 219, 0.16);
+    --shadow-glow:    0 0 0 3px rgba(26, 86, 219, 0.15),
+                      0 8px 32px rgba(26, 86, 219, 0.20);
+    --shadow-card:    0 2px 12px rgba(26, 86, 219, 0.08),
+                      0 1px 3px rgba(26, 86, 219, 0.06);
+    --shadow-card-hover: 0 8px 30px rgba(26, 86, 219, 0.18),
+                         0 3px 8px rgba(26, 86, 219, 0.10);
+    --shadow-halo:    0 0 0 4px rgba(26, 86, 219, 0.12),
+                      inset 0 1px 2px rgba(255, 255, 255, 0.9);
+
+    /* ── Dégradés ── */
+    --gradient-primary: linear-gradient(135deg, #FFFFFF 0%, #F0F5FF 60%, #E0ECFF 100%);
+    --gradient-accent:  linear-gradient(135deg, #1A56DB 0%, #2563EB 50%, #3B82F6 100%);
+    --gradient-fashion: linear-gradient(135deg, #1240A8 0%, #1A56DB 40%, #3B82F6 100%);
+    --gradient-hero:    linear-gradient(160deg, #F8FBFF 0%, #EBF3FF 40%, #D6E9FF 100%);
+
+    /* ── Variables shadcn/ui compatibles ── */
+    --background:             210 60% 98%;
+    --foreground:             220 60% 8%;
+    --card:                   0 0% 100%;
+    --card-foreground:        220 60% 8%;
+    --popover:                0 0% 100%;
+    --popover-foreground:     220 60% 8%;
+    --primary:                220 75% 47%;
+    --primary-foreground:     0 0% 100%;
+    --secondary:              214 40% 92%;
+    --secondary-foreground:   220 60% 8%;
+    --muted:                  214 30% 88%;
+    --muted-foreground:       215 25% 40%;
+    --accent:                 220 75% 47%;
+    --accent-foreground:      0 0% 100%;
+    --destructive:            0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border:                 214 40% 88%;
+    --input:                  214 40% 90%;
+    --ring:                   220 75% 47%;
+    --radius:                 0.75rem;
+  }
+}
+
+/* ============================================================
+   B/ TOKENS — MODE SOMBRE
+   Chocolat/Marron profond + Or/Jaune
+   Inspiré du bâtiment CAEB : matériaux chauds, lumières dorées
+   ============================================================ */
+@layer base {
+  html.dark {
+    /* ── Fond & Surfaces ── */
+    --library-bg:            #120A04;   /* Brun très foncé — fond global (nuit chaude) */
+    --library-surface:       #1E1208;   /* Chocolat profond — cartes principales */
+    --library-surface-alt:   #2A1A0A;   /* Chocolat moyen — surfaces alt */
+    --library-surface-weak:  #3A2512;   /* Brun caramel — éléments secondaires */
+
+    /* ── Couleurs CAEB dark (bâtiment : bois, pierre, lumière dorée) ── */
+    --library-primary:       #F5C518;   /* Or vif CAEB — accent principal */
+    --library-primary-dark:  #D4A017;   /* Or brûlé — hover/pressed */
+    --library-primary-light: #FFD95A;   /* Or clair — highlights */
+    --library-primary-pale:  #3D2A00;   /* Or très sombre — bg badges */
+
+    /* ── Accent & Interactivité ── */
+    --library-accent:        #F5C518;   /* Or principal */
+    --library-accent-alt:    #E8B800;   /* Or chaud — variante */
+    --library-accent-light:  #FFD95A;   /* Or lumineux — hover */
+    --library-accent-sky:    #FFF0A0;   /* Or très pâle — subtil */
+
+    /* ── Textes ── */
+    --library-text:          #FDF3E3;   /* Crème chaud — texte principal */
+    --library-text-muted:    #C9A87C;   /* Beige caramel — texte secondaire */
+    --library-muted:         #8B6A45;   /* Brun moyen — texte tertiaire */
+
+    /* ── Bordures ── */
+    --border-color:          #3D2810;   /* Brun foncé — bordures standard */
+    --border-strong:         #5C3D1A;   /* Brun moyen — bordures visibles */
+
+    /* ── Textes sur fonds colorés ── */
+    --library-on-accent:     #1A0A00;   /* Brun très foncé sur or */
+    --library-on-light-text: #1A0A00;
+    --library-on-image-text: #FFFFFF;
+    --library-accent-secondary: #1A0A00; /* Texte sur boutons d'accent */
+
+    /* ── Ombres (teintées or/brun pour atmosphère) ── */
+    --shadow-xs:      0 1px 3px rgba(0, 0, 0, 0.30);
+    --shadow-subtle:  0 2px 8px rgba(0, 0, 0, 0.35);
+    --shadow-soft:    0 4px 16px rgba(0, 0, 0, 0.40);
+    --shadow-medium:  0 8px 32px rgba(0, 0, 0, 0.45);
+    --shadow-elevated:0 16px 48px rgba(0, 0, 0, 0.55);
+    --shadow-glow:    0 0 0 3px rgba(245, 197, 24, 0.20),
+                      0 8px 32px rgba(245, 197, 24, 0.15);
+    --shadow-card:    0 2px 12px rgba(0, 0, 0, 0.35),
+                      0 1px 3px rgba(245, 197, 24, 0.05);
+    --shadow-card-hover: 0 8px 30px rgba(0, 0, 0, 0.50),
+                         0 3px 8px rgba(245, 197, 24, 0.12);
+    --shadow-halo:    0 0 0 4px rgba(245, 197, 24, 0.15),
+                      inset 0 1px 2px rgba(255, 245, 200, 0.1);
+
+    /* ── Dégradés ── */
+    --gradient-primary: linear-gradient(135deg, #1E1208 0%, #2A1A0A 60%, #3A2512 100%);
+    --gradient-accent:  linear-gradient(135deg, #F5C518 0%, #D4A017 50%, #B8860B 100%);
+    --gradient-fashion: linear-gradient(135deg, #3A2512 0%, #2A1A0A 40%, #1E1208 100%);
+    --gradient-hero:    linear-gradient(160deg, #1E1208 0%, #2A1A0A 40%, #1A1006 100%);
+
+    /* ── Variables shadcn/ui compatibles ── */
+    --background:             25 60% 5%;
+    --foreground:             35 70% 92%;
+    --card:                   25 55% 8%;
+    --card-foreground:        35 70% 92%;
+    --popover:                25 55% 8%;
+    --popover-foreground:     35 70% 92%;
+    --primary:                45 95% 54%;
+    --primary-foreground:     25 80% 8%;
+    --secondary:              25 35% 15%;
+    --secondary-foreground:   35 70% 92%;
+    --muted:                  25 30% 18%;
+    --muted-foreground:       35 35% 60%;
+    --accent:                 45 95% 54%;
+    --accent-foreground:      25 80% 8%;
+    --destructive:            0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border:                 25 40% 18%;
+    --input:                  25 40% 15%;
+    --ring:                   45 95% 54%;
+  }
+}
+
+/* ============================================================
+   C/ UTILITIES — Classes globales réutilisables
+   ============================================================ */
+@layer utilities {
+
+  /* ── Transitions de thème ── */
+  *,
+  *::before,
+  *::after {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-duration: 250ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .no-theme-transition,
+  .no-theme-transition * {
+    transition: none !important;
+  }
+
+  /* ── Textes sémantiques ── */
+  .text-primary   { color: var(--library-text) !important; }
+  .text-secondary { color: var(--library-text-muted) !important; }
+  .text-accent    { color: var(--library-accent) !important; }
+  .text-muted     { color: var(--library-muted) !important; }
+  .text-on-accent { color: var(--library-on-accent) !important; }
+  .text-on-light  { color: var(--library-on-light-text) !important; }
+  .text-on-image  { color: var(--library-on-image-text) !important; }
+
+  /* ── Surfaces & Fonds ── */
+  .surface {
+    background-color: var(--library-surface);
+    color: var(--library-text);
+  }
+
+  .surface-alt {
+    background-color: var(--library-surface-alt);
+    color: var(--library-text);
+  }
+
+  .surface-weak {
+    background-color: var(--library-surface-weak);
+    color: var(--library-text);
+  }
+
+  .bg-surface      { background-color: var(--library-surface); }
+  .bg-surface-alt  { background-color: var(--library-surface-alt); }
+  .bg-surface-weak { background-color: var(--library-surface-weak); }
+
+  /* ── Ombres ── */
+  .shadow-card       { box-shadow: var(--shadow-card); }
+  .shadow-card-hover { box-shadow: var(--shadow-card-hover); }
+  .shadow-subtle     { box-shadow: var(--shadow-subtle); }
+  .shadow-soft       { box-shadow: var(--shadow-soft); }
+  .shadow-medium     { box-shadow: var(--shadow-medium); }
+  .shadow-elevated   { box-shadow: var(--shadow-elevated); }
+  .shadow-glow       { box-shadow: var(--shadow-glow); }
+  .shadow-halo       { box-shadow: var(--shadow-halo); }
+
+  /* ── Dégradés ── */
+  .gradient-primary { background: var(--gradient-primary); }
+  .gradient-accent  { background: var(--gradient-accent); }
+  .gradient-fashion { background: var(--gradient-fashion); }
+  .gradient-hero    { background: var(--gradient-hero); }
+
+  /* ── Glass effect ── */
+  .glass-effect {
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+  }
+
+  html:not(.dark) .glass-effect {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(26, 86, 219, 0.12);
+    box-shadow: 0 8px 32px rgba(26, 86, 219, 0.10);
+  }
+
+  html.dark .glass-effect {
+    background: rgba(30, 18, 8, 0.80);
+    border: 1px solid rgba(245, 197, 24, 0.12);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.40);
+  }
+
+  /* ── Cards ── */
+  .card {
+    background-color: var(--library-surface);
+    border: 1px solid var(--border-color);
+    color: var(--library-text);
+    box-shadow: var(--shadow-card);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+  }
+
+  html:not(.dark) .card:hover {
+    border-color: rgba(26, 86, 219, 0.20);
+  }
+
+  html.dark .card:hover {
+    border-color: rgba(245, 197, 24, 0.15);
+  }
+
+  /* ── Progress bars ── */
+  [data-slot="progress-indicator"] {
+    background: var(--gradient-accent);
+  }
+
+  /* ── Scrollbars personnalisées ── */
+  /* Light — bleu */
+  html:not(.dark) ::-webkit-scrollbar        { width: 8px; height: 8px; }
+  html:not(.dark) ::-webkit-scrollbar-track  { background: var(--library-surface-weak); border-radius: 8px; }
+  html:not(.dark) ::-webkit-scrollbar-thumb  {
+    background: linear-gradient(180deg, var(--library-primary), var(--library-primary-dark));
+    border-radius: 8px;
+    border: 2px solid var(--library-surface-weak);
+  }
+  html:not(.dark) ::-webkit-scrollbar-thumb:hover { background: var(--library-primary-dark); }
+
+  /* Dark — or */
+  html.dark ::-webkit-scrollbar        { width: 8px; height: 8px; }
+  html.dark ::-webkit-scrollbar-track  { background: var(--library-surface-weak); border-radius: 8px; }
+  html.dark ::-webkit-scrollbar-thumb  {
+    background: linear-gradient(180deg, var(--library-accent), var(--library-accent-alt));
+    border-radius: 8px;
+    border: 2px solid var(--library-surface-alt);
+  }
+  html.dark ::-webkit-scrollbar-thumb:hover { background: var(--library-accent-light); }
+
+  /* ── Sélection de texte ── */
+  html:not(.dark) ::selection { background: rgba(26, 86, 219, 0.20); color: #0A0F1E; }
+  html.dark       ::selection { background: rgba(245, 197, 24, 0.25); color: #FDF3E3; }
+
+  /* ── Placeholder ── */
+  ::placeholder { color: var(--library-muted); opacity: 0.75; }
+
+  /* ── Safe area ── */
+  .pb-safe { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+
+  /* ── Line clamping ── */
+  .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* ── Text balance ── */
+  .text-balance { text-wrap: balance; }
+
+  /* ── Scrollbar hide ── */
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* ── Interactions texte ── */
+  .text-interactive {
+    color: var(--library-accent);
+    transition: color 0.2s ease;
+    cursor: pointer;
+  }
+  .text-interactive:hover  { color: var(--library-accent-light); }
+  .text-interactive:active { color: var(--library-primary-dark); }
+}
+
+/* ============================================================
+   D/ BOUTONS — Correction du reset global (bug identifié)
+   On stylise uniquement les boutons fantôme/non-classés.
+   Les boutons avec bg explicite (bg-*, btn-primary, etc.)
+   ne sont JAMAIS overridés.
+   ============================================================ */
+@layer utilities {
+
+  /*
+    LIGHT MODE — Boutons neutres/fantômes uniquement
+    Exclut : boutons avec classe bg-*, [data-variant="primary"], .btn-solid
+  */
+  html:not(.dark) button:not(:disabled):not([class*="bg-"]):not(.btn-solid):not([data-variant="primary"]) {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--library-accent);
+    background: var(--library-surface);
+    border: 1px solid rgba(26, 86, 219, 0.12);
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+  }
+
+  html:not(.dark) button:not(:disabled):not([class*="bg-"]):not(.btn-solid):not([data-variant="primary"]):hover {
+    background: var(--library-surface-alt);
+    color: var(--library-primary-dark);
+    box-shadow: var(--shadow-soft);
+    transform: translateY(-1px);
+    border-color: rgba(26, 86, 219, 0.25);
+  }
+
+  html:not(.dark) button:not(:disabled):not([class*="bg-"]):not(.btn-solid):not([data-variant="primary"]):active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-xs);
+  }
+
+  /*
+    DARK MODE — Boutons neutres/fantômes uniquement
+  */
+  html.dark button:not(:disabled):not([class*="bg-"]):not(.btn-solid):not([data-variant="primary"]) {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--library-text);
+    background: var(--library-surface-alt);
+    border: 1px solid var(--border-color);
+    font-weight: 600;
+  }
+
+  html.dark button:not(:disabled):not([class*="bg-"]):not(.btn-solid):not([data-variant="primary"]):hover {
+    background: var(--library-surface-weak);
+    color: var(--library-accent);
+    border-color: rgba(245, 197, 24, 0.25);
+    box-shadow: var(--shadow-soft);
+    transform: translateY(-1px);
+  }
+
+  html.dark button:not(:disabled):not([class*="bg-"]):not(.btn-solid):not([data-variant="primary"]):active {
+    transform: translateY(0);
+  }
+
+  /* Classe utilitaire pour forcer un bouton coloré
+     (corrige les CTA qui seraient overridés par le reset ci-dessus) */
+  .btn-solid {
+    background: var(--library-accent) !important;
+    color: var(--library-on-accent) !important;
+    border-color: transparent !important;
+  }
+
+  .btn-solid:hover {
+    background: var(--library-primary-dark) !important;
+    box-shadow: var(--shadow-medium) !important;
+    transform: translateY(-2px) !important;
+  }
+
+  /* Focus visible accessible */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 2px solid var(--library-accent);
+    outline-offset: 2px;
+    box-shadow: var(--shadow-halo);
+  }
+
+  /* Inputs focus */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.15);
+    outline: none;
+  }
+
+  html.dark input:focus,
+  html.dark textarea:focus,
+  html.dark select:focus {
+    box-shadow: 0 0 0 3px rgba(245, 197, 24, 0.15);
+  }
+
+  /* Liens globaux */
+  html:not(.dark) a {
+    color: var(--library-primary);
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+  html:not(.dark) a:hover {
+    color: var(--library-primary-dark);
+    text-decoration: underline;
+    text-decoration-color: rgba(26, 86, 219, 0.4);
+    text-underline-offset: 3px;
+  }
+
+  html.dark a {
+    color: var(--library-accent);
+    font-weight: 500;
+  }
+  html.dark a:hover {
+    color: var(--library-accent-light);
+  }
+}
+
+/* ============================================================
+   E/ BASE — Typographie & Corps
+   ============================================================ */
+@layer base {
+  * { @apply border-border; }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--library-bg);
+    color: var(--library-text);
+    font-family: 'Poppins', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+  }
+
+  /* Typographie light mode */
+  html:not(.dark) p      { color: #1E3A5F; font-weight: 450; }
+  html:not(.dark) small,
+  html:not(.dark) .text-sm { color: #2A4A70; font-weight: 450; }
+  html:not(.dark) strong,
+  html:not(.dark) b { color: #0A0F1E; font-weight: 700; }
+
+  /* Typographie dark mode */
+  html.dark p      { color: #C9A87C; font-weight: 400; }
+  html.dark small,
+  html.dark .text-sm { color: #B89060; font-weight: 400; }
+  html.dark strong,
+  html.dark b { color: #FDF3E3; font-weight: 700; }
+
+  /* Titres */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--library-text);
+  }
+
+  html:not(.dark) h1,
+  html:not(.dark) h2,
+  html:not(.dark) h3,
+  html:not(.dark) h4,
+  html:not(.dark) h5,
+  html:not(.dark) h6 { color: #0A0F1E; }
+
+  html.dark h1,
+  html.dark h2,
+  html.dark h3 { color: #FDF3E3; }
+
+  html.dark h4,
+  html.dark h5,
+  html.dark h6 { color: #F5C518; }
+
+  h1 { font-size: 2.5rem; }
+  h2 { font-size: 2rem; }
+  h3 { font-size: 1.75rem; }
+  h4 { font-size: 1.5rem; }
+  h5 { font-size: 1.25rem; }
+  h6 { font-size: 1.125rem; }
+
+  @media (max-width: 640px) {
+    h1 { font-size: 1.875rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.25rem; }
+    h4 { font-size: 1.125rem; }
+  }
+}
+
+/* ============================================================
+   F/ ANIMATIONS & KEYFRAMES
+   ============================================================ */
+
+/* Entrées */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes flow-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Lévitation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+/* Shimmer chargement */
+@keyframes shimmer {
+  0%   { background-position: -800px 0; }
+  100% { background-position: 800px 0; }
+}
+
+/* Brillance héro */
+@keyframes soft-sheen {
+  0%   { transform: rotate(25deg) translateX(-120%); opacity: 0; }
+  20%  { opacity: 0.5; }
+  50%  { transform: rotate(25deg) translateX(0%); opacity: 0.8; }
+  80%  { opacity: 0.5; }
+  100% { transform: rotate(25deg) translateX(120%); opacity: 0; }
+}
+
+/* Blobs flottants */
+@keyframes float-blob {
+  0%   { transform: translateY(0) scale(1); }
+  50%  { transform: translateY(-20px) scale(1.03); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* Glow light */
+@keyframes glow-light {
+  0%, 100% { box-shadow: var(--shadow-card); }
+  50%       { box-shadow: var(--shadow-glow); }
+}
+
+/* Glow dark — halo doré */
+@keyframes glow-dark {
+  0%, 100% { box-shadow: var(--shadow-medium); }
+  50%       { box-shadow: 0 0 40px rgba(245, 197, 24, 0.20), var(--shadow-glow); }
+}
+
+/* Pulsation douce */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.75; }
+}
+
+/* Bounce subtil */
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+
+/* Halo */
+@keyframes halo {
+  0%, 100% { box-shadow: var(--shadow-subtle); }
+  50%       { box-shadow: var(--shadow-halo); }
+}
+
+/* Marquee */
+@keyframes marquee-left {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes marquee-right {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+/* Scroll X */
+@keyframes scrollX {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Caret */
+@keyframes caret-blink {
+  0%, 70%, 100% { opacity: 1; }
+  20%, 50%      { opacity: 0; }
+}
+
+/* Accordion */
+@keyframes accordion-down {
+  from { height: 0; }
+  to   { height: var(--radix-accordion-content-height); }
+}
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to   { height: 0; }
+}
+
+/* Dark mode — velours doré */
+@keyframes velvet-pulse {
+  0%   { transform: scale(1); opacity: 1; }
+  50%  { transform: scale(1.006); opacity: 0.96; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Particules */
+@keyframes particle-drift {
+  0%   { transform: translateY(0) translateX(0) scale(0.9); opacity: 0.5; }
+  50%  { transform: translateY(-28px) translateX(8px) scale(1); opacity: 0.9; }
+  100% { transform: translateY(0) translateX(0) scale(0.9); opacity: 0.5; }
+}
+
+/* ── Classes d'animation ── */
+.animate-slide-up     { animation: slide-up  0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+.animate-slide-down   { animation: slide-down 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+.animate-fade-in      { animation: fade-in 0.4s ease-out; }
+.animate-scale-in     { animation: scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+.animate-flow-in      { animation: flow-in 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+.animate-float        { animation: float 4s ease-in-out infinite; }
+.animate-shimmer      { animation: shimmer 2s linear infinite; background-size: 800px 100%; }
+.animate-glow-light   { animation: glow-light 2.5s ease-in-out infinite; }
+.animate-glow-dark    { animation: glow-dark 2.5s ease-in-out infinite; }
+.animate-pulse-soft   { animation: pulse-soft 2s ease-in-out infinite; }
+.animate-bounce-subtle{ animation: bounce-subtle 2s ease-in-out infinite; }
+.animate-halo         { animation: halo 3s ease-in-out infinite; }
+.animate-marquee-left { animation: marquee-left 30s linear infinite; }
+.animate-marquee-right{ animation: marquee-right 30s linear infinite; }
+.animate-scroll-x     { animation: scrollX 20s linear infinite; }
+.animate-caret-blink  { animation: caret-blink 1.25s ease-out infinite; }
+.animate-accordion-down { animation: accordion-down 0.2s ease-out; }
+.animate-accordion-up   { animation: accordion-up 0.2s ease-out; }
+.velvet-fade { animation: velvet-pulse 3.5s ease-in-out infinite; }
+.particle    { animation: particle-drift 8s ease-in-out infinite; }
+
+/* ── Skeleton loading ── */
+.skeleton-loading {
+  background: linear-gradient(90deg,
+    var(--library-surface-weak) 25%,
+    var(--library-surface-alt) 50%,
+    var(--library-surface-weak) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* ── Hover lift ── */
+.hover-lift {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover-lift:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-elevated);
+}
+
+/* ── Press effect ── */
+.press-effect { transition: transform 0.15s ease; }
+.press-effect:active { transform: scale(0.97); }
+
+/* ── Underline animé ── */
+.underline-animate {
+  position: relative;
+  text-decoration: none;
+}
+.underline-animate::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0;
+  width: 0; height: 2px;
+  background: var(--library-accent);
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 2px;
+}
+.underline-animate:hover::after { width: 100%; }
+
+/* ── List items staggered ── */
+.list-item-fade { animation: slide-up 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards; }
+.list-item-fade:nth-child(1) { animation-delay: 0.05s; }
+.list-item-fade:nth-child(2) { animation-delay: 0.10s; }
+.list-item-fade:nth-child(3) { animation-delay: 0.15s; }
+.list-item-fade:nth-child(4) { animation-delay: 0.20s; }
+.list-item-fade:nth-child(5) { animation-delay: 0.25s; }
+
+/* ── Elegant divider ── */
+.elegant-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--library-accent) 50%, transparent 100%);
+  opacity: 0.3;
+}
+
+/* ── Page transitions ── */
+.page-transition { animation: flow-in 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* ── Backdrop modal ── */
+.modal-backdrop {
+  backdrop-filter: blur(6px);
+  animation: fade-in 0.25s ease-out;
+}
+
+/* ── Toast styling ── */
+html:not(.dark) [data-sonner-toast] {
+  --normal-bg: var(--library-surface);
+  --normal-border: var(--border-color);
+  --normal-text: var(--library-text);
+  --success-bg: #EFF8FF;
+  --success-border: var(--library-primary);
+  --success-text: #0A0F1E;
+  --error-bg: #FFF1F0;
+  --error-border: #E53E3E;
+  --error-text: #1A0000;
+}
+
+html.dark [data-sonner-toast] {
+  --normal-bg: var(--library-surface);
+  --normal-border: var(--border-color);
+  --normal-text: var(--library-text);
+  --success-bg: #1C1508;
+  --success-border: var(--library-accent);
+  --success-text: var(--library-text);
+  --error-bg: #1C0808;
+  --error-border: #FC8181;
+  --error-text: #FED7D7;
+}
+
+/* ============================================================
+   G/ ARRIÈRE-PLANS DE PAGES SPÉCIFIQUES
+   ============================================================ */
+
+/* ── Landing / Login / Register — Light ── */
+html:not(.dark) .page-landing,
+html:not(.dark) .page-login,
+html:not(.dark) .page-register {
+  background: linear-gradient(160deg,
+    #F8FBFF 0%,
+    #EBF3FF 25%,
+    #D6E9FF 55%,
+    #EBF3FF 80%,
+    #F8FBFF 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Landing / Login / Register — Dark ── */
+html.dark .page-landing,
+html.dark .page-login,
+html.dark .page-register {
+  background: linear-gradient(160deg,
+    #120A04 0%,
+    #1E1208 30%,
+    #16100A 65%,
+    #1E1208 85%,
+    #120A04 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Blobs décoratifs — Light (bleus) ── */
+.bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.22;
+  pointer-events: none;
+  will-change: transform;
+}
+
+html:not(.dark) .bg-blob.blob-1 {
+  width: 500px; height: 500px;
+  left: -8%; top: 5%;
+  background: radial-gradient(circle, rgba(26,86,219,0.9) 0%, rgba(59,130,246,0.4) 50%, transparent 75%);
+  animation: float-blob 12s ease-in-out infinite;
+}
+
+html:not(.dark) .bg-blob.blob-2 {
+  width: 380px; height: 380px;
+  right: -5%; bottom: -5%;
+  background: radial-gradient(circle, rgba(37,99,235,0.85) 0%, rgba(96,165,250,0.35) 50%, transparent 75%);
+  animation: float-blob 14s ease-in-out infinite reverse;
+}
+
+/* ── Blobs décoratifs — Dark (dorés) ── */
+html.dark .bg-blob.blob-1 {
+  width: 450px; height: 450px;
+  left: -8%; top: 5%;
+  background: radial-gradient(circle, rgba(245,197,24,0.25) 0%, rgba(212,160,23,0.10) 50%, transparent 75%);
+  animation: float-blob 12s ease-in-out infinite;
+}
+
+html.dark .bg-blob.blob-2 {
+  width: 350px; height: 350px;
+  right: -5%; bottom: -5%;
+  background: radial-gradient(circle, rgba(212,160,23,0.20) 0%, rgba(245,197,24,0.08) 50%, transparent 75%);
+  animation: float-blob 14s ease-in-out infinite reverse;
+}
+
+/* ── Effet de brillance sur CTA ── */
+.sheen::after {
+  content: '';
+  position: absolute;
+  top: -40%; left: -30%;
+  width: 160%; height: 180%;
+  background: linear-gradient(120deg,
+    rgba(255,255,255,0.02) 0%,
+    rgba(255,255,255,0.10) 50%,
+    rgba(255,255,255,0.02) 100%
+  );
+  transform: rotate(25deg) translateX(-100%);
+  animation: soft-sheen 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── Icônes de page ── */
+.page-landing  { --page-icon-color: var(--library-accent); }
+.page-login    { --page-icon-color: var(--library-accent); }
+.page-register { --page-icon-color: var(--library-accent); }
+
+/* ============================================================
+   H/ MARQUE CAEB
+   ============================================================ */
+
+/* Logo textuel gradient */
+.caeb-brand {
+  display: inline-block;
+  font-weight: 800;
+  font-family: 'Playfair Display', Georgia, serif;
+  line-height: 1;
+}
+
+html:not(.dark) .caeb-brand {
+  background: linear-gradient(135deg, #1240A8 0%, #1A56DB 40%, #3B82F6 80%, #60A5FA 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+html.dark .caeb-brand {
+  background: linear-gradient(135deg, #D4A017 0%, #F5C518 40%, #FFD95A 80%, #FFF0A0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Fallback solide */
+.caeb-brand--solid {
+  color: var(--library-text);
+  -webkit-text-fill-color: var(--library-text);
+}
+
+/* ============================================================
+   I/ ADAPTIVE FOREGROUND (script src/lib/adaptiveFg.ts)
+   ============================================================ */
+.adaptive-fg {
+  --adaptive-fg: var(--library-text);
+  transition: color 0.18s ease, fill 0.18s ease;
+}
+
+.adaptive-fg [data-adaptive] {
+  color: var(--adaptive-fg) !important;
+  fill: var(--adaptive-fg) !important;
+  stroke: var(--adaptive-fg) !important;
+}
+
+/* ============================================================
+   J/ TEXTURE GRAIN
+   ============================================================ */
+.grain-overlay::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  z-index: 9999;
+}
+
+/* ============================================================
+   L/ MICRO-INTERACTIONS — Tilt 3D, boutons, étoiles
+   ============================================================ */
+
+/* ── Carte livre — tilt 3D au survol ── */
+.book-card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.book-card-3d:hover {
+  transform: perspective(600px) rotateY(-3deg) rotateX(2deg) translateY(-6px);
+  box-shadow: var(--shadow-card-hover);
+}
+.book-card-3d:active {
+  transform: perspective(600px) rotateY(0deg) rotateX(0deg) translateY(-2px) scale(0.98);
+  transition-duration: 0.1s;
+}
+
+/* ── Bouton avec feedback de succès ── */
+.btn-success-feedback {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.btn-success-feedback.success {
+  background-color: #22c55e !important;
+  transform: scale(1.04);
+}
+.btn-success-feedback.success::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: bold;
+  color: white;
+  animation: scale-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Étoiles cascade au hover ── */
+.star-cascade .star {
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+              color 0.18s ease;
+  display: inline-block;
+}
+.star-cascade:hover .star:nth-child(1) { transition-delay: 0.00s; transform: scale(1.35); }
+.star-cascade:hover .star:nth-child(2) { transition-delay: 0.04s; transform: scale(1.35); }
+.star-cascade:hover .star:nth-child(3) { transition-delay: 0.08s; transform: scale(1.35); }
+.star-cascade:hover .star:nth-child(4) { transition-delay: 0.12s; transform: scale(1.35); }
+.star-cascade:hover .star:nth-child(5) { transition-delay: 0.16s; transform: scale(1.35); }
+
+/* ── Tap feedback natif mobile ── */
+.tap-feedback {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+.tap-feedback:active {
+  transform: scale(0.95);
+  opacity: 0.85;
+}
+
+/* ── Nav item active pulse ── */
+@keyframes nav-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); }
+  70%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+.nav-item-active-pop { animation: nav-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* ============================================================
+   M/ SKELETON LOADING — États de chargement
+   ============================================================ */
+
+/* Skeleton de base */
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--library-surface-weak) 25%,
+    var(--library-surface-alt) 50%,
+    var(--library-surface-weak) 75%
+  );
+  background-size: 400px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+
+/* Skeleton carte livre (portrait) */
+.skeleton-book-cover {
+  aspect-ratio: 2/3;
+  width: 100%;
+  border-radius: 1rem;
+}
+
+/* Skeleton texte */
+.skeleton-text { height: 0.875rem; border-radius: 0.375rem; }
+.skeleton-text-sm { height: 0.75rem; border-radius: 0.375rem; }
+.skeleton-text-lg { height: 1.25rem; border-radius: 0.5rem; }
+.skeleton-title { height: 1.5rem; width: 70%; border-radius: 0.5rem; }
+
+/* Skeleton badge */
+.skeleton-badge { height: 1.25rem; width: 4rem; border-radius: 9999px; }
+
+/* Skeleton avatar */
+.skeleton-avatar { border-radius: 9999px; }
+
+/* Skeleton bouton */
+.skeleton-btn { height: 2.25rem; border-radius: 0.75rem; }
+
+/* ============================================================
+   N/ ÉTATS VIDES ILLUSTRÉS — SVG inline
+   ============================================================ */
+
+/* Conteneur général */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  gap: 1rem;
+}
+.empty-state-illustration {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+/* Animation d'entrée des états vides */
+.empty-state { animation: empty-state-in 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+
+@keyframes empty-state-in {
+  0%   { opacity: 0; transform: translateY(16px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ============================================================
+   O/ DARK MODE — Profondeur atmosphérique
+   ============================================================ */
+
+/* Vignettage cinématique en dark */
+html.dark body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse at 50% 40%,
+    transparent 55%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+}
+
+/* Border-top lumineux sur les cartes dark — simule lumière venant du haut */
+html.dark .surface,
+html.dark .card {
+  border-top-color: rgba(245, 197, 24, 0.08) !important;
+}
+html.dark .surface:hover,
+html.dark .card:hover {
+  border-top-color: rgba(245, 197, 24, 0.14) !important;
+}
+
+/* Lueur dorée subtile sur les boutons accent en dark */
+html.dark .btn-solid,
+html.dark [class*="bg-[var(--library-accent)]"] {
+  box-shadow: 0 2px 12px rgba(245, 197, 24, 0.18), 0 1px 3px rgba(0,0,0,0.4);
+}
+html.dark .btn-solid:hover {
+  box-shadow: 0 4px 20px rgba(245, 197, 24, 0.28), 0 2px 6px rgba(0,0,0,0.5);
+}
+
+/* ============================================================
+   K/ ACCESSIBILITÉ
+   ============================================================ */
+
+/* Mouvement réduit */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Navigation clavier */
+:focus:not(:focus-visible) { outline: none; }
+
+/* Impression */
+@media print {
+  .no-print { display: none !important; }
+  * { background: white !important; color: black !important; }
+}

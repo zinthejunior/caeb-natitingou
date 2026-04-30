@@ -1,0 +1,18 @@
+dist
+
+# Python
+__pycache__/
+*.pyc
+
+# Base de données
+*.sqlite3
+*.db
+
+# Dataset lourd
+backend/dataset/data/
+
+# Node
+node_modules/
+
+# Env
+.env
