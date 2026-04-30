@@ -72,8 +72,6 @@ def import_users():
             sous_genre_prefere=item.get('sous_genre_prefere'),
             score_confiance=item.get('score_confiance', 0),
             profil_complet=bool(item.get('profil_complet')),
-            xp=item.get('xp', 0),
-            level=item.get('level', 1)
         )
     print(f"{len(users_data)} utilisateurs importés.")
 

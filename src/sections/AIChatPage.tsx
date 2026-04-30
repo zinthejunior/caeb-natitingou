@@ -409,15 +409,16 @@ export function AIChatPage({ user, onNavigate }: AIChatPageProps) {
   );
 }
 
-// ── BULLE DE MESSAGE ──────────────────────────────────────────────────
-function MessageBubble({
-  message, onRate, onBookClick, renderContent,
-}: {
+type MessageBubbleProps = {
   message: ChatMessage;
   onRate: (id: string, r: 'up' | 'down') => void;
   onBookClick: (bookId: string) => void;
   renderContent: (content: string) => React.ReactNode;
-}) {
+};
+
+function MessageBubble({
+  message, onRate, onBookClick, renderContent,
+}: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const time = message.timestamp.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 

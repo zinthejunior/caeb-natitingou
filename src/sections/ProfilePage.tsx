@@ -23,6 +23,67 @@ interface ProfilePageProps {
   onUpdateUser?: (updates: Partial<User>) => Promise<boolean>;
 }
 
+// ── Sous-composants ───────────────────────────────────────────────────
+
+type IconComponent = React.ComponentType<{ className?: string }>;
+
+function StatCard({ icon: Icon, value, label }: { icon: IconComponent; value: number; label: string }) {
+  return (
+    <div className="surface rounded-xl p-4 shadow-card border border-[var(--border-color)] hover:shadow-card-hover transition-shadow flex flex-col items-center text-center gap-2">
+      <div className="w-10 h-10 bg-[var(--library-accent)]/10 border border-[var(--library-accent)]/20 rounded-full flex items-center justify-center">
+        <Icon className="w-5 h-5 text-accent" />
+      </div>
+      <div>
+        <p className="text-2xl font-bold text-primary">{value}</p>
+        <p className="text-xs text-muted mt-0.5">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+function ActivityItem({ icon: Icon, title, description, color }: { icon: IconComponent; title: string; description: string; color: 'accent' | 'amber' }) {
+  const cls = color === 'amber'
+    ? 'bg-amber-500/10 border-amber-500/20 text-amber-500'
+    : 'bg-[var(--library-accent)]/10 border-[var(--library-accent)]/20 text-accent';
+  return (
+    <div className="flex items-start gap-4 surface rounded-xl border border-[var(--border-color)] shadow-card p-4">
+      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 border ${cls}`}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h4 className="font-semibold text-primary">{title}</h4>
+        <p className="text-sm text-muted mt-0.5">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function TipItem({ text }: { text: string }) {
+  return (
+    <div className="flex items-start gap-3 surface-alt rounded-xl border border-[var(--library-accent)]/15 p-4">
+      <p className="text-sm text-muted">{text}</p>
+    </div>
+  );
+}
+
+function SettingItem({ icon: Icon, title, description, onClick }: { icon: IconComponent; title: string; description: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full surface rounded-xl border border-[var(--border-color)] shadow-card hover:shadow-card-hover hover:border-[var(--library-accent)]/25 transition-all p-4 flex items-center gap-4 tap-feedback"
+    >
+      <div className="w-10 h-10 bg-[var(--library-accent)]/10 border border-[var(--library-accent)]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+        <Icon className="w-5 h-5 text-accent" />
+      </div>
+      <div className="flex-1 text-left">
+        <h4 className="font-semibold text-primary">{title}</h4>
+        <p className="text-sm text-muted">{description}</p>
+      </div>
+      <ChevronRight className="w-5 h-5 text-muted flex-shrink-0" />
+    </button>
+  );
+}
+
 // ── Score de confiance — barre de progression ─────────────────────────
 // Correspond à la valeur C du document (0 → 1)
 // Seuils d'activation : CB > 0 · CF ≥ 0.3 · IB ≥ 0.6
@@ -784,80 +845,6 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
           </div>
         </div>
       )}
-  );
-}
-
-// ── Sous-composants ───────────────────────────────────────────────────
-
-function StatCard({ icon: Icon, value, label }: {
-  icon: React.ComponentType<{ className?: string }>;
-  value: number;
-  label: string;
-}) {
-  return (
-    <div className="surface rounded-xl p-4 shadow-card border border-[var(--border-color)] hover:shadow-card-hover transition-shadow flex flex-col items-center text-center gap-2">
-      <div className="w-10 h-10 bg-[var(--library-accent)]/10 border border-[var(--library-accent)]/20 rounded-full flex items-center justify-center">
-        <Icon className="w-5 h-5 text-accent" />
-      </div>
-      <div>
-        <p className="text-2xl font-bold text-primary">{value}</p>
-        <p className="text-xs text-muted mt-0.5">{label}</p>
-      </div>
     </div>
-  );
-}
-
-function ActivityItem({ icon: Icon, title, description, color }: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-  color: 'accent' | 'amber';
-}) {
-  const cls = color === 'amber'
-    ? 'bg-amber-500/10 border-amber-500/20 text-amber-500'
-    : 'bg-[var(--library-accent)]/10 border-[var(--library-accent)]/20 text-accent';
-
-  return (
-    <div className="flex items-start gap-4 surface rounded-xl border border-[var(--border-color)] shadow-card p-4">
-      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 border ${cls}`}>
-        <Icon className="w-5 h-5" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <h4 className="font-semibold text-primary">{title}</h4>
-        <p className="text-sm text-muted mt-0.5">{description}</p>
-      </div>
-    </div>
-  );
-}
-
-function TipItem({ text }: { text: string }) {
-  return (
-    <div className="flex items-start gap-3 surface-alt rounded-xl border border-[var(--library-accent)]/15 p-4">
-      <TrendingUp className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
-      <p className="text-sm text-muted">{text}</p>
-    </div>
-  );
-}
-
-function SettingItem({ icon: Icon, title, description, onClick }: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full surface rounded-xl border border-[var(--border-color)] shadow-card hover:shadow-card-hover hover:border-[var(--library-accent)]/25 transition-all p-4 flex items-center gap-4 tap-feedback"
-    >
-      <div className="w-10 h-10 bg-[var(--library-accent)]/10 border border-[var(--library-accent)]/20 rounded-lg flex items-center justify-center flex-shrink-0">
-        <Icon className="w-5 h-5 text-accent" />
-      </div>
-      <div className="flex-1 text-left">
-        <h4 className="font-semibold text-primary">{title}</h4>
-        <p className="text-sm text-muted">{description}</p>
-      </div>
-      <ChevronRight className="w-5 h-5 text-muted flex-shrink-0" />
-    </button>
   );
 }
