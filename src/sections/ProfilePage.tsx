@@ -5,7 +5,7 @@ import {
   Crown, Lock, TrendingUp, User as UserIcon,
   GraduationCap, Heart, CheckCircle2, AlertCircle, X
 } from 'lucide-react';
-import { genreList, educationLevels, sousGenresParGenre } from '@/data/constants';
+import { genreList, educationLevels, sousGenresParGenre, classesParNiveau } from '@/data/constants';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
@@ -704,15 +704,26 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                   <select value={formData.educationLevel} onChange={e => setFormData(f => ({...f, educationLevel: e.target.value, classe: ''}))}
                     className="w-full px-4 py-2 surface border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-accent/20 outline-none">
                     <option value="">Sélectionner...</option>
-                    {educationLevels.map(l => <option key={l} value={l.toLowerCase()}>{l}</option>)}
+                    {educationLevels.map(l => <option key={l} value={l}>{l}</option>)}
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-primary">Classe / Filière</label>
-                  <input type="text" value={formData.classe} onChange={e => setFormData(f => ({...f, classe: e.target.value}))}
-                    placeholder="ex: 3ème, MI L2..."
-                    className="w-full px-4 py-2 surface border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-accent/20 outline-none" />
-                </div>
+                {classesParNiveau[formData.educationLevel]?.length > 0 ? (
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-primary">Classe / Filière</label>
+                    <select value={formData.classe} onChange={e => setFormData(f => ({...f, classe: e.target.value}))}
+                      className="w-full px-4 py-2 surface border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-accent/20 outline-none">
+                      <option value="">Sélectionner...</option>
+                      {classesParNiveau[formData.educationLevel].map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                ) : formData.educationLevel ? (
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-primary">Classe / Filière</label>
+                    <input type="text" value={formData.classe} onChange={e => setFormData(f => ({...f, classe: e.target.value}))}
+                      placeholder="Ex: Profession, Autre..."
+                      className="w-full px-4 py-2 surface border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-accent/20 outline-none" />
+                  </div>
+                ) : null}
               </div>
 
               <div className="grid sm:grid-cols-2 gap-4">

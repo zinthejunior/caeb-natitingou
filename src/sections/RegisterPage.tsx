@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { genreList, educationLevels } from '@/data/constants';
+import { genreList, educationLevels, classesParNiveau } from '@/data/constants';
 
 interface RegisterPageProps {
   onRegister: (data: {
@@ -34,17 +34,7 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
     sous_genre_prefere: [] as string[],
   });
 
-  const NIVEAUX_CLASSES: Record<string, string[]> = {
-    "Primaire": ["CI", "CP", "CE1", "CE2", "CM1", "CM2"],
-    "Collège": ["6ème", "5ème", "4ème", "3ème"],
-    "Lycée": ["Seconde", "Première", "Terminale"],
-    "Université": ["MI L1", "MI L2", "MI L3", "MI M1", "MI M2", "PC L1", "PC L2", "P L3", "C L3", "P M1", "P M2", "C M1", "C M2",
-      "Droit L1", "Droit L2", "Droit L3", "Droit M1", "Droit M2", "Eco L1", "Eco L2", "Eco L3", "Eco M1", "Eco M2", "Droit L1",
-      "Droit L2", "Droit L3", "Droit M1", "Droit M2", "Médecine L1", "Médecine L2", "Médecine L3", "Médecine M1", "Médecine M2",
-      "Pharmacie L1", "Pharmacie L2", "Pharmacie L3", "Pharmacie M1", "Pharmacie M2"],
-    "Professionnel": ["Médecin", "Infirmier", "Pharmacien", "Ingénieur", "Enseignant", "Commerçant", "Artisan", "Autre"],
-    "Autre": [],
-  };
+
 
   const SOUS_GENRES_PAR_GENRE: Record<string, string[]> = {
     "Roman": ["Contemporain", "Classique", "Historique", "Science-fiction", "Fantastique", "Policier", "famille"],
@@ -103,7 +93,7 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
       sous_genre_prefere: formData.sous_genre_prefere,
       profil_complet: !!(
         formData.educationLevel &&
-        (NIVEAUX_CLASSES[formData.educationLevel]?.length === 0 || formData.classe) &&
+        (classesParNiveau[formData.educationLevel]?.length === 0 || formData.classe) &&
         formData.preferredGenres[0] &&
         formData.sous_genre_prefere
       ),
@@ -181,7 +171,7 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
               </Select>
             </div>
             {/* Classe — apparaît seulement si le niveau a des classes */}
-            {NIVEAUX_CLASSES[formData.educationLevel]?.length > 0 && (
+            {classesParNiveau[formData.educationLevel]?.length > 0 ? (
               <div className="space-y-1.5">
                 <label htmlFor="classe" className={labelClass}>Classe / Filière</label>
                 <Select
@@ -191,11 +181,17 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
                     <SelectValue placeholder="Sélectionnez votre classe" />
                   </SelectTrigger>
                   <SelectContent className="surface border border-[var(--border-color)]">
-                    {NIVEAUX_CLASSES[formData.educationLevel].map((c) => (
+                    {classesParNiveau[formData.educationLevel].map((c) => (
                       <SelectItem key={c} value={c} className="text-primary">{c}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            ) : formData.educationLevel && (
+              <div className="space-y-1.5">
+                <label htmlFor="classe" className={labelClass}>Classe / Filière</label>
+                <Input id="classe" placeholder="Ex: Profession, Autre..." value={formData.classe}
+                  onChange={(e) => updateField('classe', e.target.value)} className={inputClass} />
               </div>
             )}
           </div>
