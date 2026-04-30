@@ -20,11 +20,7 @@ export interface UserStats {
   eventsAttended: number;
 }
 
-export interface Badge {
-  id:   string;
-  name: string;
-  icon?: string;
-}
+
 
 export interface User {
   // Identité
@@ -63,9 +59,6 @@ export interface User {
   favorites:      string[];     // IDs de livres
   stats:          UserStats;
   followedClubs:  string[];     // IDs de clubs
-  // Gamification
-  xp?: number;
-  level?: number;
 }
 
 

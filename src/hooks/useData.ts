@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Book, ReadingClub, Event, News, Review, Borrow, Reservation, Badge } from '@/types';
+import type { Book, ReadingClub, Event, News, Review, Borrow, Reservation } from '@/types';
 
 const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -285,28 +285,6 @@ export function useReservations() {
   return { reservations, isLoading, error };
 }
 
-export function useBadges() {
-  const [badges, setBadges] = useState<Badge[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        setIsLoading(true);
-        const data = await apiFetch('/badges/').catch(() => []);
-        setBadges(data.results || data);
-        setError(null);
-      } catch (err) {
-        setError('Erreur lors du chargement des badges');
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, []);
-
-  return { badges, isLoading, error };
-}
 
 // ── Actions d'écriture ────────────────────────────────────────────────
 

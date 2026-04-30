@@ -1,13 +1,13 @@
-from rest_framework import viewsets, permissions, status
-from .models import User, Book, Borrow, Interaction, Notification, ReadingClub, Event, News, Badge, Review, Reservation
+from rest_framework import viewsets, permissions
+from .models import User, Book, Borrow, Interaction, Notification, ReadingClub, Event, News, Review, Reservation
 from .serializers import (
-    UserSerializer, BookSerializer, BorrowSerializer, InteractionSerializer, 
-    NotificationSerializer, ReadingClubSerializer, EventSerializer, 
-    NewsSerializer, BadgeSerializer, ReviewSerializer, ReservationSerializer
+    UserSerializer, BookSerializer, BorrowSerializer, InteractionSerializer,
+    NotificationSerializer, ReadingClubSerializer, EventSerializer,
+    NewsSerializer, ReviewSerializer, ReservationSerializer
 )
-
 from rest_framework.response import Response
 from rest_framework.decorators import action
+
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -19,6 +19,7 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
+
 class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
@@ -26,17 +27,18 @@ class BookViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def favorite(self, request, pk=None):
-        # Logique pour ajouter/retirer des favoris
-        # Pour simplifier, on peut juste renvoyer un succès
+        # Logique favoris gérée côté frontend via updateUser
         return Response({'status': 'favoris mis à jour'})
+
 
 class BorrowViewSet(viewsets.ModelViewSet):
     queryset = Borrow.objects.all()
     serializer_class = BorrowSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
         return Borrow.objects.filter(user=self.request.user)
+
 
 class InteractionViewSet(viewsets.ModelViewSet):
     queryset = Interaction.objects.all()
@@ -46,6 +48,7 @@ class InteractionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Interaction.objects.filter(user=self.request.user)
 
+
 class NotificationViewSet(viewsets.ModelViewSet):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
@@ -53,6 +56,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Notification.objects.filter(user=self.request.user)
+
 
 class ReadingClubViewSet(viewsets.ModelViewSet):
     queryset = ReadingClub.objects.all()
@@ -66,6 +70,7 @@ class ReadingClubViewSet(viewsets.ModelViewSet):
         club.save()
         return Response({'status': 'inscrit au club'})
 
+
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
@@ -76,17 +81,14 @@ class EventViewSet(viewsets.ModelViewSet):
         event = self.get_object()
         event.participant_count += 1
         event.save()
-        return Response({'status': 'inscrit à l\'événement'})
+        return Response({'status': "inscrit à l'événement"})
+
 
 class NewsViewSet(viewsets.ModelViewSet):
     queryset = News.objects.all()
     serializer_class = NewsSerializer
     permission_classes = [permissions.AllowAny]
 
-class BadgeViewSet(viewsets.ModelViewSet):
-    queryset = Badge.objects.all()
-    serializer_class = BadgeSerializer
-    permission_classes = [permissions.AllowAny]
 
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
@@ -95,6 +97,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
 
 class ReservationViewSet(viewsets.ModelViewSet):
     queryset = Reservation.objects.all()

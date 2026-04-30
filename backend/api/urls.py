@@ -11,7 +11,6 @@ router.register(r'notifications', views.NotificationViewSet)
 router.register(r'clubs', views.ReadingClubViewSet)
 router.register(r'events', views.EventViewSet)
 router.register(r'news', views.NewsViewSet)
-router.register(r'badges', views.BadgeViewSet)
 router.register(r'reviews', views.ReviewViewSet)
 router.register(r'reservations', views.ReservationViewSet)
 

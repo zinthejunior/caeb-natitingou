@@ -137,12 +137,6 @@ export function useAuth() {
     }
   }, [state.user]);
 
-  const addXp = useCallback((amount: number) => {
-    if (!state.user) return;
-    const newXp = (state.user.xp || 0) + amount;
-    const newLevel = Math.floor(newXp / 300) + 1;
-    void updateUser({ xp: newXp, level: newLevel });
-  }, [state.user, updateUser]);
 
   return {
     ...state,
@@ -150,7 +144,6 @@ export function useAuth() {
     register,
     logout,
     updateUser,
-    addXp,
   };
 }
 

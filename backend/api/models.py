@@ -26,10 +26,8 @@ class User(AbstractUser):
     profil_complet = models.BooleanField(default=False)
     vecteur_profil = models.JSONField(null=True, blank=True)
     date_inscription = models.DateTimeField(auto_now_add=True)
-    xp = models.IntegerField(default=0)
-    level = models.IntegerField(default=1)
     
-    # Overriding fields to avoid conflicts or match schema
+    # Champs surchargés pour éviter les conflits ou correspondre au schéma
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
 
@@ -215,15 +213,6 @@ class News(models.Model):
 
     def __str__(self):
         return self.title
-
-class Badge(models.Model):
-    id = models.CharField(max_length=20, primary_key=True)
-    name = models.CharField(max_length=100)
-    icon = models.CharField(max_length=100, null=True, blank=True)
-    users = models.ManyToManyField(User, related_name='user_badges')
-
-    def __str__(self):
-        return self.name
 
 class Review(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
