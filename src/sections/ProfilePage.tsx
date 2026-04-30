@@ -264,6 +264,7 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
     pseudo: user?.pseudo || '',
     educationLevel: user?.educationLevel || '',
     classe: (user as any)?.classe || '',
+    classeCustom: '',
     genre: user?.preferredGenres?.[0] || '',
     sous_genre: (user as any)?.sous_genre_prefere || '',
   });
@@ -312,7 +313,7 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
       lastName: formData.lastName,
       pseudo: formData.pseudo,
       educationLevel: formData.educationLevel as any,
-      classe: formData.classe,
+      classe: formData.classe === 'Autre' ? formData.classeCustom : formData.classe,
       preferredGenres: formData.genre ? [formData.genre] : [],
       sous_genre_prefere: formData.sous_genre,
     } as any);
@@ -715,6 +716,11 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                       <option value="">Sélectionner...</option>
                       {classesParNiveau[formData.educationLevel].map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
+                    {formData.classe === 'Autre' && (
+                      <input type="text" value={formData.classeCustom} onChange={e => setFormData(f => ({...f, classeCustom: e.target.value}))}
+                        placeholder="Précisez votre classe/filière"
+                        className="w-full px-4 py-2 mt-2 surface border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-accent/20 outline-none" autoFocus />
+                    )}
                   </div>
                 ) : formData.educationLevel ? (
                   <div className="space-y-2">

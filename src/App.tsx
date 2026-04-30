@@ -65,14 +65,33 @@ export default function App() {
   // ── State ────────────────────────────────────────────────────────────
 
   const { user, isAuthenticated, login, register, logout, updateUser } = useAuth();
-  const [currentView, setCurrentView] = useState<View>('landing');
-  const [navParams, setNavParams] = useState<NavParams>({});
+  const parseHash = () => {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return { view: 'landing' as View, params: {} };
+    
+    const [viewPart, paramsPart] = hash.split('?');
+    const params = paramsPart ? Object.fromEntries(new URLSearchParams(paramsPart)) : {};
+    return { view: (viewPart || 'landing') as View, params };
+  };
+
+  const [currentView, setCurrentView] = useState<View>(() => parseHash().view);
+  const [navParams, setNavParams] = useState<NavParams>(() => parseHash().params);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const { view, params } = parseHash();
+      setCurrentView(view);
+      setNavParams(params);
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated && (currentView === 'landing' || currentView === 'login' || currentView === 'register')) {
-      setCurrentView('home');
+      navigateTo('home');
     } else if (!isAuthenticated && PROTECTED_VIEWS.includes(currentView)) {
-      setCurrentView('landing');
+      navigateTo('landing');
     }
   }, [isAuthenticated, currentView]);
 
@@ -89,6 +108,17 @@ export default function App() {
   const navigateTo = useCallback((view: View, params?: NavParams) => {
     setCurrentView(view);
     setNavParams(params ?? {});
+    
+    let hash = `#${view}`;
+    if (params && Object.keys(params).length > 0) {
+      const searchParams = new URLSearchParams(params as Record<string, string>);
+      hash += `?${searchParams.toString()}`;
+    }
+    
+    if (window.location.hash !== hash) {
+      window.history.pushState(null, '', hash);
+    }
+    
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
@@ -99,19 +129,19 @@ export default function App() {
 
   const handleLogin = useCallback(async (email: string, password: string): Promise<boolean> => {
     const success = await login(email, password);
-    if (success) setCurrentView('home');
+    if (success) navigateTo('home');
     return success;
   }, [login]);
 
   const handleRegister = useCallback(async (data: any): Promise<boolean> => {
     const success = await register(data);
-    if (success) setCurrentView('home');
+    if (success) navigateTo('home');
     return success;
   }, [register]);
 
   const handleLogout = useCallback(() => {
     logout();
-    setCurrentView('landing');
+    navigateTo('landing');
   }, [logout]);
 
   // ── Écouteurs d'événements globaux ───────────────────────────────────
@@ -307,7 +337,6 @@ export default function App() {
           <SettingsPage
             user={user}
             onLogout={handleLogout}
-            onUpdateUser={handleUpdateUser}
           />
         );
 

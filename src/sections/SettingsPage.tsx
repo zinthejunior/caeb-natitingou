@@ -6,11 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import type { User } from '@/types';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 interface SettingsPageProps {
   user: User | null;
   onLogout: () => void;
-  onUpdateUser?: (updates: Partial<User>) => Promise<boolean>;
 }
 
 const Toggle = ({ active, onToggle }: { active: boolean; onToggle: () => void }) => (
@@ -43,7 +43,7 @@ const ToggleRow = ({ label, active, onToggle }: { label: string; active: boolean
   </div>
 );
 
-export function SettingsPage({ user, onLogout, onUpdateUser }: SettingsPageProps) {
+export function SettingsPage({ user, onLogout }: SettingsPageProps) {
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   const [notifications, setNotifications] = useState(() => {
     const saved = localStorage.getItem('caeb_settings_notifications');
@@ -57,6 +57,8 @@ export function SettingsPage({ user, onLogout, onUpdateUser }: SettingsPageProps
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [passData, setPassData] = useState({ old: '', new: '', confirm: '' });
+  
+  const { isInstallable, promptInstall } = usePWAInstall();
 
   const handleToggleDarkMode = () => {
     const next = !darkMode;
@@ -159,6 +161,18 @@ export function SettingsPage({ user, onLogout, onUpdateUser }: SettingsPageProps
                 <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-soft transition-transform duration-300 ${darkMode ? 'translate-x-5' : 'translate-x-0'}`} />
               </div>
             </button>
+            
+            {isInstallable && (
+              <button onClick={promptInstall}
+                className="w-full mt-3 flex items-center justify-between p-4 bg-[var(--library-accent)]/10 rounded-xl border border-[var(--library-accent)]/30 hover:bg-[var(--library-accent)]/20 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--library-accent)]">
+                <div className="flex items-center gap-3">
+                  <div className="text-left text-accent">
+                    <p className="font-bold">Installer l'application (PWA)</p>
+                    <p className="text-xs opacity-90">Accédez à la bibliothèque directement depuis votre écran d'accueil.</p>
+                  </div>
+                </div>
+              </button>
+            )}
           </section>
 
           {/* Notifications */}

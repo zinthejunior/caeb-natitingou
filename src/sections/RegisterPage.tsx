@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, EyeOff, Loader2, ChevronRight, Check, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,14 +25,31 @@ interface RegisterPageProps {
 }
 
 export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: RegisterPageProps) {
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    email: '', password: '', confirmPassword: '',
-    firstName: '', lastName: '', birthDate: '',
-    educationLevel: '', preferredGenres: [] as string[],
-    classe: '',
-    sous_genre_prefere: [] as string[],
+  const [step, setStep] = useState(() => {
+    const saved = sessionStorage.getItem('register_step');
+    return saved ? parseInt(saved, 10) : 1;
   });
+  
+  const [formData, setFormData] = useState(() => {
+    const saved = sessionStorage.getItem('register_formData');
+    if (saved) return JSON.parse(saved);
+    return {
+      email: '', password: '', confirmPassword: '',
+      firstName: '', lastName: '', birthDate: '',
+      educationLevel: '', preferredGenres: [] as string[],
+      classe: '',
+      classeCustom: '',
+      sous_genre_prefere: [] as string[],
+    };
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem('register_step', step.toString());
+  }, [step]);
+
+  useEffect(() => {
+    sessionStorage.setItem('register_formData', JSON.stringify(formData));
+  }, [formData]);
 
 
 
@@ -89,7 +106,7 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
       educationLevel: formData.educationLevel || undefined,
       preferredGenres: formData.preferredGenres,
 
-      classe: formData.classe || undefined,
+      classe: formData.classe === 'Autre' ? formData.classeCustom : (formData.classe || undefined),
       sous_genre_prefere: formData.sous_genre_prefere,
       profil_complet: !!(
         formData.educationLevel &&
@@ -98,7 +115,12 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
         formData.sous_genre_prefere
       ),
     });
-    if (!success) toast.error("Une erreur est survenue lors de l'inscription");
+    if (!success) {
+      toast.error("Une erreur est survenue lors de l'inscription");
+    } else {
+      sessionStorage.removeItem('register_step');
+      sessionStorage.removeItem('register_formData');
+    }
   };
 
   const inputClass = 'w-full h-12 px-4 surface-alt border border-[var(--border-color)] rounded-xl text-primary placeholder:text-muted focus:border-[var(--library-accent)] focus:ring-2 focus:ring-[var(--library-accent)]/20 transition-all';
@@ -186,6 +208,12 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
                     ))}
                   </SelectContent>
                 </Select>
+                {formData.classe === 'Autre' && (
+                  <div className="pt-2">
+                    <Input placeholder="Précisez votre classe/filière" value={formData.classeCustom}
+                      onChange={(e) => updateField('classeCustom', e.target.value)} className={inputClass} autoFocus />
+                  </div>
+                )}
               </div>
             ) : formData.educationLevel && (
               <div className="space-y-1.5">

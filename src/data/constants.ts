@@ -15,7 +15,15 @@ export const classesParNiveau: Record<string, string[]> = {
   'École': ['CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'],
   'Collège': ['6ème', '5ème', '4ème', '3ème'],
   'Lycée': ['2nde A', '2nde B', '2nde C', '2nde D', '2nde G', '1ère A', '1ère B', '1ère C', '1ère D', '1ère G', 'Terminale A', 'Terminale B', 'Terminale C', 'Terminale D', 'Terminale G', 'Autre'],
-  'Étudiant': ['Médecine', 'Droit', 'Economie', 'Gestion', 'Informatique', 'Lettres', 'Sciences', 'Ingénierie', 'Autre'],
+  'Étudiant': [
+    "MI L1", "MI L2", "MI L3", "MI M1", "MI M2", 
+    "PC L1", "PC L2", "P L3", "C L3", "P M1", "P M2", "C M1", "C M2",
+    "Droit L1", "Droit L2", "Droit L3", "Droit M1", "Droit M2", 
+    "Eco L1", "Eco L2", "Eco L3", "Eco M1", "Eco M2", 
+    "Médecine L1", "Médecine L2", "Médecine L3", "Médecine M1", "Médecine M2",
+    "Pharmacie L1", "Pharmacie L2", "Pharmacie L3", "Pharmacie M1", "Pharmacie M2", 
+    "Autre"
+  ],
 };
 
 export const sousGenresParGenre: Record<string, string[]> = {
