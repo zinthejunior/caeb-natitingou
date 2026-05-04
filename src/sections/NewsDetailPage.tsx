@@ -23,7 +23,7 @@ export function NewsDetailPage({ newsId, user, onBack }: NewsDetailPageProps) {
     </div>
   );
 
-  const categoryLabels: Record<string, string> = {
+  const categoryLabels: Record<string, string> = { 
     announcement: 'Annonce',
     event: 'Événement',
     course: 'Formation',

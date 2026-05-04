@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Navbar } from '@/components/Navbar';
 import { ClubContactForm } from '@/components/ClubContactForm';
 import type { Event, User as UserType } from '@/types';
-import { useClub, useEvents, joinClub } from '@/hooks/useData';
+import { useClub, useEvents, rejoindreClub } from '@/hooks/useData';
 
 interface ClubDetailPageProps {
   clubId: string;
@@ -15,13 +15,13 @@ interface ClubDetailPageProps {
 }
 
 export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
-  const { club, isLoading: isClubLoading } = useClub(clubId);
-  const { events, isLoading: isEventsLoading } = useEvents();
+  const { club, chargement: isClubLoading } = useClub(clubId);
+  const { evenements: events, chargement: isEventsLoading } = useEvents();
   const [isJoined, setIsJoined] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
 
   useEffect(() => {
-    if (club) setIsJoined(club.isJoined || false);
+    if (club) setIsJoined(club.estMembre || false);
   }, [club]);
 
   if (isClubLoading || isEventsLoading) return (
@@ -37,7 +37,7 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
 
   const handleContactFormSubmit = async () => {
     try {
-      await joinClub(clubId);
+      await rejoindreClub(clubId);
       setIsJoined(true);
       toast.success('Vous avez rejoint le club !', {
         description: 'La bibliothèque a été notifiée de votre inscription.',
@@ -84,7 +84,7 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
 
       {/* Hero image */}
       <div className="relative h-72">
-        <img src={club.image} alt={club.name} className="w-full h-full object-cover" />
+        <img src={club.image} alt={club.nom} className="w-full h-full object-cover" />
         <div className="absolute inset-0 image-overlay" />
 
         {/* Back button */}
@@ -100,16 +100,16 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
         <div className="absolute bottom-0 left-0 right-0 p-6">
           <div className="max-w-7xl mx-auto">
             <Badge className="mb-3 font-bold text-sm overlay-label">
-              {getAudienceIcon(club.targetAudience)}
-              <span className="ml-1">{getAudienceLabel(club.targetAudience)}</span>
+              {getAudienceIcon(club.publicCible)}
+              <span className="ml-1">{getAudienceLabel(club.publicCible)}</span>
             </Badge>
             <h1 className="font-display text-4xl font-bold mb-2 overlay-text">
-              {club.name}
+              {club.nom}
             </h1>
             <div className="flex items-center gap-6 overlay-text">
               <span className="flex items-center gap-2 font-medium">
                 <Users className="w-5 h-5" />
-                {club.memberCount} membres
+                {club.nbMembres} membres
               </span>
             </div>
           </div>
@@ -137,10 +137,10 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
               Rejoindre ce club
             </Button>
           )}
-          {club.externalLink && (
+          {club.lienExterne && (
             <Button
               variant="outline"
-              onClick={() => window.open(club.externalLink, '_blank')}
+              onClick={() => window.open(club.lienExterne, '_blank')}
               className="border-[var(--border-color)] text-[var(--library-text)] hover:border-[var(--library-accent)]/40 gap-2"
             >
               <ExternalLink className="w-4 h-4" />
@@ -164,7 +164,7 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
             </div>
 
             {/* External link */}
-            {club.externalLink && (
+            {club.lienExterne && (
               <div className="surface rounded-2xl p-6 border border-[var(--border-color)] shadow-soft">
                 <h3 className="font-display text-lg font-semibold text-[var(--library-text)] mb-2 flex items-center gap-2">
                   <ExternalLink className="w-5 h-5 text-[var(--library-accent)]" />
@@ -174,7 +174,7 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
                   Le club dispose d'un espace en ligne pour suivre ses activités et discussions :
                 </p>
                 <a
-                  href={club.externalLink}
+                  href={club.lienExterne}
                   target="_blank"
                   rel="noreferrer"
                   className="mt-3 inline-flex items-center gap-2 text-[var(--library-accent)] font-medium hover:underline"
@@ -186,14 +186,14 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
             )}
 
             {/* Courses */}
-            {club.courses && club.courses.length > 0 && (
+            {club.cours && club.cours.length > 0 && (
               <div className="surface rounded-2xl p-6 border border-[var(--border-color)] shadow-soft">
                 <h2 className="font-display text-xl font-semibold text-[var(--library-text)] mb-3 flex items-center gap-2">
                   <BookOpen className="w-5 h-5 text-[var(--library-accent)]" />
                   Cours proposés
                 </h2>
                 <div className="space-y-3">
-                  {club.courses.map((course) => (
+                  {club.cours.map((course) => (
                     <div key={course.id} className="p-3 rounded-xl bg-[var(--library-surface-alt)] border border-[var(--border-color)]">
                       <div className="flex items-center justify-between">
                         <div>
@@ -209,14 +209,14 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
             )}
 
             {/* Recent activity */}
-            {club.recentActivity && club.recentActivity.length > 0 && (
+            {club.activiteRecente && club.activiteRecente.length > 0 && (
               <div className="surface rounded-2xl p-6 border border-[var(--border-color)] shadow-soft">
                 <h2 className="font-display text-xl font-semibold text-[var(--library-text)] mb-3 flex items-center gap-2">
                   <Activity className="w-5 h-5 text-[var(--library-accent)]" />
                   Activité des membres
                 </h2>
                 <div className="space-y-2">
-                  {club.recentActivity.map((act) => (
+                  {club.activiteRecente.map((act) => (
                     <div key={act.id} className="flex items-start gap-3 p-3 bg-[var(--library-surface-alt)] rounded-xl border border-[var(--border-color)]">
                       <div className="w-10 h-10 rounded-full bg-[var(--library-accent)]/10 flex items-center justify-center text-[var(--library-accent)] font-semibold">
                         {act.userName.charAt(0)}
@@ -254,34 +254,34 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Manager */}
-            {club.manager && (
+            {club.responsable && (
               <div className="surface rounded-2xl p-6 border border-[var(--border-color)] shadow-soft">
                 <h3 className="font-display font-semibold text-lg text-[var(--library-text)] mb-3">Responsable</h3>
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="font-semibold text-[var(--library-text)]">{club.manager.name}</p>
-                    <p className="text-sm text-[var(--library-muted)]">{club.manager.role}</p>
+                    <p className="font-semibold text-[var(--library-text)]">{club.responsable.nom}</p>
+                    <p className="text-sm text-[var(--library-muted)]">{club.responsable.role}</p>
                     <a
-                      href={`mailto:${club.manager.email}`}
+                      href={`mailto:${club.responsable.email}`}
                       className="text-sm text-[var(--library-accent)] font-medium mt-1 inline-block hover:underline"
                     >
-                      {club.manager.email}
+                      {club.responsable.email}
                     </a>
                   </div>
                   <div className="flex flex-col gap-2">
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => window.open(`mailto:${club.manager?.email}`)}
+                      onClick={() => window.open(`mailto:${club.responsable?.email}`)}
                       className="border-[var(--border-color)] text-[var(--library-text)] hover:border-[var(--library-accent)]/40"
                     >
                       Contacter
                     </Button>
-                    {club.externalLink && (
+                    {club.lienExterne && (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => window.open(club.externalLink, '_blank')}
+                        onClick={() => window.open(club.lienExterne, '_blank')}
                         className="border-[var(--border-color)] text-[var(--library-text)] hover:border-[var(--library-accent)]/40"
                       >
                         Visiter
@@ -293,26 +293,26 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
             )}
 
             {/* Next meetings */}
-            {club.nextMeetings && club.nextMeetings.length > 0 && (
+            {club.prochainesReunions && club.prochainesReunions.length > 0 && (
               <div className="surface rounded-2xl p-6 border border-[var(--border-color)] shadow-soft">
                 <h3 className="font-display font-semibold text-lg text-[var(--library-text)] mb-4">
                   Prochaines rencontres
                 </h3>
                 <div className="space-y-3">
-                  {club.nextMeetings.map((meeting) => {
+                  {club.prochainesReunions.map((meeting) => {
                     const meetingDate = new Date(meeting.date);
                     return (
                       <div
                         key={meeting.id}
                         className="p-3 bg-[var(--library-surface-alt)] rounded-xl border border-[var(--border-color)] hover:border-[var(--library-accent)]/30 transition-all"
                       >
-                        <p className="text-sm font-semibold text-[var(--library-text)]">{meeting.time}</p>
+                        <p className="text-sm font-semibold text-[var(--library-text)]">{meeting.heure}</p>
                         <p className="text-xs text-[var(--library-muted)] mt-1">
                           {meetingDate.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
                         </p>
                         <p className="text-xs text-[var(--library-muted)] flex items-center gap-1 mt-1">
                           <MapPin className="w-3 h-3" />
-                          {meeting.location}
+                          {meeting.lieu}
                         </p>
                       </div>
                     );
@@ -327,11 +327,11 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
               <div className="space-y-3">
                 <div>
                   <span className="text-xs text-[var(--library-muted)] uppercase tracking-wide">Membres actifs</span>
-                  <p className="text-2xl font-bold text-[var(--library-accent)]">{club.memberCount}</p>
+                  <p className="text-2xl font-bold text-[var(--library-accent)]">{club.nbMembres}</p>
                 </div>
                 <div className="border-t border-[var(--border-color)] pt-3">
                   <span className="text-xs text-[var(--library-muted)] uppercase tracking-wide">Public</span>
-                  <p className="text-lg font-semibold text-[var(--library-text)] mt-1">{getAudienceLabel(club.targetAudience)}</p>
+                  <p className="text-lg font-semibold text-[var(--library-text)] mt-1">{getAudienceLabel(club.publicCible)}</p>
                 </div>
               </div>
             </div>
@@ -340,8 +340,8 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
 
         {showContactForm && (
           <ClubContactForm
-            club={{ id: club.id, name: club.name, manager: club.manager }}
-            userName={`${user.firstName} ${user.lastName}`}
+            club={{ id: club.id, name: club.nom, manager: club.responsable }}
+            userName={`${user.prenom} ${user.nom}`}
             userEmail={user.email}
             onClose={() => setShowContactForm(false)}
             onSubmit={handleContactFormSubmit}
@@ -371,20 +371,20 @@ function EventCard({ event, onParticipate }: { event: Event; onParticipate: () =
           <p className="text-xs text-[var(--library-muted)]">{event.time} • {event.location}</p>
           <div className="flex items-center gap-1 mt-1 text-xs text-[var(--library-muted)]">
             <Users className="w-3 h-3" />
-            {event.participantCount} participants
+            {event.nbParticipants} participants
           </div>
         </div>
       </div>
       <Button
         size="sm"
-        variant={event.isParticipating ? 'outline' : 'default'}
+        variant={event.participe ? 'outline' : 'default'}
         onClick={onParticipate}
-        className={`w-full ${event.isParticipating
+        className={`w-full ${event.participe
           ? 'border-[var(--border-color)] text-[var(--library-muted)]'
           : 'bg-[var(--library-accent)] text-[var(--library-on-accent)] hover:opacity-90 sheen'
           }`}
       >
-        {event.isParticipating ? (
+        {event.participe ? (
           <><Check className="w-4 h-4 mr-1" />Inscrit</>
         ) : (
           'Je participe'

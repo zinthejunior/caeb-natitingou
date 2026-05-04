@@ -12,7 +12,7 @@ interface EventsPageProps {
   user: User | null;
   onEventClick?: (eventId: string) => void;
 }
-
+ 
 // ── EMPTY STATE — Calendrier illustré ──────────────────────────────────
 function EmptyCalendar() {
   return (
@@ -189,8 +189,8 @@ function EventCard({ event, clubs, isParticipating, onParticipate, onClick, type
         <div className="flex items-center justify-between pt-3 border-t border-[var(--border-color)]">
           <div className="flex items-center gap-1.5 text-xs text-muted">
             <Users className="w-3.5 h-3.5" />
-            <span className="font-semibold text-primary">{event.participantCount + (isParticipating ? 1 : 0)}</span>
-            <span>participant{event.participantCount > 1 ? 's' : ''}</span>
+            <span className="font-semibold text-primary">{(event.participantCount ?? event.nbParticipants ?? 0) + (isParticipating ? 1 : 0)}</span>
+            <span>participant{(event.participantCount ?? event.nbParticipants ?? 0) > 1 ? 's' : ''}</span>
           </div>
           <Button size="sm" onClick={(e) => { e.stopPropagation(); onParticipate(); }}
             className={`tap-feedback ${isParticipating

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import type { User } from '@/types';
-import { useBorrows, useReservations } from '@/hooks/useData';
+import { useEmprunts, useReservations } from '@/hooks/useData';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
@@ -72,13 +72,13 @@ function EmptyReservations() {
 
 export function BorrowsPage({ user }: BorrowsPageProps) {
   const [activeTab, setActiveTab] = useState<'borrows' | 'reservations'>('borrows');
-  const { borrows = [] } = useBorrows();
+  const { emprunts = [] } = useEmprunts();
   const { reservations = [] } = useReservations();
 
   if (!user) {
     return (
       <div className="min-h-screen bg-library-bg pb-24">
-        <Navbar user={user} />
+        <Navbar utilisateur={user} />
         <main className="max-w-4xl mx-auto px-4 py-8 pt-24">
           <div className="surface rounded-2xl p-8 text-center border border-[var(--border-color)]">
             <p className="text-muted">Veuillez vous connecter pour voir vos emprunts</p>
@@ -105,7 +105,7 @@ export function BorrowsPage({ user }: BorrowsPageProps) {
 
   return (
     <div className="min-h-screen bg-library-bg pb-24">
-      <Navbar user={user} />
+      <Navbar utilisateur={user} />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
 
@@ -126,7 +126,7 @@ export function BorrowsPage({ user }: BorrowsPageProps) {
             aria-selected={activeTab === 'borrows'} role="tab">
             <span className="hidden sm:inline">Emprunts actuels</span>
             <span className="sm:hidden">Emprunts</span>
-            <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded-full surface-alt border border-[var(--border-color)]">{borrows.length}</span>
+            <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded-full surface-alt border border-[var(--border-color)]">{emprunts.length}</span>
           </button>
           <button onClick={() => setActiveTab('reservations')} className={tabClass(activeTab === 'reservations')}
             aria-selected={activeTab === 'reservations'} role="tab">
@@ -139,24 +139,24 @@ export function BorrowsPage({ user }: BorrowsPageProps) {
         {/* Contenu */}
         <div className="space-y-4">
           {activeTab === 'borrows' ? (
-            borrows.length > 0 ? (
-              (borrows as unknown[]).map((borrow: any) => {
-                const daysRemaining = calculateDaysRemaining(borrow.returnDate);
+            emprunts.length > 0 ? (
+              (emprunts as unknown[]).map((emprunt: any) => {
+                const daysRemaining = calculateDaysRemaining(emprunt.returnDate);
                 const isOverdue = daysRemaining < 0;
                 const isWarning = !isOverdue && daysRemaining < 3;
                 const progressValue = Math.max(0, Math.min(100, ((14 - Math.max(0, daysRemaining)) / 14) * 100));
 
                 return (
-                  <div key={borrow.id} className="surface rounded-2xl p-5 shadow-card hover:shadow-card-hover border border-[var(--border-color)] hover:border-[var(--library-accent)]/20 transition-all">
+                  <div key={emprunt.id} className="surface rounded-2xl p-5 shadow-card hover:shadow-card-hover border border-[var(--border-color)] hover:border-[var(--library-accent)]/20 transition-all">
                     <div className="flex gap-4">
                       <div className="hidden sm:block w-16 h-24 rounded-xl overflow-hidden flex-shrink-0 shadow-soft">
-                        <ApiImage src={borrow.book.cover} alt={borrow.book.title} className="w-full h-full object-cover" />
+                        <ApiImage src={emprunt.book.cover} alt={emprunt.book.title} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <div>
-                            <h3 className="font-bold text-primary">{borrow.book.title}</h3>
-                            <p className="text-sm text-muted">{borrow.book.author}</p>
+                            <h3 className="font-bold text-primary">{emprunt.book.title}</h3>
+                            <p className="text-sm text-muted">{emprunt.book.author}</p>
                           </div>
                           {isOverdue ? (
                             <Badge className="bg-red-500/10 text-red-500 border border-red-500/20 flex-shrink-0">En retard</Badge>
@@ -170,12 +170,12 @@ export function BorrowsPage({ user }: BorrowsPageProps) {
                         <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
                           <div>
                             <p className="text-xs text-muted font-semibold uppercase tracking-wide mb-0.5">Emprunté le</p>
-                            <p className="text-primary font-medium">{new Date(borrow.borrowDate).toLocaleDateString('fr-FR')}</p>
+                            <p className="text-primary font-medium">{new Date(emprunt.borrowDate).toLocaleDateString('fr-FR')}</p>
                           </div>
                           <div>
                             <p className="text-xs text-muted font-semibold uppercase tracking-wide mb-0.5">À retourner le</p>
                             <p className={`font-semibold ${isOverdue ? 'text-red-500' : isWarning ? 'text-amber-500' : 'text-primary'}`}>
-                              {new Date(borrow.returnDate).toLocaleDateString('fr-FR')}
+                              {new Date(emprunt.returnDate).toLocaleDateString('fr-FR')}
                             </p>
                           </div>
                         </div>
@@ -189,7 +189,7 @@ export function BorrowsPage({ user }: BorrowsPageProps) {
                         </div>
 
                         <div className="flex gap-2">
-                          {!borrow.isExtended ? (
+                          {!emprunt.isExtended ? (
                             <Button onClick={() => handleRenew()} size="sm" variant="outline"
                               className="gap-2 border-[var(--library-accent)]/30 text-accent hover:bg-[var(--library-accent)]/10 font-semibold tap-feedback">
                               <RotateCw className="w-4 h-4" />

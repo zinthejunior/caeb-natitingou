@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { Navbar } from '@/components/Navbar';
 import { ApiImage } from '@/components/ApiImage';
 import type { ReadingClub, User as UserType } from '@/types';
-import { useClubs, joinClub } from '@/hooks/useData';
+import { useClubs, rejoindreClub } from '@/hooks/useData';
 
 interface ClubsPageProps {
   onClubClick: (clubId: string) => void;
@@ -25,7 +25,7 @@ export function ClubsPage({ onClubClick, user }: ClubsPageProps) {
   const selectedClub = selectedClubId ? clubs.find(c => c.id === selectedClubId) : null;
 
   const filteredClubs = clubs.filter(c =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
   const myClubs = filteredClubs.filter(c => joinedClubs.includes(c.id));
@@ -38,7 +38,7 @@ export function ClubsPage({ onClubClick, user }: ClubsPageProps) {
   };
   const handleConfirmJoin = async (clubId: string) => {
     try {
-      await joinClub(clubId);
+      await rejoindreClub(clubId);
       setJoinedClubs(prev => [...prev, clubId]);
       toast.success('Vous avez rejoint le club !', { description: 'La bibliothèque a été notifiée de votre inscription.' });
       setShowContactForm(false);
@@ -140,8 +140,8 @@ export function ClubsPage({ onClubClick, user }: ClubsPageProps) {
 
       {showContactForm && selectedClub && (
         <ClubContactForm
-          club={{ id: selectedClub.id, name: selectedClub.name, manager: selectedClub.manager }}
-          userName={`${user.firstName} ${user.lastName}`}
+          club={{ id: selectedClub.id, name: selectedClub.nom, manager: selectedClub.manager }}
+          userName={`${user.prenom} ${user.nom}`}
           userEmail={user.email}
           onClose={() => { setShowContactForm(false); setSelectedClubId(null); }}
           onSubmit={() => handleConfirmJoin(selectedClub.id)}
@@ -161,14 +161,14 @@ interface ClubCardProps {
 }
 
 function ClubCard({ club, isJoined, audienceConfig, onClick, onJoin, onLeave }: ClubCardProps) {
-  const audience = audienceConfig[club.targetAudience] || audienceConfig.all;
+  const audience = audienceConfig[club.publicCible || 'all'] || audienceConfig.all;
   return (
     <div onClick={onClick}
       className="surface rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover border border-[var(--border-color)] hover:border-[var(--library-accent)]/20 hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
 
       {/* Image */}
       <div className="relative h-40 overflow-hidden surface-weak">
-        <ApiImage src={club.image} alt={club.name}
+        <ApiImage src={club.image} alt={club.nom}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
         <div className="image-overlay absolute inset-0" />
         <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -176,7 +176,7 @@ function ClubCard({ club, isJoined, audienceConfig, onClick, onJoin, onLeave }: 
             {audience.icon}
             <span>{audience.label}</span>
           </Badge>
-          <h3 className="font-display font-bold overlay-text text-lg">{club.name}</h3>
+          <h3 className="font-display font-bold overlay-text text-lg">{club.nom}</h3>
         </div>
       </div>
 
@@ -186,12 +186,12 @@ function ClubCard({ club, isJoined, audienceConfig, onClick, onJoin, onLeave }: 
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 text-sm text-muted">
             <Users className="w-4 h-4 text-accent" />
-            <span className="font-semibold text-primary">{club.memberCount}</span>
+            <span className="font-semibold text-primary">{club.nbMembres}</span>
             <span>membres</span>
           </div>
           <div className="flex items-center gap-2">
-            {club.externalLink && (
-              <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); window.open(club.externalLink, '_blank'); }}
+            {(club.lienExterne || club.externalLink) && (
+              <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); window.open(club.lienExterne || club.externalLink, '_blank'); }}
                 className="border-[var(--border-color)] text-primary hover:border-[var(--library-accent)]/30 font-semibold">
                 <ExternalLink className="w-3.5 h-3.5 mr-1" />Visiter
               </Button>

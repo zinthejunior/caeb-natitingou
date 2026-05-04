@@ -10,13 +10,13 @@ import { useState, useEffect } from 'react';
 
 interface EventDetailPageProps {
   eventId: string;
-  user: User | null;
+  user: User | null; 
   onBack: () => void;
 }
 
 export function EventDetailPage({ eventId, user, onBack }: EventDetailPageProps) {
   const { event, isLoading: isEventLoading } = useEvent(eventId);
-  const { clubs, isLoading: isClubsLoading } = useClubs();
+  const { clubs, chargement: isClubsLoading } = useClubs();
   const [isParticipating, setIsParticipating] = useState(false);
 
   useEffect(() => {

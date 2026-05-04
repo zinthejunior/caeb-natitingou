@@ -9,7 +9,8 @@ import { ProfileMenu } from './ProfileMenu';
 
 // Props du composant Navbar
 interface NavbarProps {
-  user: User | null; // Utilisateur actuellement connecté
+  utilisateur?: User | null; // Utilisateur actuellement connecté
+  user?: User | null;        // Alias anglais pour compatibilité
 }
 
 /**
@@ -19,7 +20,8 @@ interface NavbarProps {
  * - Notifications, sélecteur de thème, infos profil utilisateur
  * - Reste fixe avec support du notch/safe area pour mobiles
  */
-export function Navbar({ user }: NavbarProps) {
+export function Navbar({ utilisateur, user: userProp }: NavbarProps) {
+  const user = utilisateur ?? userProp ?? null;
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const notifRef = useRef<HTMLDivElement | null>(null);
@@ -117,19 +119,19 @@ export function Navbar({ user }: NavbarProps) {
                     imageKey={user?.avatar}
                     src={user?.avatar && (user.avatar.startsWith('/') || user.avatar.startsWith('http')) ? user.avatar : undefined}
                     fallback={'/avatar-1.jpg'}
-                    alt={`${user?.firstName || user?.username || 'Utilisateur'} avatar`}
+                    alt={`${user?.prenom || user?.username || 'Utilisateur'} avatar`}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-sm font-semibold text-primary dark:text-library-text leading-none">{user?.firstName || user?.username || 'Utilisateur'}</p>
-                  <p className="text-xs text-muted dark:text-library-muted mt-0.5">{user?.isMember ? 'Premium' : 'Gratuit'}</p>
+                  <p className="text-sm font-semibold text-primary dark:text-library-text leading-none">{user?.prenom || user?.username || 'Utilisateur'}</p>
+                  <p className="text-xs text-muted dark:text-library-muted mt-0.5">{user?.estMembre ? 'Premium' : 'Gratuit'}</p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted dark:text-library-muted hidden sm:block group-hover:translate-x-0.5 transition-transform" />
               </button>
               {showProfileMenu && (
                 <div className="absolute right-0 mt-2 w-56 z-50">
-                  <ProfileMenu user={user!} onClose={() => setShowProfileMenu(false)} />
+                  <ProfileMenu utilisateur={user!} onClose={() => setShowProfileMenu(false)} />
                 </div>
               )}
             </div>

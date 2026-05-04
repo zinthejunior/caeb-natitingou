@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   LogOut, BookOpen, Star, Users, Calendar,
   ChevronRight, Edit3, Bell, Shield, HelpCircle,
-  Crown, Lock, TrendingUp, User as UserIcon,
+  Crown, Lock, User as UserIcon,
   GraduationCap, Heart, CheckCircle2, AlertCircle, X
 } from 'lucide-react';
 import { genreList, educationLevels, sousGenresParGenre, classesParNiveau, intentionsList } from '@/data/constants';
@@ -34,7 +34,7 @@ function StatCard({ icon: Icon, value, label }: { icon: IconComponent; value: nu
         <Icon className="w-5 h-5 text-accent" />
       </div>
       <div>
-        <p className="text-2xl font-bold text-primary">{value}</p>
+        <p className="text-2xl font-bold text-primary">{value || 0}</p>
         <p className="text-xs text-muted mt-0.5">{label}</p>
       </div>
     </div>
@@ -58,14 +58,8 @@ function ActivityItem({ icon: Icon, title, description, color }: { icon: IconCom
   );
 }
 
-function TipItem({ text }: { text: string }) {
-  return (
-    <div className="flex items-start gap-3 surface-alt rounded-xl border border-[var(--library-accent)]/15 p-4">
-      <p className="text-sm text-muted">{text}</p>
-    </div>
-  );
-}
 
+// Force IDE refresh
 function SettingItem({ icon: Icon, title, description, onClick }: { icon: IconComponent; title: string; description: string; onClick: () => void }) {
   return (
     <button
@@ -101,7 +95,7 @@ function ProfilFiche({ user }: { user: User }) {
       value: user.educationLevel
         ? niveauLabels[user.educationLevel] ?? user.educationLevel
         : null,
-    },
+    }, 
     {
       icon: GraduationCap,
       label: 'Classe / Filière',
@@ -346,10 +340,10 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                 <section>
                   <h3 className="font-display font-semibold text-lg text-primary mb-4">Statistiques</h3>
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    <StatCard icon={BookOpen} value={stats.booksRead} label="Livres lus" />
-                    <StatCard icon={Star} value={stats.reviewsPosted} label="Avis postés" />
-                    <StatCard icon={Users} value={stats.clubsJoined} label="Clubs" />
-                    <StatCard icon={Calendar} value={stats.eventsAttended} label="Événements" />
+                    <StatCard icon={BookOpen} value={stats.booksRead || 0} label="Livres lus" />
+                    <StatCard icon={Star} value={stats.reviewsPosted || 0} label="Avis postés" />
+                    <StatCard icon={Users} value={stats.clubsJoined || 0} label="Clubs" />
+                    <StatCard icon={Calendar} value={stats.eventsAttended || 0} label="Événements" />
                   </div>
                 </section>
 
@@ -361,27 +355,23 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                     </h3>
                     {borrows.length > 0 ? (
                       <div className="grid gap-3">
-                        {(borrows as Array<{
-                          id: string;
-                          book: { cover: string; title: string; author: string };
-                          returnDate: string;
-                        }>).map((borrow) => (
+                        {borrows.map((borrow) => (
                           <div
                             key={borrow.id}
                             className="surface rounded-xl border border-[var(--border-color)] shadow-card hover:shadow-card-hover transition-shadow p-4 flex items-start gap-4"
                           >
                             <ApiImage
-                              src={borrow.book.cover?.startsWith('/') || borrow.book.cover?.startsWith('http') ? borrow.book.cover : undefined}
-                              alt={borrow.book.title}
+                              src={borrow.livre.couverture?.startsWith('/') || borrow.livre.couverture?.startsWith('http') ? borrow.livre.couverture : undefined}
+                              alt={borrow.livre.titre}
                               className="w-16 h-24 rounded-lg object-cover flex-shrink-0"
                             />
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-primary line-clamp-1">{borrow.book.title}</h4>
-                              <p className="text-sm text-muted">{borrow.book.author}</p>
+                              <h4 className="font-semibold text-primary line-clamp-1">{borrow.livre.titre}</h4>
+                              <p className="text-sm text-muted">{borrow.livre.auteur}</p>
                               <div className="flex items-center gap-2 mt-2">
                                 <Calendar className="w-4 h-4 text-accent flex-shrink-0" />
                                 <span className="text-sm font-semibold text-accent">
-                                  Retour le {new Date(borrow.returnDate).toLocaleDateString('fr-FR')}
+                                  Retour le {borrow.returnDate ? new Date(borrow.returnDate).toLocaleDateString('fr-FR') : 'Non défini'}
                                 </span>
                               </div>
                             </div>
@@ -399,22 +389,19 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                       <>
                         <h3 className="font-display font-semibold text-lg text-primary mb-4 mt-6">Mes réservations</h3>
                         <div className="grid gap-3">
-                          {(reservations as Array<{
-                            id: string;
-                            book: { cover: string; title: string; author: string };
-                          }>).map((res) => (
+                          {reservations.map((res) => (
                             <div
                               key={res.id}
                               className="surface rounded-xl border border-[var(--border-color)] shadow-card p-4 flex items-start gap-4"
                             >
                               <ApiImage
-                                src={res.book.cover?.startsWith('/') || res.book.cover?.startsWith('http') ? res.book.cover : undefined}
-                                alt={res.book.title}
+                                src={res.livre.couverture?.startsWith('/') || res.livre.couverture?.startsWith('http') ? res.livre.couverture : undefined}
+                                alt={res.livre.titre}
                                 className="w-16 h-24 rounded-lg object-cover flex-shrink-0"
                               />
                               <div className="flex-1 min-w-0">
-                                <h4 className="font-semibold text-primary line-clamp-1">{res.book.title}</h4>
-                                <p className="text-sm text-muted">{res.book.author}</p>
+                                <h4 className="font-semibold text-primary line-clamp-1">{res.livre.titre}</h4>
+                                <p className="text-sm text-muted">{res.livre.auteur}</p>
                                 <Badge className="mt-2 bg-[var(--library-accent)]/10 text-accent border border-[var(--library-accent)]/20">
                                   En attente
                                 </Badge>
@@ -452,7 +439,7 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                   <h3 className="font-display font-semibold text-lg text-primary mb-4">
                     Interactions récentes
                   </h3>
-                  {stats.booksRead === 0 && stats.reviewsPosted === 0 ? (
+                  {(stats.booksRead || 0) === 0 && (stats.reviewsPosted || 0) === 0 ? (
                     <div className="surface rounded-2xl shadow-card border border-[var(--border-color)] p-8 text-center">
                       <BookOpen className="w-10 h-10 text-muted mx-auto mb-3 opacity-40" />
                       <p className="text-muted text-sm">
@@ -461,18 +448,18 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {stats.booksRead > 0 && (
+                      {(stats.booksRead || 0) > 0 && (
                         <ActivityItem
                           icon={BookOpen}
-                          title={`${stats.booksRead} livre${stats.booksRead > 1 ? 's' : ''} marqué${stats.booksRead > 1 ? 's' : ''} comme lu`}
+                          title={`${stats.booksRead || 0} livre${(stats.booksRead || 0) > 1 ? 's' : ''} marqué${(stats.booksRead || 0) > 1 ? 's' : ''} comme lu`}
                           description="Ces signaux alimentent votre vecteur de profil"
                           color="accent"
                         />
                       )}
-                      {stats.reviewsPosted > 0 && (
+                      {(stats.reviewsPosted || 0) > 0 && (
                         <ActivityItem
                           icon={Star}
-                          title={`${stats.reviewsPosted} avis publié${stats.reviewsPosted > 1 ? 's' : ''}`}
+                          title={`${stats.reviewsPosted || 0} avis publié${(stats.reviewsPosted || 0) > 1 ? 's' : ''}`}
                           description={
                             user.isMember
                               ? 'Chaque avis compte.'
@@ -481,18 +468,18 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                           color="amber"
                         />
                       )}
-                      {stats.clubsJoined > 0 && (
+                      {(stats.clubsJoined || 0) > 0 && (
                         <ActivityItem
                           icon={Users}
-                          title={`${stats.clubsJoined} club${stats.clubsJoined > 1 ? 's' : ''} rejoint`}
+                          title={`${stats.clubsJoined || 0} club${(stats.clubsJoined || 0) > 1 ? 's' : ''} rejoint`}
                           description="Clubs de lecture CAEB"
                           color="accent"
                         />
                       )}
-                      {stats.eventsAttended > 0 && (
+                      {(stats.eventsAttended || 0) > 0 && (
                         <ActivityItem
                           icon={Calendar}
-                          title={`${stats.eventsAttended} événement${stats.eventsAttended > 1 ? 's' : ''} suivi`}
+                          title={`${stats.eventsAttended || 0} événement${(stats.eventsAttended || 0) > 1 ? 's' : ''} suivi`}
                           description="Conférences, ateliers et clubs de lecture"
                           color="accent"
                         />

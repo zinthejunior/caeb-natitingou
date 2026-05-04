@@ -10,7 +10,7 @@ interface ClubContactFormProps {
     id: string;
     name: string;
     manager?: ClubManager;
-  };
+  }; 
   userName: string;
   userEmail: string;
   onClose: () => void;

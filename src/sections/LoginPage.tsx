@@ -18,7 +18,7 @@ export function LoginPage({ onLogin, onBack, onRegisterClick, isLoading }: Login
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
+    if (!email || !password) { 
       toast.error('Veuillez remplir tous les champs');
       return;
     }

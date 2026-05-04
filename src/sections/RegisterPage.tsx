@@ -128,7 +128,7 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
 
   const inputClass = 'w-full h-12 px-4 surface-alt border border-[var(--border-color)] rounded-xl text-primary placeholder:text-muted focus:border-[var(--library-accent)] focus:ring-2 focus:ring-[var(--library-accent)]/20 transition-all';
   const labelClass = 'text-sm font-semibold text-primary';
-
+ 
   const renderStep = () => {
     switch (step) {
       case 1:

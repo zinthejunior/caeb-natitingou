@@ -16,7 +16,7 @@ export function NotFoundPage({ user, onNavigate }: NotFoundPageProps) {
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16 pt-24">
         <div className="text-center">
-
+ 
           {/* Icône */}
           <div className="mb-8 flex justify-center">
             <div className="relative">

@@ -5,7 +5,7 @@ import { Navbar } from '@/components/Navbar';
 import { ApiImage } from '@/components/ApiImage';
 import { Button } from '@/components/ui/button';
 import type { View, User, Book, Event, News } from '@/types';
-import { useBooks, useEvents, useNews } from '@/hooks/useData';
+import { useLivres, useEvenements, useActualites } from '@/hooks/useData';
 
 interface HomePageProps {
   user: User;
@@ -63,26 +63,26 @@ export function HomePage({ user, onNavigate }: HomePageProps) {
     return 'Bonsoir';
   });
   const [dataReady, setDataReady] = useState(false);
-  const { books } = useBooks();
-  const { events } = useEvents();
-  const { news } = useNews();
+  const { livres: books } = useLivres();
+  const { evenements: events } = useEvenements();
+  const { actualites: news } = useActualites();
 
   useEffect(() => {
     const t = setTimeout(() => setDataReady(true), 700);
     return () => clearTimeout(t);
   }, []);
 
-  const recommendedBooks = (user?.preferredGenres && user.preferredGenres.length > 0)
-    ? books.filter(b => user.preferredGenres.includes(b.genre || '')).slice(0, 4)
+  const recommendedBooks = (user?.genresPreferes && user.genresPreferes.length > 0)
+    ? books.filter((b: any) => user.genresPreferes?.includes(b.genre || '')).slice(0, 4)
     : books.slice(0, 4);
-  const newBooks = books.filter(b => (b as unknown as Record<string, unknown>).is_new).slice(0, 4);
-  const popularBooks = books.filter(b => (b as unknown as Record<string, unknown>).is_popular).slice(0, 4);
+  const newBooks = books.filter((b: any) => (b as unknown as Record<string, unknown>).estNouveau).slice(0, 4);
+  const popularBooks = books.filter((b: any) => (b as unknown as Record<string, unknown>).estPopulaire).slice(0, 4);
   const upcomingEvents = events.slice(0, 3);
   const latestNews = news.sort((a, b) => new Date(b.date || '').getTime() - new Date(a.date || '').getTime()).slice(0, 3);
 
   return (
     <div className="min-h-screen bg-library-bg pb-24 transition-colors duration-300">
-      <Navbar user={user} />
+      <Navbar utilisateur={user} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -98,7 +98,7 @@ export function HomePage({ user, onNavigate }: HomePageProps) {
                 <div>
                   <p className="text-muted font-medium mb-1">{greeting},</p>
                   <h1 className="font-display text-3xl md:text-4xl font-bold mb-3 text-primary">
-                    {user?.firstName || 'Utilisateur'} !
+                    {user?.prenom || 'Utilisateur'} !
                   </h1>
                   <p className="text-muted max-w-md leading-relaxed">
                     {newBooks.length > 0 ? (
@@ -110,7 +110,7 @@ export function HomePage({ user, onNavigate }: HomePageProps) {
                       <>Bienvenue dans votre espace lecteur. Découvrez notre sélection de 12 000 ouvrages pensés pour vous.</>
                     )}
                   </p>
-                  {!user?.isMember && (
+                  {!user?.estMembre && (
                     <div className="mt-6">
                       <Button className="btn-solid shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all font-semibold">
                         <Crown className="w-4 h-4 mr-2" />
@@ -149,7 +149,7 @@ export function HomePage({ user, onNavigate }: HomePageProps) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
                   {recommendedBooks.map((book) => (
                     <BookCard key={book.id} book={book} user={user} onClick={() => onNavigate('book-detail', { bookId: book.id })}
-                      onToggleFavorite={(id) => user.favorites?.includes(id) ? user.favorites = user.favorites.filter(f => f !== id) : user.favorites = [...(user.favorites || []), id]} />
+                      onToggleFavorite={(id) => user.favoris?.includes(id) ? user.favoris = user.favoris.filter((f: any) => f !== id) : user.favoris = [...(user.favoris || []), id]} />
                   ))}
                 </div>
               ) : null}
@@ -166,7 +166,7 @@ export function HomePage({ user, onNavigate }: HomePageProps) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
                   {newBooks.map((book) => (
                     <BookCard key={book.id} book={book} user={user} onClick={() => onNavigate('book-detail', { bookId: book.id })}
-                      onToggleFavorite={(id) => user.favorites?.includes(id) ? user.favorites = user.favorites.filter(f => f !== id) : user.favorites = [...(user.favorites || []), id]} />
+                      onToggleFavorite={(id) => user.favoris?.includes(id) ? user.favoris = user.favoris.filter((f: any) => f !== id) : user.favoris = [...(user.favoris || []), id]} />
                   ))}
                 </div>
               )}
@@ -183,7 +183,7 @@ export function HomePage({ user, onNavigate }: HomePageProps) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
                   {popularBooks.map((book) => (
                     <BookCard key={book.id} book={book} user={user} onClick={() => onNavigate('book-detail', { bookId: book.id })}
-                      onToggleFavorite={(id) => user.favorites?.includes(id) ? user.favorites = user.favorites.filter(f => f !== id) : user.favorites = [...(user.favorites || []), id]} />
+                      onToggleFavorite={(id) => user.favoris?.includes(id) ? user.favoris = user.favoris.filter((f: any) => f !== id) : user.favoris = [...(user.favoris || []), id]} />
                   ))}
                 </div>
               )}
@@ -207,7 +207,7 @@ export function HomePage({ user, onNavigate }: HomePageProps) {
               )}
             </section>
 
-            {!user?.isMember && (
+            {!user?.estMembre && (
               <div className="gradient-accent rounded-2xl p-6 text-center space-y-4 shadow-medium border border-[var(--library-accent)]/20 relative overflow-hidden">
                 <div className="absolute inset-0 opacity-10 pointer-events-none">
                   <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full blur-2xl" />
@@ -257,7 +257,7 @@ function SectionHeader({ title, icon: Icon, onSeeAll }: { title: string; icon: R
 }
 
 function BookCard({ book, user, onClick, onToggleFavorite }: { book: Book; user: User; onClick: () => void; onToggleFavorite?: (id: string) => void }) {
-  const isFavorited = user.favorites?.includes(book.id) || false;
+  const isFavorited = user.favoris?.includes(book.id) || false;
   const [heartPop, setHeartPop] = useState(false);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -275,7 +275,7 @@ function BookCard({ book, user, onClick, onToggleFavorite }: { book: Book; user:
     <div role="button" tabIndex={0} onClick={onClick} onKeyDown={handleKeyDown}
       className="w-full text-left group relative flex flex-col h-full book-card-3d cursor-pointer">
       <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden shadow-card mb-3 surface-weak">
-        <ApiImage src={book.cover} alt={book.title}
+        <ApiImage src={book.couverture} alt={book.titre}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
 
         {/* Favoris avec pop */}
@@ -287,7 +287,7 @@ function BookCard({ book, user, onClick, onToggleFavorite }: { book: Book; user:
         </button>
 
         {/* Overlay de verrouillage */}
-        {!user?.isMember && !book.isAvailable && (
+        {!user?.estMembre && !book.estDisponible && (
           <div className="absolute inset-0 surface/80 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <div className="surface p-2 rounded-full shadow-medium">
               <Lock className="w-4 h-4 text-accent" />
@@ -297,18 +297,18 @@ function BookCard({ book, user, onClick, onToggleFavorite }: { book: Book; user:
       </div>
 
       <div className="flex-1 flex flex-col">
-        <h3 className="font-bold text-primary line-clamp-1 group-hover:text-accent transition-colors text-base">{book.title}</h3>
-        <p className="text-sm text-muted line-clamp-1 mb-1">{book.author}</p>
+        <h3 className="font-bold text-primary line-clamp-1 group-hover:text-accent transition-colors text-base">{book.titre}</h3>
+        <p className="text-sm text-muted line-clamp-1 mb-1">{book.auteur}</p>
         {/* Étoiles cascade */}
         <div className="mt-auto flex items-center justify-between">
           <div className="flex items-center gap-0.5 star-cascade">
             {[1, 2, 3, 4, 5].map(n => (
               <Star key={n}
-                className={`star w-3 h-3 ${n <= Math.round(book.rating || 4.5) ? 'fill-[var(--library-accent)] text-[var(--library-accent)]' : 'text-[var(--border-color)]'}`} />
+                className={`star w-3 h-3 ${n <= Math.round(book.note || 4.5) ? 'fill-[var(--library-accent)] text-[var(--library-accent)]' : 'text-[var(--border-color)]'}`} />
             ))}
-            <span className="text-xs font-semibold text-accent ml-1">{book.rating || '4.5'}</span>
+            <span className="text-xs font-semibold text-accent ml-1">{book.note || '4.5'}</span>
           </div>
-          {!user?.isMember && (
+          {!user?.estMembre && (
             <span className="text-[10px] font-bold text-accent bg-[var(--library-accent)]/10 px-2 py-0.5 rounded-full">PREMIUM</span>
           )}
         </div>
@@ -332,13 +332,13 @@ function EventCard({ event, user, onClick }: { event: Event; user: User; onClick
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
-          <h3 className="font-semibold text-primary truncate group-hover:text-accent transition-colors">{event.title}</h3>
-          {!user.isMember && event.type === 'conference' && <Lock className="w-3 h-3 text-muted flex-shrink-0" />}
+          <h3 className="font-semibold text-primary truncate group-hover:text-accent transition-colors">{event.titre}</h3>
+          {!user.estMembre && event.type === 'conference' && <Lock className="w-3 h-3 text-muted flex-shrink-0" />}
         </div>
         <div className="flex items-center text-xs text-muted gap-2">
-          <span>{event.time}</span>
+          <span>{event.heure}</span>
           <span className="w-1 h-1 bg-[var(--border-color)] rounded-full" />
-          <span className="truncate max-w-[100px]">{event.location}</span>
+          <span className="truncate max-w-[100px]">{event.lieu}</span>
         </div>
       </div>
     </button>
@@ -357,14 +357,14 @@ function NewsCard({ news, onClick }: { news: News; onClick: () => void }) {
     general: { label: 'Actualité', class: 'surface-weak text-muted border-[var(--border-color)]' },
   };
 
-  const currentConfig = categoryConfig[news.category] || categoryConfig.general;
+  const currentConfig = categoryConfig[news.categorie] || categoryConfig.general;
 
   return (
     <button onClick={onClick} className="w-full text-left group flex flex-col h-full tap-feedback">
       <div className={`surface rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover border border-[var(--border-color)] hover:border-[var(--library-accent)]/20 transition-all duration-300 flex flex-col h-full`}>
         {news.image && (
           <div className="relative w-full aspect-video overflow-hidden bg-[var(--library-surface-alt)]">
-            <ApiImage src={news.image} alt={news.title}
+            <ApiImage src={news.image} alt={news.titre}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           </div>
         )}
@@ -377,8 +377,8 @@ function NewsCard({ news, onClick }: { news: News; onClick: () => void }) {
               {newsDate.getDate()} {newsDate.toLocaleDateString('fr-FR', { month: 'short' })}
             </span>
           </div>
-          <h3 className="font-bold text-primary line-clamp-2 group-hover:text-accent transition-colors mb-2 text-base">{news.title}</h3>
-          <p className="text-sm text-muted line-clamp-3 mb-4 flex-1">{news.excerpt}</p>
+          <h3 className="font-bold text-primary line-clamp-2 group-hover:text-accent transition-colors mb-2 text-base">{news.titre}</h3>
+          <p className="text-sm text-muted line-clamp-3 mb-4 flex-1">{news.resume}</p>
           <div className="flex items-center text-sm font-semibold text-accent gap-0.5 hover:gap-1 transition-all">
             En savoir plus <ChevronRight className="w-4 h-4" />
           </div>

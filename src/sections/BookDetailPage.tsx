@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/Navbar';
 import type { User, Review } from '@/types';
-import { reserveBook, postReview, useReviews, useBook } from '@/hooks/useData';
+import { reserverLivre, useReviews, useBook, postReview } from '@/hooks/useData';
 
 interface BookDetailPageProps {
   bookId: string;
@@ -17,6 +17,7 @@ interface BookDetailPageProps {
 }
 
 export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookDetailPageProps) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { book, isLoading: isBookLoading } = useBook(bookId);
   const { data: initialReviews, reload: reloadReviews } = useReviews(bookId);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -38,12 +39,12 @@ export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookD
   if (!book) return null;
 
   const handleReserve = async () => {
-    if (!user.isMember) {
+    if (!user.estMembre) {
       toast.error('Réservation réservée aux membres', { description: 'Devenez membre pour réserver des livres' });
       return;
     }
     try {
-      await reserveBook(bookId);
+      await reserverLivre(bookId);
       toast.success('Livre réservé avec succès !', { description: 'Vous pouvez venir le chercher à la bibliothèque' });
     } catch (err) {
       toast.error('Erreur lors de la réservation');
@@ -74,7 +75,7 @@ export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookD
 
   return (
     <div className="min-h-screen bg-library-bg pb-24">
-      <Navbar user={user} />
+      <Navbar utilisateur={user} />
 
       {/* Bouton retour */}
       <div className="fixed top-20 left-4 sm:left-6 z-40">
@@ -92,15 +93,15 @@ export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookD
           {/* Couverture */}
           <div className="lg:col-span-1 flex justify-center">
             <div className="relative w-full max-w-xs">
-              <div className="aspect-[2/3] rounded-2xl overflow-hidden shadow-elevated">
-                <img src={book.cover} alt={book.title} className="w-full h-full object-cover" />
-                <button 
-                  onClick={(e) => { e.stopPropagation(); onToggleFavorite?.(bookId); }}
-                  className="absolute top-4 right-4 p-3 rounded-full surface shadow-elevated hover:scale-110 transition-transform z-10"
+              <div className="w-full max-w-sm mx-auto aspect-[2/3] surface-alt rounded-2xl overflow-hidden shadow-elevated relative group animate-scale-in">
+                <ApiImage src={book.couverture} alt={book.titre}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                <button onClick={(e) => { e.stopPropagation(); onToggleFavorite?.(bookId); }}
+                  className="absolute top-4 right-4 w-12 h-12 bg-white/90 dark:bg-[var(--library-surface)]/90 backdrop-blur border border-[var(--border-color)] rounded-full flex items-center justify-center shadow-soft hover:scale-110 hover:shadow-medium transition-all tap-feedback z-10"
                 >
                   <Heart className={`w-6 h-6 ${user.favorites?.includes(bookId) ? 'text-red-500 fill-current' : 'text-muted'}`} />
                 </button>
-                {!book.isAvailable && (
+                {!book.estDisponible && (
                   <div className="absolute inset-0 surface/80 backdrop-blur-sm flex items-center justify-center">
                     <span className="text-primary text-sm font-bold px-4 py-2 surface rounded-xl shadow-medium">Indisponible</span>
                   </div>
@@ -112,21 +113,21 @@ export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookD
           {/* Informations */}
           <div className="lg:col-span-2 space-y-5">
             <div>
-              <h1 className="font-display text-4xl font-bold text-primary mb-2">{book.title}</h1>
-              <p className="text-xl text-muted">{book.author}</p>
+              <h1 className="font-display text-4xl font-bold text-primary mb-2">{book.titre}</h1>
+              <p className="text-xl text-muted">{book.auteur}</p>
             </div>
 
             <div className="flex items-center gap-2">
               <Star className="w-5 h-5 text-accent fill-current" />
-              <span className="font-bold text-primary text-lg">{book.rating}</span>
-              <span className="text-muted">({book.reviewCount} avis)</span>
+              <span className="font-bold text-primary text-lg">{book.note}</span>
+              <span className="text-muted">({book.nbAvis} avis)</span>
             </div>
 
             <div className="flex flex-wrap gap-2">
               <Badge className="surface-alt border border-[var(--border-color)] text-primary font-semibold">{book.genre}</Badge>
-              <Badge variant="outline" className="border-[var(--border-color)] text-muted font-semibold">{book.year}</Badge>
-              {book.isNew && <Badge className="bg-[var(--library-accent)] text-[var(--library-on-accent)] font-bold">Nouveau</Badge>}
-              {book.isAvailable ? (
+              <Badge variant="outline" className="border-[var(--border-color)] text-muted font-semibold">{book.annee}</Badge>
+              {book.estNouveau && <Badge className="bg-[var(--library-accent)] text-[var(--library-on-accent)] font-bold">Nouveau</Badge>}
+              {book.estDisponible ? (
                 <Badge className="bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800 font-semibold">Disponible</Badge>
               ) : (
                 <Badge variant="destructive">Indisponible</Badge>
@@ -140,8 +141,8 @@ export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookD
 
             {/* Actions */}
             <div className="flex flex-wrap gap-3 pt-2">
-              {user.isMember ? (
-                book.isAvailable ? (
+              {user.estMembre ? (
+                book.estDisponible ? (
                   <Button size="lg" onClick={handleReserve}
                     className="btn-solid gap-2 shadow-medium hover:shadow-elevated hover:-translate-y-0.5 transition-all font-bold sheen relative overflow-hidden">
                     <BookOpen className="w-5 h-5" />Réserver ce livre
@@ -188,10 +189,10 @@ export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookD
             <TabsContent value="details" className="space-y-6">
               <div className="grid sm:grid-cols-2 gap-5">
                 {[
-                  { label: 'Auteur', value: book.author },
+                  { label: 'Auteur', value: book.auteur },
                   { label: 'Genre', value: book.genre },
-                  { label: 'Année', value: book.year },
-                  { label: 'Pages', value: book.pages },
+                  { label: 'Année', value: book.annee },
+                  { label: 'Pages', value: book.nbPages },
                 ].map(item => (
                   <div key={item.label} className="p-4 surface-alt rounded-xl border border-[var(--border-color)]">
                     <p className="text-xs text-muted font-semibold uppercase tracking-wider mb-1">{item.label}</p>

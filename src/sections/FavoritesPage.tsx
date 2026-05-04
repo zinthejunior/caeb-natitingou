@@ -62,8 +62,8 @@ export function FavoritesPage({ user, onNavigate, onToggleFavorite }: FavoritesP
 
   const favoriteBooks = books.filter(book => user.favorites?.includes(book.id));
   const sortedFavorites = [...favoriteBooks].sort((a, b) => {
-    if (sortBy === 'rating') return b.rating - a.rating;
-    if (sortBy === 'title') return a.title.localeCompare(b.title);
+    if (sortBy === 'rating') return b.note - a.note;
+    if (sortBy === 'title') return a.titre.localeCompare(b.titre);
     return 0;
   });
 
@@ -100,8 +100,8 @@ export function FavoritesPage({ user, onNavigate, onToggleFavorite }: FavoritesP
               <button key={opt.key} onClick={() => setSortBy(opt.key)}
                 aria-pressed={sortBy === opt.key}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[var(--library-accent)] focus:ring-offset-0 tap-feedback ${sortBy === opt.key
-                    ? 'bg-[var(--library-accent)] text-[var(--library-on-accent)] shadow-soft'
-                    : 'surface border border-[var(--border-color)] text-primary hover:border-[var(--library-accent)]/30'
+                  ? 'bg-[var(--library-accent)] text-[var(--library-on-accent)] shadow-soft'
+                  : 'surface border border-[var(--border-color)] text-primary hover:border-[var(--library-accent)]/30'
                   }`}>
                 {opt.label}
               </button>
@@ -119,7 +119,7 @@ export function FavoritesPage({ user, onNavigate, onToggleFavorite }: FavoritesP
 
                 {/* Couverture */}
                 <div className="relative aspect-[2/3] w-full overflow-hidden surface-alt flex-shrink-0">
-                  <ApiImage src={book.cover} alt={book.title}
+                  <ApiImage src={book.couverture} alt={book.titre}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
 
                   <button onClick={(e) => { e.stopPropagation(); onToggleFavorite?.(book.id); }}
@@ -130,22 +130,22 @@ export function FavoritesPage({ user, onNavigate, onToggleFavorite }: FavoritesP
                   </button>
 
                   <div className="absolute top-2 left-2 flex flex-col gap-1">
-                    {!book.isAvailable && <Badge variant="destructive" className="text-[10px]">Indisponible</Badge>}
-                    {book.isNew && <Badge className="bg-[var(--library-accent)] text-[var(--library-on-accent)] text-[10px]">Nouveau</Badge>}
+                    {!book.estDisponible && <Badge variant="destructive" className="text-[10px]">Indisponible</Badge>}
+                    {book.estNouveau && <Badge className="bg-[var(--library-accent)] text-[var(--library-on-accent)] text-[10px]">Nouveau</Badge>}
                   </div>
                 </div>
 
                 {/* Détails */}
                 <div className="p-4 flex-1 flex flex-col">
-                  <h3 className="font-bold text-sm text-primary line-clamp-2 mb-1 group-hover:text-accent transition-colors">{book.title}</h3>
-                  <p className="text-xs text-muted line-clamp-1 mb-2">{book.author}</p>
+                  <h3 className="font-bold text-sm text-primary line-clamp-2 mb-1 group-hover:text-accent transition-colors">{book.titre}</h3>
+                  <p className="text-xs text-muted line-clamp-1 mb-2">{book.auteur}</p>
                   {/* Étoiles cascade */}
                   <div className="flex items-center gap-0.5 mb-3 star-cascade">
                     {[1, 2, 3, 4, 5].map(n => (
-                      <Star key={n} className={`star w-3.5 h-3.5 ${n <= Math.round(book.rating) ? 'fill-[var(--library-accent)] text-[var(--library-accent)]' : 'text-[var(--border-color)]'}`} />
+                      <Star key={n} className={`star w-3.5 h-3.5 ${n <= Math.round(book.note) ? 'fill-[var(--library-accent)] text-[var(--library-accent)]' : 'text-[var(--border-color)]'}`} />
                     ))}
-                    <span className="text-xs font-bold text-accent ml-1">{book.rating}</span>
-                    {book.reviewCount && <span className="text-xs text-muted">({book.reviewCount})</span>}
+                    <span className="text-xs font-bold text-accent ml-1">{book.note}</span>
+                    {book.nbAvis && <span className="text-xs text-muted">({book.nbAvis})</span>}
                   </div>
                   <Badge variant="outline" className="text-xs w-fit mb-3 border-[var(--border-color)] text-muted">{book.genre}</Badge>
                   <Button onClick={(e) => { e.stopPropagation(); onNavigate('book-detail', { bookId: book.id }); }}

@@ -14,7 +14,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
   const [selectedImage, setSelectedImage] = useState<{ caption: string; src: string } | null>(null);
   // ── Reveal on scroll ──
   useEffect(() => {
-    const observer = new IntersectionObserver(
+    const observer = new IntersectionObserver( 
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {

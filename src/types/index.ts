@@ -21,12 +21,19 @@ export interface StatistiquesUtilisateur {
   avisPublies:    number;
   clubsRejoints:  number;
   evenementsParticipes: number;
+  // Aliases anglais pour compatibilité UI
+  booksRead?:        number;
+  reviewsPosted?:    number;
+  clubsJoined?:      number;
+  eventsAttended?:   number;
 }
 
 // Alias pour compatibilité
 export type UserStats = StatistiquesUtilisateur;
 
 export interface Utilisateur {
+  favorites: any;
+  isMember: any;
   // Identité
   id:        string;
   prenom:    string;
@@ -37,6 +44,14 @@ export interface Utilisateur {
   username?: string; // Pour compatibilité Django/Auth
   bio?:      string;
   avatar?:   string;
+
+  // Aliases anglais (compatibilité UI)
+  firstName?: string;
+  lastName?:  string;
+  educationLevel?: string;
+  preferredGenres?: string[];
+  createdAt?: string;
+  sous_genre_prefere?: string[];
 
   // Statut & adhésion
   estMembre:  boolean;
@@ -95,6 +110,11 @@ export type Book = Livre;
 // ── Avis / Interaction ────────────────────────────────────────────────────────
 
 export interface Avis {
+  createdAt: string | number | Date;
+  user: any;
+  rating: number;
+  comment: string;
+  likes: number;
   id:           string;
   livreId:      string;
   utilisateurId: string;
@@ -117,6 +137,14 @@ export interface CommentaireAvis {
   dateCreation: string;
   mentionsJaime: number;
   estAvisUtilisateur?: boolean;
+  // Aliases anglais pour compatibilité UI
+  userName?:       string;
+  rating?:         number;
+  title?:          string;
+  comment?:        string;
+  likes?:          number;
+  createdAt?:      string;
+  isUserReview?:   boolean;
 }
 
 // Alias pour compatibilité
@@ -133,6 +161,10 @@ export interface LivreEmprunte {
   titre:  string;
   auteur: string;
   couverture?: string;
+  // Aliases anglais
+  title?: string;
+  author?: string;
+  cover?: string;
 }
 export type BorrowBook = LivreEmprunte;
 
@@ -146,6 +178,9 @@ export interface Emprunt {
   renouvele:          boolean;
   statut:             StatutEmprunt;
   estProlonge:        boolean;         // prolongé
+  // Aliases anglais
+  book?:              LivreEmprunte;
+  returnDate?:        string;
 }
 
 // Alias pour compatibilité
@@ -160,6 +195,8 @@ export interface Reservation {
   livre:            LivreEmprunte;
   dateReservation:  string;          // ISO date
   statut:           StatutReservation;
+  // Aliases anglais
+  book?:            LivreEmprunte;
 }
 
 
@@ -172,6 +209,7 @@ export interface ResponsableClub {
   nom:    string;
   role:   string;
   email:  string;
+  name?:  string; // alias anglais
 }
 export type ClubManager = ResponsableClub;
 
@@ -181,6 +219,10 @@ export interface CoursClub {
   niveau:      string;
   frequence:   string;
   description: string;
+  // Aliases anglais
+  title?:      string;
+  level?:      string;
+  frequency?:  string;
 }
 export type ClubCourse = CoursClub;
 
@@ -189,6 +231,9 @@ export interface ActiviteClub {
   nomUtilisateur: string;
   activite:       string;
   date:           string;
+  // Aliases anglais
+  userName?:      string;
+  activity?:      string;
 }
 export type ClubActivity = ActiviteClub;
 
@@ -215,6 +260,17 @@ export interface ClubLecture {
   cours?:          CoursClub[];
   activiteRecente?: ActiviteClub[];
   prochainesReunions?: ReunionClub[];
+
+  // Aliases anglais pour compatibilité UI
+  name?:           string;
+  targetAudience?: AudienceClub;
+  memberCount?:    number;
+  isJoined?:       boolean;
+  externalLink?:   string;
+  manager?:        ResponsableClub & { name?: string };
+  courses?:        CoursClub[];
+  recentActivity?: ActiviteClub[];
+  nextMeetings?:   ReunionClub[];
 }
 
 // Alias pour compatibilité
@@ -237,6 +293,13 @@ export interface Evenement {
   nbParticipants:   number;
   participe?:       boolean;
   clubId?:          string;    // FK vers ClubLecture
+
+  // Aliases anglais pour compatibilité UI
+  title?:            string;
+  time?:             string;
+  location?:         string;
+  participantCount?: number;
+  isParticipating?:  boolean;
 }
 
 // Alias pour compatibilité
@@ -263,6 +326,13 @@ export interface Actualite {
   date:        string;
   categorie:   CategorieActualite;
   misEnAvant?: boolean;
+
+  // Aliases anglais
+  category?:   CategorieActualite;
+  title?:      string;
+  featured?:   boolean;
+  excerpt?:    string;
+  content?:    string;
 }
 
 // Alias pour compatibilité

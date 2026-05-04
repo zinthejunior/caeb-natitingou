@@ -11,7 +11,7 @@ interface LabPageProps {
   user: User | null;
   onNavigate: (view: View) => void;
 }
-
+     
 export function LabPage({ user }: LabPageProps) {
   const { stations, isLoading } = useLabStations();
   const [selectedStation, setSelectedStation] = useState<number | null>(null);
@@ -107,7 +107,7 @@ export function LabPage({ user }: LabPageProps) {
               </div>
             ) : (
               <div className="space-y-4">
-                {stations.map(station => (
+                {stations.map((station: any) => (
                   <div 
                     key={station.id}
                     role="button"

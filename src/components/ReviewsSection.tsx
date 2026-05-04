@@ -11,7 +11,7 @@ interface ReviewsSectionProps {
   onAddReview?: (rating: number, title: string, comment: string) => void;
   isAuthenticated?: boolean;
 }
-
+ 
 export function ReviewsSection({ reviews, onAddReview, isAuthenticated }: Omit<ReviewsSectionProps, 'bookId'>) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [rating, setRating] = useState(5);

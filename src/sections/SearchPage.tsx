@@ -20,7 +20,7 @@ const SectionTitle = ({ icon: Icon, label, count }: { icon: React.ElementType; l
     <h2 className="text-xl font-bold text-primary">{label}</h2>
     <span className="text-sm text-muted font-medium">({count})</span>
   </div>
-);
+); 
 
 export function SearchPage({ user, onNavigate }: SearchPageProps) {
   const [query, setQuery] = useState('');

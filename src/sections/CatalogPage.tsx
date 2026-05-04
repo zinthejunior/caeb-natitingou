@@ -95,26 +95,26 @@ export function CatalogPage({ onBookClick, user }: { onBookClick: (idLivre: stri
     if (recherche) {
       const q = recherche.toLowerCase();
       resultat = resultat.filter(l => 
-        l.title.toLowerCase().includes(q) || 
-        l.author.toLowerCase().includes(q) || 
+        l.titre.toLowerCase().includes(q) || 
+        l.auteur.toLowerCase().includes(q) || 
         l.genre.toLowerCase().includes(q)
       );
     }
     if (genresSelectionnes.length > 0) resultat = resultat.filter(l => genresSelectionnes.includes(l.genre));
-    if (publicSelectionne.length > 0) resultat = resultat.filter(l => publicSelectionne.includes(l.targetAudience || ''));
-    if (afficherDispoUniquement) resultat = resultat.filter(l => l.isAvailable);
+    if (publicSelectionne.length > 0) resultat = resultat.filter(l => publicSelectionne.includes(l.publicCible || ''));
+    if (afficherDispoUniquement) resultat = resultat.filter(l => l.estDisponible);
     
     switch (triPar) {
-      case 'newest': resultat.sort((a, b) => (b.year || 0) - (a.year || 0)); break;
-      case 'rating': resultat.sort((a, b) => b.rating - a.rating); break;
-      default: resultat.sort((a, b) => (b.isPopular ? 1 : 0) - (a.isPopular ? 1 : 0));
+      case 'newest': resultat.sort((a, b) => (b.annee || 0) - (a.annee || 0)); break;
+      case 'rating': resultat.sort((a, b) => b.note - a.note); break;
+      default: resultat.sort((a, b) => (b.estPopulaire ? 1 : 0) - (a.estPopulaire ? 1 : 0));
     }
     return resultat;
   }, [recherche, genresSelectionnes, publicSelectionne, afficherDispoUniquement, triPar, livres]);
 
   // Extraction des genres et publics pour les filtres
   const tousLesGenres = useMemo(() => Array.from(new Set(livres.map((l) => l.genre))).sort(), [livres]);
-  const tousLesPublics = useMemo(() => Array.from(new Set(livres.map((l) => l.targetAudience || ''))).sort(), [livres]);
+  const tousLesPublics = useMemo(() => Array.from(new Set(livres.map((l) => l.publicCible || ''))).sort(), [livres]);
 
   const basculerGenre = (genre: string) => {
     setGenresSelectionnes((precedents) => precedents.includes(genre) ? precedents.filter((g) => g !== genre) : [...precedents, genre]);
@@ -132,7 +132,7 @@ export function CatalogPage({ onBookClick, user }: { onBookClick: (idLivre: stri
 
   return (
     <div className="min-h-screen bg-library-bg pb-24">
-      <Navbar user={user} />
+      <Navbar utilisateur={user} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
 
@@ -283,26 +283,26 @@ function CarteLivreGrille({ livre, onClick }: { livre: Book; onClick: () => void
   return (
     <button onClick={onClick} className="text-left group flex flex-col h-full book-card-3d tap-feedback">
       <div className="relative aspect-[2/3] rounded-xl overflow-hidden shadow-card mb-3 surface-weak">
-        <img src={livre.cover} alt={livre.title}
+        <img src={livre.couverture} alt={livre.titre}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-        {!livre.isAvailable && (
+        {!livre.estDisponible && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
             <span className="text-white text-xs font-bold px-2 py-1 bg-black/50 rounded-lg backdrop-blur-sm">Indisponible</span>
           </div>
         )}
-        {livre.isNew && (
+        {livre.estNouveau && (
           <Badge className="absolute top-2 left-2 bg-[var(--library-accent)] text-[var(--library-on-accent)] text-[10px] font-bold">Nouveau</Badge>
         )}
       </div>
       <div className="flex-1 flex flex-col">
-        <h3 className="font-semibold text-primary line-clamp-1 group-hover:text-accent transition-colors text-sm">{livre.title}</h3>
-        <p className="text-xs text-muted line-clamp-1 mb-auto">{livre.author}</p>
+        <h3 className="font-semibold text-primary line-clamp-1 group-hover:text-accent transition-colors text-sm">{livre.titre}</h3>
+        <p className="text-xs text-muted line-clamp-1 mb-auto">{livre.auteur}</p>
         <div className="flex items-center gap-0.5 mt-2 star-cascade">
           {[1, 2, 3, 4, 5].map(n => (
-            <Star key={n} className={`star w-3 h-3 ${n <= Math.round(livre.rating) ? 'fill-[var(--library-accent)] text-[var(--library-accent)]' : 'text-[var(--border-color)]'}`} />
+            <Star key={n} className={`star w-3 h-3 ${n <= Math.round(livre.note) ? 'fill-[var(--library-accent)] text-[var(--library-accent)]' : 'text-[var(--border-color)]'}`} />
           ))}
-          <span className="text-xs font-semibold text-accent ml-1">{livre.rating}</span>
-          <span className="text-xs text-muted">({livre.reviewCount})</span>
+          <span className="text-xs font-semibold text-accent ml-1">{livre.note}</span>
+          <span className="text-xs text-muted">({livre.nbAvis})</span>
         </div>
       </div>
     </button>
@@ -314,9 +314,9 @@ function CarteLivreListe({ livre, onClick }: { livre: Book; onClick: () => void 
     <button onClick={onClick}
       className="w-full surface rounded-xl p-4 shadow-card hover:shadow-card-hover border border-[var(--border-color)] hover:border-[var(--library-accent)]/20 transition-all duration-300 text-left flex gap-4 group tap-feedback">
       <div className="relative w-20 h-28 rounded-lg overflow-hidden flex-shrink-0 surface-weak">
-        <img src={livre.cover} alt={livre.title}
+        <img src={livre.couverture} alt={livre.titre}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-        {!livre.isAvailable && (
+        {!livre.estDisponible && (
           <div className="absolute inset-0 surface-weak/90 flex items-center justify-center">
             <span className="text-[10px] font-bold text-muted px-1 py-0.5 surface rounded">Indisponible</span>
           </div>
@@ -325,20 +325,20 @@ function CarteLivreListe({ livre, onClick }: { livre: Book; onClick: () => void 
       <div className="flex-1 min-w-0 py-1">
         <div className="flex items-start justify-between gap-2 mb-1">
           <div>
-            <h3 className="font-semibold text-primary line-clamp-1 group-hover:text-accent transition-colors">{livre.title}</h3>
-            <p className="text-sm text-muted">{livre.author}</p>
+            <h3 className="font-semibold text-primary line-clamp-1 group-hover:text-accent transition-colors">{livre.titre}</h3>
+            <p className="text-sm text-muted">{livre.auteur}</p>
           </div>
-          {livre.isNew && (
+          {livre.estNouveau && (
             <Badge className="bg-[var(--library-accent)] text-[var(--library-on-accent)] text-xs flex-shrink-0 font-bold">Nouveau</Badge>
           )}
         </div>
         <p className="text-xs text-muted mb-2">{livre.genre}</p>
         <div className="flex items-center gap-0.5 star-cascade">
           {[1, 2, 3, 4, 5].map(n => (
-            <Star key={n} className={`star w-3.5 h-3.5 ${n <= Math.round(livre.rating) ? 'fill-[var(--library-accent)] text-[var(--library-accent)]' : 'text-[var(--border-color)]'}`} />
+            <Star key={n} className={`star w-3.5 h-3.5 ${n <= Math.round(livre.note) ? 'fill-[var(--library-accent)] text-[var(--library-accent)]' : 'text-[var(--border-color)]'}`} />
           ))}
-          <span className="text-sm text-accent font-semibold ml-1">{livre.rating}</span>
-          <span className="text-xs text-muted">({livre.reviewCount} avis)</span>
+          <span className="text-sm text-accent font-semibold ml-1">{livre.note}</span>
+          <span className="text-xs text-muted">({livre.nbAvis} avis)</span>
         </div>
       </div>
     </button>

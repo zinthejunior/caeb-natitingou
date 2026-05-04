@@ -19,7 +19,7 @@ const Toggle = ({ active, onToggle }: { active: boolean; onToggle: () => void })
     className={`relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-[var(--library-accent)] focus:ring-offset-2 ${active ? 'bg-[var(--library-accent)]' : 'bg-[var(--border-color)]'}`}>
     <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-soft transition-transform duration-300 ${active ? 'translate-x-5' : 'translate-x-0'}`} />
   </button>
-);
+); 
 
 const SectionTitle = ({ icon: Icon, title }: { icon?: React.ElementType; title: string }) => (
   <h2 className="text-xl font-bold text-primary mb-6 flex items-center gap-2.5">

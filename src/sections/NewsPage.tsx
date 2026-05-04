@@ -19,13 +19,13 @@ export function NewsPage({ user, onNewsClick }: NewsPageProps) {
   const filteredNews = selectedCategory === 'all' ? news : news.filter(n => n.category === selectedCategory);
   const sortedNews = [...filteredNews].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const categories = [
+  const categories = [ 
     { id: 'all', label: 'Tous', count: news.length },
-    { id: 'announcement', label: 'Annonces', count: news.filter(n => n.category === 'announcement').length },
-    { id: 'event', label: 'Événements', count: news.filter(n => n.category === 'event').length },
-    { id: 'course', label: 'Formations', count: news.filter(n => n.category === 'course').length },
-    { id: 'visit', label: 'Visites', count: news.filter(n => n.category === 'visit').length },
-    { id: 'closure', label: 'Fermetures', count: news.filter(n => n.category === 'closure').length },
+    { id: 'announcement', label: 'Annonces', count: news.filter((n: any) => n.categorie === 'announcement').length },
+    { id: 'event', label: 'Événements', count: news.filter((n: any) => n.categorie === 'event').length },
+    { id: 'course', label: 'Formations', count: news.filter((n: any) => n.categorie === 'course').length },
+    { id: 'visit', label: 'Visites', count: news.filter((n: any) => n.categorie === 'visit').length },
+    { id: 'closure', label: 'Fermetures', count: news.filter((n: any) => n.categorie === 'closure').length },
   ];
 
   const categoryLabels: Record<string, string> = {
@@ -95,7 +95,7 @@ export function NewsPage({ user, onNewsClick }: NewsPageProps) {
 
                 {newsItem.image && (
                   <div className="md:w-64 w-full aspect-video md:aspect-auto overflow-hidden surface-alt flex-shrink-0">
-                    <ApiImage src={newsItem.image} alt={newsItem.title}
+                    <ApiImage src={newsItem.image} alt={newsItem.titre}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   </div>
                 )}
@@ -103,12 +103,12 @@ export function NewsPage({ user, onNewsClick }: NewsPageProps) {
                 <div className="flex-1 p-5 md:p-6 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-3 mb-3 flex-wrap">
-                      {newsItem.category && (
-                        <Badge className={`text-xs font-semibold px-3 py-1 border ${categoryColors[newsItem.category] || categoryColors.general}`}>
-                          {categoryLabels[newsItem.category] || 'Actualité'}
+                      {newsItem.categorie && (
+                        <Badge className={`text-xs font-semibold px-3 py-1 border ${categoryColors[newsItem.categorie] || categoryColors.general}`}>
+                          {categoryLabels[newsItem.categorie] || 'Actualité'}
                         </Badge>
                       )}
-                      {newsItem.featured && (
+                      {newsItem.misEnAvant && (
                         <Badge className="bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800 text-xs font-semibold px-3 py-1">
                           ✦ À la une
                         </Badge>
@@ -118,17 +118,17 @@ export function NewsPage({ user, onNewsClick }: NewsPageProps) {
                       </span>
                     </div>
 
-                    <h3 className="font-bold text-primary text-xl md:text-2xl mb-3 group-hover:text-accent transition-colors line-clamp-2">{newsItem.title}</h3>
-                    <p className="text-muted text-sm md:text-base leading-relaxed mb-4">{newsItem.excerpt}</p>
+                    <h3 className="font-bold text-primary text-xl md:text-2xl mb-3 group-hover:text-accent transition-colors line-clamp-2">{newsItem.titre}</h3>
+                    <p className="text-muted text-sm md:text-base leading-relaxed mb-4">{newsItem.resume}</p>
                   </div>
 
-                  {newsItem.content && (
+                  {newsItem.contenu && (
                     <details className="mb-4" onClick={(e) => e.stopPropagation()}>
                       <summary className="text-sm font-semibold text-accent cursor-pointer hover:opacity-75 transition-opacity">
                         Lire la suite
                       </summary>
                       <div className="mt-3 pt-3 border-t border-[var(--border-color)]">
-                        <p className="text-sm text-muted leading-relaxed">{newsItem.content}</p>
+                        <p className="text-sm text-muted leading-relaxed">{newsItem.contenu}</p>
                       </div>
                     </details>
                   )}

@@ -192,7 +192,7 @@ export default function App() {
 
   const handleToggleMemberStatus = useCallback(() => {
     if (!user) return;
-    void updateUser({ isMember: !user.isMember, type_compte: !user.isMember ? 'membre' : 'non_membre' });
+    void updateUser({ estMembre: !user.estMembre, type_compte: !user.estMembre ? 'membre' : 'non_membre' });
   }, [user, updateUser]);
 
   const handleUpdateUser = useCallback(async (updates: Partial<User>) => {
@@ -202,12 +202,12 @@ export default function App() {
 
   const handleToggleFavorite = useCallback(async (bookId: string) => {
     if (!user) return;
-    const favorites = user.favorites || [];
-    const newFavorites = favorites.includes(bookId)
-      ? favorites.filter(id => id !== bookId)
-      : [...favorites, bookId];
+    const favoris = user.favoris || [];
+    const newFavoris = favoris.includes(bookId)
+      ? favoris.filter((id: string) => id !== bookId)
+      : [...favoris, bookId];
     
-    await updateUser({ favorites: newFavorites });
+    await updateUser({ favoris: newFavoris });
   }, [user, updateUser]);
 
   // ── Rendu ────────────────────────────────────────────────────────────

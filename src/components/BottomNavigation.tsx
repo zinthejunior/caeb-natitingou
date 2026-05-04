@@ -6,7 +6,7 @@ import type { View } from '@/types';
 interface BottomNavigationProps {
   currentView: View;
   onNavigate: (view: View) => void;
-}
+} 
 
 export function BottomNavigation({ currentView, onNavigate }: BottomNavigationProps) {
   const [justActivated, setJustActivated] = useState<View | null>(null);

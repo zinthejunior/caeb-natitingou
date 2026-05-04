@@ -52,18 +52,18 @@ class UserPasswordSerializer(serializers.Serializer):
 
 
 class BookSerializer(serializers.ModelSerializer):
-    titre       = serializers.CharField(source='titre')
-    auteur      = serializers.CharField(source='auteur', allow_null=True, required=False)
     couverture  = serializers.CharField(source='couverture_url', allow_null=True, required=False)
-    annee       = serializers.IntegerField(source='annee', allow_null=True, required=False)
-    nb_pages    = serializers.IntegerField(source='nb_pages', allow_null=True, required=False)
-    resume      = serializers.CharField(source='resume', allow_null=True, required=False)
     note        = serializers.FloatField(source='note_moyenne', required=False)
     nb_avis     = serializers.IntegerField(source='nb_notes', required=False)
-    disponible  = serializers.BooleanField(source='disponible', required=False)
-    nouveau     = serializers.BooleanField(source='is_new', required=False, default=False)
-    populaire   = serializers.BooleanField(source='is_popular', required=False, default=False)
+    nouveau     = serializers.SerializerMethodField()
+    populaire   = serializers.SerializerMethodField()
     public_cible = serializers.CharField(source='categorie_age', required=False)
+
+    def get_nouveau(self, obj):
+        return getattr(obj, 'is_new', False)
+        
+    def get_populaire(self, obj):
+        return getattr(obj, 'is_popular', False)
 
     class Meta:
         model  = Book
@@ -121,7 +121,7 @@ class ReadingClubSerializer(serializers.ModelSerializer):
 class EventSerializer(serializers.ModelSerializer):
     type            = serializers.CharField(source='type_event')
     nb_participants = serializers.IntegerField(source='participant_count')
-    club_id         = serializers.CharField(source='club_id', required=False, allow_null=True)
+    club_id         = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
         model  = Event
@@ -135,9 +135,7 @@ class NewsSerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    note             = serializers.IntegerField(source='note')
-    commentaire      = serializers.CharField(source='commentaire')
-    livre_id         = serializers.CharField(source='livre_id', required=False)
+    livre_id         = serializers.CharField(required=False)
     utilisateur_id   = serializers.CharField(source='user_id', read_only=True)
     nom_utilisateur  = serializers.CharField(source='user.username', read_only=True)
     date_creation    = serializers.DateTimeField(source='created_at', read_only=True)
@@ -149,10 +147,9 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class ReservationSerializer(serializers.ModelSerializer):
     livre            = BookSerializer(source='livre', read_only=True)
-    livre_id         = serializers.CharField(source='livre_id', required=False)
+    livre_id         = serializers.CharField(required=False)
     utilisateur_id   = serializers.CharField(source='user_id', read_only=True)
-    date_reservation = serializers.DateTimeField(source='date_reservation', read_only=True)
-    statut           = serializers.CharField(source='statut', required=False)
+    date_reservation = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model  = Reservation

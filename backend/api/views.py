@@ -160,6 +160,10 @@ class ReservationViewSet(viewsets.ModelViewSet):
         return Reservation.objects.filter(user=self.request.user).select_related('livre')
 
     def perform_create(self, serializer):
+        from rest_framework.exceptions import PermissionDenied
+        if self.request.user.type_compte != 'membre':
+            raise PermissionDenied("Seuls les membres peuvent faire une demande d'emprunt (réservation).")
+            
         livre_id = self.request.data.get('book') or self.request.data.get('livre') or self.request.data.get('bookId')
         from .models import Book as BookModel
         livre = BookModel.objects.get(pk=livre_id)

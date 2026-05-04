@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Book, ReadingClub, Event, News, Review, Borrow, Reservation } from '@/types';
+import type { Livre, ClubLecture, Evenement, Actualite, Avis, Emprunt, Reservation } from '@/types';
 
 // URL de base de l'API Django
 const API_BASE_URL = 'http://localhost:8000/api';
@@ -35,7 +35,7 @@ export async function appelAPI(endpoint: string, options: RequestInit = {}) {
  * Récupère la liste de tous les livres.
  */
 export function useLivres() {
-  const [livres, setLivres] = useState<Book[]>([]);
+  const [livres, setLivres] = useState<Livre[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -43,7 +43,7 @@ export function useLivres() {
     (async () => {
       try {
         setChargement(true);
-        const donnees = await appelAPI('/books/');
+        const donnees = await appelAPI('/livres/');
         setLivres(donnees.results || donnees);
       } catch { 
         setErreur('Erreur lors du chargement des livres'); 
@@ -60,7 +60,7 @@ export function useLivres() {
  * Récupère les détails d'un livre spécifique par son ID.
  */
 export function useLivre(id?: string) {
-  const [livre, setLivre] = useState<Book | null>(null);
+  const [livre, setLivre] = useState<Livre | null>(null);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -69,7 +69,7 @@ export function useLivre(id?: string) {
     (async () => {
       try {
         setChargement(true);
-        const donnees = await appelAPI(`/books/${id}/`);
+        const donnees = await appelAPI(`/livres/${id}/`);
         setLivre(donnees);
       } catch { 
         setErreur('Erreur lors du chargement du livre'); 
@@ -86,7 +86,7 @@ export function useLivre(id?: string) {
  * Récupère la liste des clubs de lecture.
  */
 export function useClubs() {
-  const [clubs, setClubs] = useState<ReadingClub[]>([]);
+  const [clubs, setClubs] = useState<ClubLecture[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -111,7 +111,7 @@ export function useClubs() {
  * Récupère les détails d'un club spécifique.
  */
 export function useClub(id?: string) {
-  const [club, setClub] = useState<ReadingClub | null>(null);
+  const [club, setClub] = useState<ClubLecture | null>(null);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -137,7 +137,7 @@ export function useClub(id?: string) {
  * Récupère la liste des événements.
  */
 export function useEvenements() {
-  const [evenements, setEvenements] = useState<Event[]>([]);
+  const [evenements, setEvenements] = useState<Evenement[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -145,7 +145,7 @@ export function useEvenements() {
     (async () => {
       try {
         setChargement(true);
-        const donnees = await appelAPI('/events/').catch(() => []);
+        const donnees = await appelAPI('/evenements/').catch(() => []);
         setEvenements(donnees.results || donnees);
       } catch { 
         setErreur('Erreur lors du chargement des événements'); 
@@ -162,7 +162,7 @@ export function useEvenements() {
  * Récupère les détails d'un événement spécifique.
  */
 export function useEvenement(id?: string) {
-  const [evenement, setEvenement] = useState<Event | null>(null);
+  const [evenement, setEvenement] = useState<Evenement | null>(null);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -171,7 +171,7 @@ export function useEvenement(id?: string) {
     (async () => {
       try {
         setChargement(true);
-        const donnees = await appelAPI(`/events/${id}/`);
+        const donnees = await appelAPI(`/evenements/${id}/`);
         setEvenement(donnees);
       } catch { 
         setErreur('Erreur lors du chargement de l\'événement'); 
@@ -188,7 +188,7 @@ export function useEvenement(id?: string) {
  * Récupère la liste des actualités.
  */
 export function useActualites() {
-  const [actualites, setActualites] = useState<News[]>([]);
+  const [actualites, setActualites] = useState<Actualite[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -196,7 +196,7 @@ export function useActualites() {
     (async () => {
       try {
         setChargement(true);
-        const donnees = await appelAPI('/news/').catch(() => []);
+        const donnees = await appelAPI('/actualites/').catch(() => []);
         setActualites(donnees.results || donnees);
       } catch { 
         setErreur('Erreur lors du chargement des actualités'); 
@@ -213,7 +213,7 @@ export function useActualites() {
  * Récupère un article d'actualité spécifique.
  */
 export function useArticleActualite(id?: string) {
-  const [article, setArticle] = useState<News | null>(null);
+  const [article, setArticle] = useState<Actualite | null>(null);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -222,7 +222,7 @@ export function useArticleActualite(id?: string) {
     (async () => {
       try {
         setChargement(true);
-        const donnees = await appelAPI(`/news/${id}/`);
+        const donnees = await appelAPI(`/actualites/${id}/`);
         setArticle(donnees);
       } catch { 
         setErreur('Erreur lors du chargement de l\'actualité'); 
@@ -239,14 +239,14 @@ export function useArticleActualite(id?: string) {
  * Récupère les avis (commentaires) d'un livre ou tous les avis.
  */
 export function useAvis(livreId?: string) {
-  const [avis, setAvis] = useState<Review[]>([]);
+  const [avis, setAvis] = useState<Avis[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
 
   const recupererAvis = async () => {
     try {
       setChargement(true);
-      const pointEntree = livreId ? `/reviews/?book=${livreId}` : '/reviews/';
+      const pointEntree = livreId ? `/avis/?book=${livreId}` : '/avis/';
       const donnees = await appelAPI(pointEntree).catch(() => []);
       setAvis(donnees.results || donnees);
     } catch { 
@@ -265,7 +265,7 @@ export function useAvis(livreId?: string) {
  * Récupère les emprunts de l'utilisateur.
  */
 export function useEmprunts() {
-  const [emprunts, setEmprunts] = useState<Borrow[]>([]);
+  const [emprunts, setEmprunts] = useState<Emprunt[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -273,7 +273,7 @@ export function useEmprunts() {
     (async () => {
       try {
         setChargement(true);
-        const donnees = await appelAPI('/borrows/').catch(() => []);
+        const donnees = await appelAPI('/emprunts/').catch(() => []);
         setEmprunts(donnees.results || donnees);
       } catch { 
         setErreur('Erreur lors du chargement des emprunts'); 
@@ -348,7 +348,7 @@ export function useSessionsChat() {
  * Publie un nouvel avis sur un livre.
  */
 export async function publierAvis(livreId: string, note: number, commentaire: string) {
-  return appelAPI('/reviews/', {
+  return appelAPI('/avis/', {
     method: 'POST',
     body: JSON.stringify({ bookId: livreId, rating: note, comment: commentaire }),
   });
@@ -375,14 +375,14 @@ export async function rejoindreClub(clubId: string) {
  * S'inscrire à un événement.
  */
 export async function sinscrireEvenement(evenementId: string) {
-  return appelAPI(`/events/${evenementId}/register/`, { method: 'POST' });
+  return appelAPI(`/evenements/${evenementId}/register/`, { method: 'POST' });
 }
 
 /**
  * Ajouter ou retirer un livre des favoris.
  */
 export async function inverserFavori(livreId: string) {
-  return appelAPI(`/books/${livreId}/favorite/`, { method: 'POST' });
+  return appelAPI(`/livres/${livreId}/favorite/`, { method: 'POST' });
 }
 
 /**
@@ -421,4 +421,54 @@ export async function ajouterMessageChat(sessionId: number, role: 'user' | 'assi
 export async function recupererSessionChat(sessionId: number): Promise<DonneesSessionChat> {
   return appelAPI(`/chat/${sessionId}/`);
 }
+
+// ── ALIASES ANGLAIS (compatibilité UI) ──────────────────────────────────
+
+export function useBooks() {
+  const { livres, chargement, erreur } = useLivres();
+  return { books: livres, isLoading: chargement, error: erreur };
+}
+
+export function useBook(id?: string) {
+  const { livre, chargement, erreur } = useLivre(id);
+  return { book: livre, isLoading: chargement, error: erreur };
+}
+
+export function useEvents() {
+  const { evenements, chargement, erreur } = useEvenements();
+  return { events: evenements, isLoading: chargement, error: erreur };
+}
+
+export function useEvent(id?: string) {
+  const { evenement, chargement, erreur } = useEvenement(id);
+  return { event: evenement, isLoading: chargement, error: erreur };
+}
+
+export function useNews() {
+  const { actualites, chargement, erreur } = useActualites();
+  return { news: actualites, isLoading: chargement, error: erreur };
+}
+
+export function useNewsItem(id?: string) {
+  const { article, chargement, erreur } = useArticleActualite(id);
+  return { news: article, isLoading: chargement, error: erreur };
+}
+
+export function useReviews(livreId?: string) {
+  const { avis, chargement, erreur, recharger } = useAvis(livreId);
+  return { data: avis, isLoading: chargement, error: erreur, reload: recharger };
+}
+
+export function useBorrows() {
+  const { emprunts, chargement, erreur } = useEmprunts();
+  return { borrows: emprunts, isLoading: chargement, error: erreur };
+}
+
+export function useLabStations() {
+  return { stations: [], isLoading: false, error: null };
+}
+
+export const postReview = publierAvis;
+export const registerEvent = sinscrireEvenement;
+export const sendClubContact = envoyerMessageClub;
 

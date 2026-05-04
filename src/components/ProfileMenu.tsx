@@ -1,18 +1,18 @@
 import { User, Settings, LogOut, ChevronRight } from 'lucide-react';
-import type { User as TUser } from '@/types';
+import type { Utilisateur } from '@/types';
 
 interface ProfileMenuProps {
-  user: TUser;
+  utilisateur: Utilisateur;
   onClose?: () => void;
 }
 
-export function ProfileMenu({ user, onClose }: ProfileMenuProps) {
+export function ProfileMenu({ utilisateur: user, onClose }: ProfileMenuProps) {
   return (
     <div className="surface rounded-lg shadow-lg p-3 border border-muted">
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-full bg-library-primary/10 flex items-center justify-center font-bold">{user?.firstName?.[0] || 'U'}</div>
+        <div className="w-10 h-10 rounded-full bg-library-primary/10 flex items-center justify-center font-bold">{user?.prenom?.[0] || 'U'}</div>
         <div>
-          <div className="font-semibold">{user?.firstName} {user?.lastName}</div>
+          <div className="font-semibold">{user?.prenom} {user?.nom}</div>
           <div className="text-xs text-muted">{user?.email}</div>
         </div>
       </div>

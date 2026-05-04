@@ -1,14 +1,11 @@
 // AIChatPage.tsx — Assistant IA CAEB "Kossi"
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { 
-  Send, ThumbsUp, ThumbsDown, Sparkles, BookOpen, RefreshCw, 
-  ChevronDown, Bot, User as UserIcon, Trash2, Library, Clock, 
-  Users, MessageSquare, Plus, Menu, X, Search, Settings, LogOut,
+  Send, ThumbsUp, ThumbsDown, BookOpen, RefreshCw, 
+  Bot, User as UserIcon, MessageSquare, Plus, X, Settings,
   ChevronLeft, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
-import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import type { User, Book } from '@/types';
 import { useLivres, creerSessionChat, ajouterMessageChat, useSessionsChat, recupererSessionChat } from '@/hooks/useData';
@@ -26,11 +23,11 @@ interface ChatMessage {
 // Interface pour les références de livres cités par l'IA
 interface RefLivre {
   id: string;
-  title: string;
-  author: string;
+  titre: string;
+  auteur: string;
   genre: string;
-  cover?: string;
-  rating: number;
+  couverture?: string;
+  note: number;
 }
 
 interface AIChatPageProps {
@@ -75,14 +72,14 @@ function extraireRefsLivres(contenu: string, tousLesLivres: Book[]): RefLivre[] 
   const refs: RefLivre[] = [];
   const contenuMinuscule = contenu.toLowerCase();
   for (const livre of tousLesLivres) {
-    if (contenuMinuscule.includes(livre.title.toLowerCase())) {
+    if (contenuMinuscule.includes(livre.titre.toLowerCase())) {
       refs.push({ 
         id: livre.id, 
-        title: livre.title, 
-        author: livre.author, 
+        titre: livre.titre, 
+        auteur: livre.auteur, 
         genre: livre.genre, 
-        cover: livre.cover, 
-        rating: livre.rating 
+        couverture: livre.couverture, 
+        note: livre.note 
       });
     }
   }
@@ -103,10 +100,10 @@ export function AIChatPage({ user, onNavigate }: AIChatPageProps) {
 
   // Préparation d'un échantillon du catalogue pour l'IA
   const echantillonCatalogue = livres.slice(0, 15).map(l =>
-    `- "${l.title}" de ${l.author} (${l.genre})`
+    `- "${l.titre}" de ${l.auteur} (${l.genre})`
   ).join('\n');
 
-  const nomUtilisateur = user?.firstName ?? 'lecteur';
+  const nomUtilisateur = user?.prenom ?? 'lecteur';
 
   const faireDefilerBas = useCallback(() => {
     finMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -388,15 +385,15 @@ export function AIChatPage({ user, onNavigate }: AIChatPageProps) {
                               className="flex items-center gap-3 p-2 surface border border-[var(--border-color)] rounded-xl hover:border-accent/40 hover:shadow-medium transition-all group"
                             >
                               <div className="w-10 h-14 bg-[var(--library-surface-alt)] rounded-lg overflow-hidden flex-shrink-0">
-                                {livre.cover ? (
-                                  <img src={livre.cover} alt={livre.title} className="w-full h-full object-cover" />
+                                {livre.couverture ? (
+                                  <img src={livre.couverture} alt={livre.titre} className="w-full h-full object-cover" />
                                 ) : (
                                   <BookOpen className="w-5 h-5 text-muted m-auto h-full" />
                                 )}
                               </div>
                               <div className="text-left pr-2">
-                                <p className="text-xs font-bold line-clamp-1 group-hover:text-accent transition-colors">{livre.title}</p>
-                                <p className="text-[10px] text-muted">{livre.author}</p>
+                                <p className="text-xs font-bold line-clamp-1 group-hover:text-accent transition-colors">{livre.titre}</p>
+                                <p className="text-[10px] text-muted">{livre.auteur}</p>
                               </div>
                             </button>
                           ))}
