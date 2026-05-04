@@ -29,7 +29,7 @@ export function BottomNavigation({ currentView, onNavigate }: BottomNavigationPr
     return false;
   };
 
-  const isKoffiActive = currentView === 'ai-chat';
+  const isKossiActive = currentView === 'ai-chat';
 
   const handleNavigate = (view: View) => {
     setJustActivated(view);
@@ -86,30 +86,29 @@ export function BottomNavigation({ currentView, onNavigate }: BottomNavigationPr
           <div className="flex-shrink-0 flex flex-col items-center justify-center -mt-5 px-2">
             <button
               onClick={() => handleNavigate('ai-chat' as View)}
-              aria-current={isKoffiActive ? 'page' : undefined}
-              aria-label="Assistant Koffi IA"
-              title="Koffi — Assistant IA"
-              className={`relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-medium transition-all duration-300 tap-feedback ${isKoffiActive
+              aria-current={isKossiActive ? 'page' : undefined}
+              aria-label="Assistant Kossi IA"
+              title="Kossi — Assistant IA"
+              className={`relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-medium transition-all duration-300 tap-feedback ${isKossiActive
                   ? 'bg-[var(--library-accent)] scale-105 shadow-elevated'
                   : 'bg-[var(--library-accent)] hover:opacity-90 hover:shadow-elevated hover:-translate-y-0.5'
                 } ${justActivated === 'ai-chat' ? 'nav-item-active-pop' : ''}`}
             >
               {/* Halo animé quand actif */}
-              {isKoffiActive && (
+              {isKossiActive && (
                 <span className="absolute inset-0 rounded-2xl animate-ping bg-[var(--library-accent)]/30 pointer-events-none" />
               )}
               <Bot
                 size={26}
-                strokeWidth={isKoffiActive ? 2.5 : 2}
+                strokeWidth={isKossiActive ? 2.5 : 2}
                 className="text-[var(--library-on-accent)] relative z-10"
               />
             </button>
-            <span className={`text-[10px] font-semibold mt-1 leading-none transition-colors ${isKoffiActive ? 'text-[var(--library-accent)]' : 'text-[var(--library-muted)]'
-              } hidden sm:inline`}>
-              Koffi IA
+            
+            <span className={`text-[10px] font-semibold mt-1 leading-none transition-colors ${isKossiActive ? 'text-[var(--library-accent)]' : 'text-[var(--library-muted)]'}`}>
+              Kossi IA
             </span>
-            <span className={`sm:hidden mt-0.5 w-1 h-1 rounded-full transition-colors ${isKoffiActive ? 'bg-[var(--library-accent)]' : 'bg-transparent'
-              }`} />
+            <span className={`sm:hidden mt-0.5 w-1 h-1 rounded-full transition-colors ${isKossiActive ? 'bg-[var(--library-accent)]' : 'bg-transparent'}`} />
           </div>
 
           {rightItems.map(item => {

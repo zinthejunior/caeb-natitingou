@@ -84,85 +84,6 @@ function SettingItem({ icon: Icon, title, description, onClick }: { icon: IconCo
   );
 }
 
-// ── Score de confiance — barre de progression ─────────────────────────
-// Correspond à la valeur C du document (0 → 1)
-// Seuils d'activation : CB > 0 · CF ≥ 0.3 · IB ≥ 0.6
-function ScoreConfiance({ score }: { score: number }) {
-  const pct = Math.round(score * 100);
-
-  const getLevel = () => {
-    if (score < 0.3) return { label: 'Débutant', color: 'bg-slate-400', text: 'text-slate-500', desc: 'Recommandations basées sur la popularité générale.' };
-    if (score < 0.6) return { label: 'En cours', color: 'bg-amber-400', text: 'text-amber-600', desc: 'Recommandations personnalisées partiellement actives.' };
-    return { label: 'Bien connu', color: 'bg-emerald-500', text: 'text-emerald-600', desc: 'Toutes les sources de recommandation sont actives.' };
-  };
-
-  const { label, color, text, desc } = getLevel();
-
-  const thresholds = [
-    { value: 0, label: 'CB', active: score > 0 },
-    { value: 30, label: 'CF', active: score >= 0.3 },
-    { value: 60, label: 'IB', active: score >= 0.6 },
-  ];
-
-  return (
-    <div className="surface rounded-2xl p-5 shadow-card border border-[var(--border-color)] space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-display font-semibold text-lg text-primary flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-accent" />
-          Profil de recommandation
-        </h3>
-        <span className={`text-sm font-bold ${text}`}>{label}</span>
-      </div>
-
-      {/* Barre */}
-      <div className="space-y-2">
-        <div className="flex justify-between text-xs text-muted">
-          <span>Score de confiance</span>
-          <span className="font-bold text-primary">{pct} %</span>
-        </div>
-        <div className="relative h-3 bg-[var(--library-surface-alt)] rounded-full border border-[var(--border-color)] overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-700 ${color}`}
-            style={{ width: `${pct}%` }}
-          />
-          {/* Marqueurs seuils */}
-          {thresholds.slice(1).map(t => (
-            <div
-              key={t.label}
-              className="absolute top-0 bottom-0 w-px bg-[var(--library-surface)] opacity-60"
-              style={{ left: `${t.value}%` }}
-            />
-          ))}
-        </div>
-        <p className="text-xs text-muted">{desc}</p>
-      </div>
-
-      {/* Sources actives */}
-      <div className="flex gap-2 flex-wrap">
-        {thresholds.map(t => (
-          <span
-            key={t.label}
-            className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border ${t.active
-                ? 'bg-[var(--library-accent)]/10 text-accent border-[var(--library-accent)]/25'
-                : 'surface-weak text-muted border-[var(--border-color)] opacity-50'
-              }`}
-          >
-            {t.active
-              ? <CheckCircle2 className="w-3 h-3" />
-              : <AlertCircle className="w-3 h-3" />
-            }
-            {t.label}
-          </span>
-        ))}
-        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border bg-[var(--library-accent)]/10 text-accent border-[var(--library-accent)]/25">
-          <CheckCircle2 className="w-3 h-3" />
-          POP
-        </span>
-      </div>
-    </div>
-  );
-}
-
 // ── Fiche profil ──────────────────────────────────────────────────────
 function ProfilFiche({ user }: { user: User }) {
   const niveauLabels: Record<string, string> = {
@@ -240,11 +161,6 @@ function ProfilFiche({ user }: { user: User }) {
         ))}
       </div>
 
-      {!profilComplet && (
-        <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-3 py-2">
-          Un profil complet (niveau + genre + sous-genre) améliore la précision de vos recommandations.
-        </p>
-      )}
     </div>
   );
 }
@@ -275,33 +191,6 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
   if (!user) return null;
 
   const stats = user.stats ?? { booksRead: 0, reviewsPosted: 0, clubsJoined: 0, eventsAttended: 0 };
-
-  // Score de confiance : calculé côté front en attendant l'API
-  // Formule du document :
-  //   Non-membre : 0.20×profil + 0.35×(avis/5) + 0.25×(genres/3) + 0.20×(ancienneté/90j)
-  //   Membre     : 0.20×profil + 0.40×(emprunts/5) + 0.25×(genres/3) + 0.15×(ancienneté/90j)
-  const scoreConfiance: number = (() => {
-    const profilComplet = user.educationLevel &&
-      user.preferredGenres?.[0] &&
-      (user as unknown as Record<string, string>).sous_genre_prefere ? 1 : 0;
-
-    const nbGenres = user.preferredGenres?.length ?? 0;
-    const anciennete = useMemo(() => {
-      if (!user.createdAt) return 0;
-      return Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24));
-    }, [user.createdAt]);
-
-    const g = Math.min(nbGenres / 3, 1);
-    const a = Math.min(anciennete / 90, 1);
-
-    if (user.isMember) {
-      const e = Math.min(stats.booksRead / 5, 1);
-      return Math.min(0.20 * profilComplet + 0.40 * e + 0.25 * g + 0.15 * a, 1);
-    } else {
-      const v = Math.min(stats.reviewsPosted / 5, 1);
-      return Math.min(0.20 * profilComplet + 0.35 * v + 0.25 * g + 0.20 * a, 1);
-    }
-  })();
 
   const handleLogout = () => {
     if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) onLogout();
@@ -432,11 +321,10 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                       <div className="flex-1">
                         <h3 className="font-display font-semibold text-primary mb-1">Passez à l'étape suivante</h3>
                         <p className="text-sm text-muted mb-3">
-                          Devenez membre CAEB : empruntez des livres, accédez à des recommandations
-                          plus précises grâce à l'historique d'emprunts réels.
+                          Devenez membre CAEB : empruntez des livres, accédez à de nouveaux horizons littéraires.
                         </p>
                         <div className="flex flex-wrap gap-2 mb-3">
-                          {['✓ Emprunts physiques', '✓ Recommandations avancées', '✓ Tous les événements'].map(b => (
+                          {['✓ Emprunts physiques', '✓ Accès prioritaire', '✓ Tous les événements'].map(b => (
                             <Badge key={b} variant="secondary" className="text-xs surface border-[var(--border-color)]">{b}</Badge>
                           ))}
                         </div>
@@ -450,9 +338,6 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                     </div>
                   </div>
                 )}
-
-                {/* Score de confiance */}
-                <ScoreConfiance score={scoreConfiance} />
 
                 {/* Fiche profil (niveau, genre, sous-genre…) */}
                 <ProfilFiche user={user} />
@@ -548,8 +433,7 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                     <div className="surface-weak rounded-2xl border border-[var(--border-color)] p-8 text-center">
                       <Lock className="w-10 h-10 text-muted mx-auto mb-3 opacity-40" />
                       <p className="text-muted text-sm mb-4">
-                        L'emprunt physique est réservé aux membres. Les emprunts enrichissent
-                        votre profil et améliorent la précision des recommandations.
+                        L'emprunt physique est réservé aux membres.
                       </p>
                       <Button 
                         onClick={() => setIsUpgrading(true)}
@@ -572,7 +456,7 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                     <div className="surface rounded-2xl shadow-card border border-[var(--border-color)] p-8 text-center">
                       <BookOpen className="w-10 h-10 text-muted mx-auto mb-3 opacity-40" />
                       <p className="text-muted text-sm">
-                        Vos interactions (livres lus, avis, clubs) apparaîtront ici et amélioreront vos recommandations.
+                        Vos interactions (livres lus, avis, clubs) apparaîtront ici.
                       </p>
                     </div>
                   ) : (
@@ -591,8 +475,8 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                           title={`${stats.reviewsPosted} avis publié${stats.reviewsPosted > 1 ? 's' : ''}`}
                           description={
                             user.isMember
-                              ? 'Chaque note enrichit votre profil avec un poids de 1.0'
-                              : 'Signal principal pour les recommandations (poids 0.35)'
+                              ? 'Chaque avis compte.'
+                              : 'Donnez votre avis sur vos lectures.'
                           }
                           color="amber"
                         />
@@ -617,31 +501,7 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                   )}
                 </section>
 
-                {/* Explication du score — visible uniquement si profil incomplet */}
-                {scoreConfiance < 0.6 && (
-                  <section>
-                    <h3 className="font-display font-semibold text-lg text-primary mb-4">
-                      Améliorer mes recommandations
-                    </h3>
-                    <div className="space-y-3">
-                      {!user.educationLevel && (
-                        <TipItem text="Renseignez votre niveau d'études dans votre profil (+20 % sur le score de confiance)" />
-                      )}
-                      {!user.preferredGenres?.[0] && (
-                        <TipItem text="Choisissez un genre préféré pour activer les recommandations par contenu (CB)" />
-                      )}
-                      {!(user as unknown as Record<string, string>).sous_genre_prefere && (
-                        <TipItem text="Ajoutez un sous-genre pour affiner encore davantage vos suggestions" />
-                      )}
-                      {stats.reviewsPosted < 5 && !user.isMember && (
-                        <TipItem text={`Publiez ${5 - stats.reviewsPosted} avis supplémentaire${5 - stats.reviewsPosted > 1 ? 's' : ''} pour renforcer votre profil`} />
-                      )}
-                      {user.isMember && stats.booksRead < 5 && (
-                        <TipItem text={`${5 - stats.booksRead} emprunt${5 - stats.booksRead > 1 ? 's' : ''} supplémentaire${5 - stats.booksRead > 1 ? 's' : ''} pour activer toutes les sources de recommandation`} />
-                      )}
-                    </div>
-                  </section>
-                )}
+
               </TabsContent>
 
               {/* ── PARAMÈTRES ── */}
@@ -817,7 +677,7 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
               <div>
                 <h2 className="text-2xl font-bold text-primary mb-2">Devenir membre Premium</h2>
                 <p className="text-muted leading-relaxed">
-                  Accédez à l'emprunt illimité de nos 12 000 ouvrages, profitez de recommandations personnalisées IA et participez à tous nos événements exclusifs.
+                  Accédez à l'emprunt illimité de nos 12 000 ouvrages, profitez d'échanges avec notre IA et participez à tous nos événements exclusifs.
                 </p>
               </div>
               <div className="space-y-3 pt-2">
@@ -894,7 +754,7 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                 La CAEB s'engage à protéger vos données personnelles. Vos interactions (livres lus, avis) sont utilisées exclusivement pour :
               </p>
               <ul className="space-y-2">
-                <li className="text-sm flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Améliorer vos recommandations personnalisées.</li>
+                <li className="text-sm flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Découvrez de nouveaux horizons littéraires.</li>
                 <li className="text-sm flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Gérer vos emprunts et réservations.</li>
                 <li className="text-sm flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Assurer le suivi de votre compte membre.</li>
               </ul>

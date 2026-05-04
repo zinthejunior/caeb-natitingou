@@ -13,11 +13,6 @@ class User(AbstractUser):
     date_naissance = models.DateField(null=True, blank=True)
     niveau_etude = models.CharField(max_length=50, null=True, blank=True)
     classe = models.CharField(max_length=100, null=True, blank=True)
-    genre_prefere = models.CharField(max_length=255, null=True, blank=True)
-    sous_genre_prefere = models.CharField(max_length=255, null=True, blank=True)
-    score_confiance = models.DecimalField(max_digits=4, decimal_places=3, default=0.000)
-    profil_complet = models.BooleanField(default=False)
-    vecteur_profil = models.JSONField(null=True, blank=True)
     date_inscription = models.DateTimeField(auto_now_add=True)
     favorites = models.JSONField(default=list, blank=True)
     intentions = models.JSONField(default=list, blank=True)
@@ -47,12 +42,8 @@ class Book(models.Model):
     nb_pages = models.IntegerField(null=True, blank=True)
     langue = models.CharField(max_length=10, default='fr')
     categorie_age = models.CharField(max_length=10, choices=CATEGORIE_AGE_CHOICES, default='adulte')
-    mots_cles = models.JSONField(null=True, blank=True)
     note_moyenne = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
     nb_notes = models.IntegerField(default=0)
-    nb_emprunts = models.IntegerField(default=0)
-    popularite = models.DecimalField(max_digits=5, decimal_places=4, default=0.0000)
-    vecteur_livre = models.JSONField(null=True, blank=True)
     disponible = models.BooleanField(default=True)
     resume = models.TextField(null=True, blank=True)
     couverture_url = models.CharField(max_length=300, null=True, blank=True)
@@ -61,14 +52,7 @@ class Book(models.Model):
     def __str__(self):
         return self.titre
 
-class SimilarBook(models.Model):
-    livre = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='similarities_from')
-    similaire = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='similarities_to')
-    score = models.DecimalField(max_digits=5, decimal_places=4)
-    date_calcul = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        unique_together = ('livre', 'similaire')
 
 class Borrow(models.Model):
     STATUT_CHOICES = [
@@ -85,7 +69,6 @@ class Borrow(models.Model):
     date_retour = models.DateField(null=True, blank=True)
     renouvele = models.BooleanField(default=False)
     statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default='en_cours')
-    poids = models.DecimalField(max_digits=3, decimal_places=2, default=1.00)
 
 class Interaction(models.Model):
     TYPE_ACTION_CHOICES = [
@@ -136,7 +119,6 @@ class Notification(models.Model):
         ('rappel_retour', 'Rappel retour'),
         ('retard', 'Retard'),
         ('livre_disponible', 'Livre disponible'),
-        ('nouvelle_recommandation', 'Nouvelle recommandation'),
     ]
     
     id = models.CharField(max_length=20, primary_key=True)

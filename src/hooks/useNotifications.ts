@@ -1,67 +1,115 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+// Correction : le nom correct de la fonction importée est `appelAPI`
+import { appelAPI } from './useData';
 
-interface NotificationShape {
+// Forme d'un objet notification reçu de l'API
+interface FormeNotification {
   id: string;
-  title: string;
-  body?: string;
-  date?: string;
-  read?: boolean;
+  userId?: string;
+  title?: string;      // titre affiché
+  message?: string;    // corps du message
+  type?: string;       // type de notification (rappel_retour, retard, livre_disponible…)
+  body?: string;       // alias de message pour l'affichage
+  date?: string;       // date de création (format ISO)
+  createdAt?: string;  // même chose, selon le champ renvoyé par l'API
+  read?: boolean;      // true = déjà lue (anglais, pour compatibilité)
+  lu?: boolean;        // true = déjà lue (français, champ Django)
 }
 
-// Notifications fictives initiales
-const mockNotifications: NotificationShape[] = [
-  {
-    id: '1',
-    title: 'Bienvenue sur la bibliothèque !',
-    body: 'Découvrez tous nos livres et clubs de lecture.',
-    date: new Date().toISOString().split('T')[0],
-    read: false,
-  },
-  {
-    id: '2',
-    title: 'Nouvel événement disponible',
-    body: 'Rencontre avec Céline Dubois le 22 février.',
-    date: new Date().toISOString().split('T')[0],
-    read: false,
-  },
-  {
-    id: '3',
-    title: 'Défi "Février Fantastique"',
-    body: 'Rejoignez le défi collectif et gagnez des récompenses !',
-    date: new Date().toISOString().split('T')[0],
-    read: true,
-  },
-];
-
 /**
- * Hook de notifications - Version mock (sans backend)
- * Gère les notifications en mémoire locale.
+ * Hook de notifications — connecté au backend API Django.
+ * Récupère automatiquement les notifications de l'utilisateur connecté.
+ *
+ * @param _intervalleSondage - Intervalle en ms entre deux rechargements (optionnel, non utilisé)
  */
-export function useNotifications(_pollInterval = 30000) {
-  const [items, setItems] = useState<NotificationShape[]>(mockNotifications);
+export function useNotifications(_intervalleSondage = 30000) {
+  const [listeNotifications, setListeNotifications] = useState<FormeNotification[]>([]);
+  const [chargement, setChargement] = useState(true);
 
-  const markAllRead = useCallback(() => {
-    setItems(prev => prev.map(n => ({ ...n, read: true })));
+  // Fonction qui va chercher les notifications auprès du serveur
+  const recupererNotifications = useCallback(async () => {
+    try {
+      const donnees = await appelAPI('/notifications/').catch(() => []);
+      const resultats = donnees.results || donnees;
+
+      // Transformation des champs API vers la forme attendue par le composant
+      const transformees = resultats.map((notif: any) => ({
+        id: notif.id,
+        userId: notif.userId,
+        type: notif.type,
+        // Génère un titre lisible à partir du type de notification
+        title:
+          notif.type === 'rappel_retour'    ? 'Rappel de retour'   :
+          notif.type === 'livre_disponible' ? 'Livre disponible'   :
+          notif.type === 'retard'           ? 'Retard'             :
+          'Notification',
+        body: notif.message,
+        message: notif.message,
+        date: notif.createdAt,
+        createdAt: notif.createdAt,
+        read: notif.lu,   // compatibilité anglais
+        lu: notif.lu,     // champ Django
+      }));
+
+      setListeNotifications(transformees);
+    } catch (erreur) {
+      console.error('Erreur de chargement des notifications', erreur);
+    } finally {
+      setChargement(false);
+    }
   }, []);
 
-  const clearAll = useCallback(() => {
-    setItems([]);
+  // Chargement initial au montage du composant
+  useEffect(() => {
+    void recupererNotifications();
+    // Optionnel : utiliser setInterval avec _intervalleSondage pour actualiser périodiquement
+  }, [recupererNotifications]);
+
+  /**
+   * Marque toutes les notifications comme lues localement.
+   * À améliorer : appeler une route API pour la persistance côté serveur.
+   */
+  const marquerToutLu = useCallback(async () => {
+    // Pour l'instant, pas de route API en masse — on met à jour l'état local uniquement
+    setListeNotifications(precedentes =>
+      precedentes.map(notif => ({ ...notif, read: true, lu: true }))
+    );
   }, []);
 
-  const markRead = useCallback((id: string, read: boolean) => {
-    setItems(prev => prev.map(n => (n.id === id ? { ...n, read } : n)));
+  /**
+   * Vide la liste des notifications localement.
+   */
+  const toutEffacer = useCallback(() => {
+    setListeNotifications([]);
   }, []);
 
-  // reload est un no-op en mode mock
-  const reload = useCallback(() => Promise.resolve(), []);
+  /**
+   * Marque une notification spécifique comme lue ou non lue via l'API.
+   * @param id  - Identifiant de la notification
+   * @param lue - true pour marquer comme lue, false pour non lue
+   */
+  const marquerLu = useCallback(async (id: string, lue: boolean) => {
+    try {
+      await appelAPI(`/notifications/${id}/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ lu: lue }),
+      });
+      // Mise à jour locale après confirmation du serveur
+      setListeNotifications(precedentes =>
+        precedentes.map(notif => (notif.id === id ? { ...notif, read: lue, lu: lue } : notif))
+      );
+    } catch (erreur) {
+      console.error('Erreur lors de la mise à jour de la notification', erreur);
+    }
+  }, []);
 
   return {
-    notifications: items,
-    loading: false,
-    reload,
-    markAllRead,
-    clearAll,
-    markRead,
+    notifications: listeNotifications,  // liste des notifications
+    chargement,                          // true pendant le chargement
+    recharger: recupererNotifications,   // fonction pour recharger manuellement
+    marquerToutLu,                       // marquer toutes les notifs comme lues
+    toutEffacer,                         // vider la liste
+    marquerLu,                           // marquer une notif spécifique
   } as const;
 }
 

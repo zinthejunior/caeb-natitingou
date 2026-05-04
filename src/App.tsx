@@ -22,10 +22,10 @@ import { SearchPage }     from '@/sections/SearchPage';
 import { AIChatPage }     from '@/sections/AIChatPage';
 import { NotFoundPage }   from '@/sections/NotFoundPage';
 import { BottomNavigation } from '@/components/BottomNavigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthentification } from '@/hooks/useAuthentification';
 
 
-import type { User } from '@/types';
+import type { Utilisateur as User } from '@/types';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -64,7 +64,15 @@ export default function App() {
 
   // ── State ────────────────────────────────────────────────────────────
 
-  const { user, isAuthenticated, login, register, logout, updateUser, changePassword } = useAuth();
+  const { 
+    utilisateur: user, 
+    estAuthentifie: isAuthenticated, 
+    connexion: login, 
+    inscription: register, 
+    deconnexion: logout, 
+    mettreAJourUtilisateur: updateUser, 
+    changerMotDePasse: changePassword 
+  } = useAuthentification();
 
   // ── Thème persisté ───────────────────────────────────────────────────
   useEffect(() => {

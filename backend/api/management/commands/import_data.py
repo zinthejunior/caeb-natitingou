@@ -52,14 +52,11 @@ class Command(BaseCommand):
                             'nb_pages': nb_pages,
                             'langue': item.get('langue', 'fr'),
                             'categorie_age': item.get('categorie_age') or item.get('targetAudience', 'all'),
-                            'mots_cles': item.get('mots_cles', []),
                             'couverture_url': item.get('cover') or item.get('couverture_url', ''),
                             'resume': item.get('synopsis') or item.get('resume', ''),
                             'note_moyenne': note_moyenne,
                             'nb_notes': nb_notes,
                             'disponible': item.get('isAvailable', True) if 'isAvailable' in item else item.get('disponible', True),
-                            'nb_emprunts': item.get('nb_emprunts', 0),
-                            'popularite': item.get('popularite', 0.0)
                         }
                     )
                     if created:
@@ -99,7 +96,14 @@ class Command(BaseCommand):
                 events_created = 0
                 for item in events_data:
                     try:
-                        date_obj = datetime.strptime(item.get('date'), '%Y-%m-%d').date() if item.get('date') else datetime.now().date()
+                        date_str = item.get('date')
+                        if date_str:
+                            if 'T' in date_str:
+                                date_obj = datetime.fromisoformat(date_str.replace('Z', '')).date()
+                            else:
+                                date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+                        else:
+                            date_obj = datetime.now().date()
                     except ValueError:
                         date_obj = datetime.now().date()
 
@@ -134,6 +138,18 @@ class Command(BaseCommand):
                 news_data = json.load(f)
                 news_created = 0
                 for item in news_data:
+                    try:
+                        date_str = item.get('date')
+                        if date_str:
+                            if 'T' in date_str:
+                                date_obj = datetime.fromisoformat(date_str.replace('Z', '')).date()
+                            else:
+                                date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+                        else:
+                            date_obj = datetime.now().date()
+                    except ValueError:
+                        date_obj = datetime.now().date()
+
                     news, created = News.objects.get_or_create(
                         id=item.get('id'),
                         defaults={
@@ -141,7 +157,7 @@ class Command(BaseCommand):
                             'excerpt': item.get('excerpt', ''),
                             'content': item.get('content', ''),
                             'image': item.get('image', ''),
-                            'date': item.get('date', datetime.now().isoformat() + 'Z'),
+                            'date': date_obj,
                             'category': item.get('category', 'general'),
                             'featured': item.get('featured', False)
                         }
@@ -149,3 +165,4 @@ class Command(BaseCommand):
                     if created:
                         news_created += 1
                 self.stdout.write(self.style.SUCCESS(f"Imported {news_created} news items."))
+

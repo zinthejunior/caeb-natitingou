@@ -1,6 +1,6 @@
 // ── Navigation ────────────────────────────────────────────────────────────────
 
-export type View =
+export type Vue =
   | 'landing' | 'login'       | 'register'
   | 'home'    | 'catalog'     | 'book-detail'
   | 'clubs'   | 'club-detail'
@@ -10,258 +10,281 @@ export type View =
   | 'profile' | 'settings'   | 'search'
   | 'ai-chat' | 'not-found';
 
+// Alias pour compatibilité
+export type View = Vue;
+
 
 // ── Utilisateur ───────────────────────────────────────────────────────────────
 
-export interface UserStats {
-  booksRead:      number;
-  reviewsPosted:  number;
-  clubsJoined:    number;
-  eventsAttended: number;
+export interface StatistiquesUtilisateur {
+  livresLus:      number;
+  avisPublies:    number;
+  clubsRejoints:  number;
+  evenementsParticipes: number;
 }
 
+// Alias pour compatibilité
+export type UserStats = StatistiquesUtilisateur;
 
-
-export interface User {
+export interface Utilisateur {
   // Identité
   id:        string;
-  firstName: string;
-  lastName:  string;
+  prenom:    string;
+  nom:       string;
   email:     string;
   type_compte : 'membre'|'non_membre'|'anonyme';
   pseudo?:   string;
-  username?: string; // Ajouté pour compatibilité avec certains composants
+  username?: string; // Pour compatibilité Django/Auth
   bio?:      string;
   avatar?:   string;
 
   // Statut & adhésion
-  isMember:  boolean;
-  date_inscription: string;          // date — date d'inscription
-  createdAt?: string;                // Alias pour date_inscription utilisé dans certains composants
-  date_naissance: string;
-  birthDate?: string;                // Alias pour date_naissance
+  estMembre:  boolean;
+  date_inscription: string;
+  date_naissance:   string;
 
   // Profil démographique
   niveau_etude?:      string;   // 'Primaire' | 'Collège' | 'Lycée' | 'Université' | 'Professionnel' | 'Autre'
-  educationLevel?:    string;   // Alias pour niveau_etude
   classe?:            string;   // ex. 'MI L2', 'Tle', 'Médecine 3'
 
-  // Préférences littéraires (conformes au schéma recommandation)
-  preferredGenres:    string[];
-  genre_prefere?:     string[];   // genre unique déclaré (système reco)
-  sous_genre_prefere?: string[];  // sous-genre déclaré (système reco)
-
-  // Score de confiance (calculé par le système de recommandation)
-  score_confiance?: number;     // 0–1
-  profil_complet?:  boolean
+  // Préférences littéraires
+  genresPreferes?:    string[];
 
   // Contenu personnel
-  favorites:      string[];     // IDs de livres
-  stats:          UserStats;
-  followedClubs:  string[];     // IDs de clubs
+  favoris:        string[];     // IDs de livres
+  stats:          StatistiquesUtilisateur;
+  clubsSuivis:    string[];     // IDs de clubs
   intentions?:    string[];     // Intentions de l'utilisateur
 }
+
+// Alias pour compatibilité
+export type User = Utilisateur;
 
 
 // ── Livre ─────────────────────────────────────────────────────────────────────
 
-export type TargetAudience = 'enfant' | 'ado' | 'adulte' | 'all';
+export type PublicCible = 'enfant' | 'ado' | 'adulte' | 'all';
+export type TargetAudience = PublicCible;
 
-export interface Book {
+export interface Livre {
   id:          string;
-  title:       string;
-  author:      string;
-  cover?:      string;
+  titre:       string;
+  auteur:      string;
+  couverture?: string;
 
   genre:        string;
-  year?:        number;
-  pages?:       number;
-  langue?:    string;
+  annee?:       number;
+  nbPages?:     number;
+  langue?:      string;
   synopsis?:    string;
 
-  rating:      number;
-  reviewCount: number;
+  note:        number;
+  nbAvis:      number;
 
-  isAvailable: boolean;
-  isNew?:      boolean;
-  isPopular?:  boolean;
+  estDisponible: boolean;
+  estNouveau?:   boolean;
+  estPopulaire?: boolean;
 
-  targetAudience?: TargetAudience;
-
-  // Données système recommandation
-  mots_cles?:      string[];
-  sous_genre?:     string;
-  vecteur_livre?:  Record<string, unknown>;
-  nb_emprunts?:    number;
-  popularite?:     number;
+  publicCible?: PublicCible;
 }
+
+// Alias pour compatibilité
+export type Book = Livre;
 
 
 // ── Avis / Interaction ────────────────────────────────────────────────────────
 
-export interface Review {
-  id:        string;
-  bookId:    string;
-  userId:    string;
-  user:      Pick<User, 'id' | 'firstName' | 'lastName' | 'avatar'>;
-  rating:    number;           // 1–5
-  comment:   string;
-  likes:     number;
-  createdAt: string;           // ISO date
+export interface Avis {
+  id:           string;
+  livreId:      string;
+  utilisateurId: string;
+  utilisateur:   Pick<Utilisateur, 'id' | 'prenom' | 'nom' | 'avatar'>;
+  note:         number;           // 1–5
+  commentaire:  string;
+  mentionsJaime: number;
+  dateCreation:  string;           // ISO date
 }
 
-export interface ReviewComment {
+// Alias pour compatibilité
+export type Review = Avis;
+
+export interface CommentaireAvis {
   id: string;
-  userName: string;
-  rating: number;
-  title: string;
-  comment: string;
-  createdAt: string;
-  likes: number;
-  isUserReview?: boolean;
+  nomUtilisateur: string;
+  note: number;
+  titre: string;
+  commentaire: string;
+  dateCreation: string;
+  mentionsJaime: number;
+  estAvisUtilisateur?: boolean;
 }
+
+// Alias pour compatibilité
+export type ReviewComment = CommentaireAvis;
+
 
 // ── Emprunt & Réservation ─────────────────────────────────────────────────────
 
-export type BorrowStatus = 'en_cours' | 'rendu' | 'perdu';
+export type StatutEmprunt = 'en_cours' | 'rendu' | 'perdu';
+export type BorrowStatus = StatutEmprunt;
 
-export interface BorrowBook {
+export interface LivreEmprunte {
   id:     string;
-  title:  string;
-  author: string;
-  cover?: string;
+  titre:  string;
+  auteur: string;
+  couverture?: string;
+}
+export type BorrowBook = LivreEmprunte;
+
+export interface Emprunt {
+  id:                 string;
+  utilisateurId:      string;
+  livre:              LivreEmprunte;
+  dateEmprunt:        string;          // date_prise
+  dateRetourPrevue:   string;          // date_retour_prevue
+  dateRetourReelle?:  string;          // date_retour_reelle
+  renouvele:          boolean;
+  statut:             StatutEmprunt;
+  estProlonge:        boolean;         // prolongé
 }
 
-export interface Borrow {
-  id:         string;
-  userId:  string;
-  book:       BorrowBook;
-  borrowDate: string;          // ISO date — date_prise
-  returnDate: string;          // ISO date — date_retour_prevue
-  returnedAt?: string;         // ISO date — date_retour_reelle
-  renouvele: boolean;         // renouvele
-  statut:     BorrowStatus;
-  isExtended: boolean;         // prolongé
-  poids?:     number;          // poids dans le système de recommandation
-}
+// Alias pour compatibilité
+export type Borrow = Emprunt;
 
-export type ReservationStatus = 'pending' | 'available' | 'expired';
+export type StatutReservation = 'pending' | 'available' | 'expired';
+export type ReservationStatus = StatutReservation;
 
 export interface Reservation {
-  id:         string;
-  userId: string;
-  book:       BorrowBook;
-  reservedAt: string;          // ISO date
-  status:     ReservationStatus;
+  id:               string;
+  utilisateurId:    string;
+  livre:            LivreEmprunte;
+  dateReservation:  string;          // ISO date
+  statut:           StatutReservation;
 }
 
 
 // ── Club de lecture ───────────────────────────────────────────────────────────
 
-export type ClubAudience = 'children' | 'teen' | 'adult' | 'all';
+export type AudienceClub = 'children' | 'teen' | 'adult' | 'all';
+export type ClubAudience = AudienceClub;
 
-export interface ClubManager {
-  name:   string;
+export interface ResponsableClub {
+  nom:    string;
   role:   string;
   email:  string;
 }
+export type ClubManager = ResponsableClub;
 
-export interface ClubCourse {
+export interface CoursClub {
   id:          string;
-  title:       string;
-  level:       string;
-  frequency:   string;
+  titre:       string;
+  niveau:      string;
+  frequence:   string;
   description: string;
 }
+export type ClubCourse = CoursClub;
 
-export interface ClubActivity {
+export interface ActiviteClub {
+  id:             string;
+  nomUtilisateur: string;
+  activite:       string;
+  date:           string;
+}
+export type ClubActivity = ActiviteClub;
+
+export interface ReunionClub {
   id:       string;
-  userName: string;
-  activity: string;
-  date:     string;            // ISO date
+  date:     string;
+  heure:    string;
+  lieu:     string;
+}
+export type ClubMeeting = ReunionClub;
+
+export interface ClubLecture {
+  id:             string;
+  nom:            string;
+  description:    string;
+  image?:         string;
+  publicCible:    AudienceClub;
+  nbMembres:      number;
+  estMembre?:     boolean;
+  lienExterne?:   string;
+
+  // Détails
+  responsable?:    ResponsableClub;
+  cours?:          CoursClub[];
+  activiteRecente?: ActiviteClub[];
+  prochainesReunions?: ReunionClub[];
 }
 
-export interface ClubMeeting {
-  id:       string;
-  date:     string;            // ISO date
-  time:     string;
-  location: string;
-}
-
-export interface ReadingClub {
-  id:           string;
-  name:         string;
-  description:  string;
-  image?:       string;
-  targetAudience: ClubAudience;
-  memberCount:  number;
-  isJoined?:    boolean;
-  externalLink?: string;
-
-  // Champs détaillés (ClubDetailPage)
-  manager?:       ClubManager;
-  courses?:       ClubCourse[];
-  recentActivity?: ClubActivity[];
-  nextMeetings?:  ClubMeeting[];
-}
+// Alias pour compatibilité
+export type ReadingClub = ClubLecture;
 
 
 // ── Événement ─────────────────────────────────────────────────────────────────
 
-export type EventType = 'club' | 'conference' | 'workshop';
+export type TypeEvenement = 'club' | 'conference' | 'workshop';
+export type EventType = TypeEvenement;
 
-export interface Event {
+export interface Evenement {
   id:               string;
-  title:            string;
+  titre:            string;
   description:      string;
-  type:             EventType;
-  date:             string;    // date
-  time:             string;    // ex. '14h00'
-  location:         string;
-  participantCount: number;
-  isParticipating?: boolean;
-  clubId?:          string;    // FK vers ReadingClub
+  type:             TypeEvenement;
+  date:             string;
+  heure:            string;    // ex. '14h00'
+  lieu:             string;
+  nbParticipants:   number;
+  participe?:       boolean;
+  clubId?:          string;    // FK vers ClubLecture
 }
+
+// Alias pour compatibilité
+export type Event = Evenement;
 
 
 // ── Actualité ─────────────────────────────────────────────────────────────────
 
-export type NewsCategory =
+export type CategorieActualite =
   | 'announcement'
   | 'event'
   | 'course'
   | 'visit'
   | 'closure'
   | 'general';
+export type NewsCategory = CategorieActualite;
 
-export interface News {
-  id:        string;
-  title:     string;
-  excerpt:   string;
-  content?:  string;
-  image?:    string;
-  date:      string;           // date
-  category:  NewsCategory;
-  featured?: boolean;
+export interface Actualite {
+  id:          string;
+  titre:       string;
+  resume:      string;
+  contenu?:    string;
+  image?:      string;
+  date:        string;
+  categorie:   CategorieActualite;
+  misEnAvant?: boolean;
 }
+
+// Alias pour compatibilité
+export type News = Actualite;
 
 
 // ── Notification ──────────────────────────────────────────────────────────────
 
-export type NotificationType =
+export type TypeNotification =
   | 'livre_disponible'
-  | 'nouvelle_recommandation'
   | 'rappel_retour'
   | 'retard';
+export type NotificationType = TypeNotification;
 
 export interface Notification {
-  id:        string;
-  userId:    string;
-  livreId?:  string;
-  type:      NotificationType;
-  message:   string;
-  lu:        boolean;
-  createdAt: string;           // date
+  id:            string;
+  utilisateurId: string;
+  livreId?:      string;
+  type:          TypeNotification;
+  message:       string;
+  lu:            boolean;
+  dateCreation:  string;
 }
 
 
@@ -273,22 +296,22 @@ export type Humeur =
   | 'nostalgique' | 'stressé' | 'détendu';
 
 export interface SessionIA {
-  id:              string;
-  userId:          string;
-  humeurDetectee?: Humeur;
-  livresAcceptes:  string[];   // IDs
-  livresRejetes:   string[];   // IDs
+  id:                string;
+  utilisateurId:     string;
+  humeurDetectee?:   Humeur;
+  livresAcceptes:    string[];   // IDs
+  livresRejetes:     string[];   // IDs
   vecteurIntention?: Record<string, unknown>;
-  createdAt:       string;     // date
-  closedAt?:       string;     // date
+  dateCreation:      string;
+  dateFermeture?:    string;
 }
 
 
 // ── Livre similaire (précalculé) ──────────────────────────────────────────────
 
 export interface LivreSimilaire {
-  livreSourceId:  string;
-  livreCibleId:   string;
+  livreSourceId:   string;
+  livreCibleId:    string;
   scoreSimilarite: number;    // 0–1
-  dateCalcul:     string;     // date
+  dateCalcul:      string;
 }

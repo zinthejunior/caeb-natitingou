@@ -1,293 +1,424 @@
 import { useState, useEffect } from 'react';
 import type { Book, ReadingClub, Event, News, Review, Borrow, Reservation } from '@/types';
 
+// URL de base de l'API Django
 const API_BASE_URL = 'http://localhost:8000/api';
 
-// ── Utilitaire fetch ─────────────────────────────────────────────────────
-async function apiFetch(endpoint: string, options: RequestInit = {}) {
+/**
+ * Utilitaire central pour effectuer des appels HTTP vers le backend.
+ * Gère automatiquement le jeton d'authentification (token).
+ */
+export async function appelAPI(endpoint: string, options: RequestInit = {}) {
   const token = localStorage.getItem('caeb_token');
   const headers = {
     'Content-Type': 'application/json',
     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     ...options.headers,
   };
+  
   const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+  
   if (!response.ok) {
+    // Si le jeton est invalide ou expiré, on le supprime
     if (response.status === 401) localStorage.removeItem('caeb_token');
-    const errText = await response.text();
-    throw new Error(`Erreur API ${response.status}: ${errText}`);
+    const texteErreur = await response.text();
+    throw new Error(`Erreur API ${response.status}: ${texteErreur}`);
   }
+  
   if (response.status === 204) return null;
   return response.json();
 }
 
-// ── Hooks de lecture ────────────────────────────────────────────────────
+// ── HOOKS DE LECTURE (Récupération des données) ──────────────────────────
 
-export function useBooks() {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+/**
+ * Récupère la liste de tous les livres.
+ */
+export function useLivres() {
+  const [livres, setLivres] = useState<Book[]>([]);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState<string | null>(null);
+
   useEffect(() => {
     (async () => {
       try {
-        setIsLoading(true);
-        const data = await apiFetch('/books/');
-        setBooks(data.results || data);
-      } catch { setError('Erreur lors du chargement des livres'); }
-      finally { setIsLoading(false); }
+        setChargement(true);
+        const donnees = await appelAPI('/books/');
+        setLivres(donnees.results || donnees);
+      } catch { 
+        setErreur('Erreur lors du chargement des livres'); 
+      } finally { 
+        setChargement(false); 
+      }
     })();
   }, []);
-  return { books, isLoading, error };
+
+  return { livres, chargement, erreur };
 }
 
-export function useBook(id?: string) {
-  const [book, setBook] = useState<Book | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+/**
+ * Récupère les détails d'un livre spécifique par son ID.
+ */
+export function useLivre(id?: string) {
+  const [livre, setLivre] = useState<Book | null>(null);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState<string | null>(null);
+
   useEffect(() => {
     if (!id) return;
     (async () => {
       try {
-        setIsLoading(true);
-        const data = await apiFetch(`/books/${id}/`);
-        setBook(data);
-      } catch { setError('Erreur lors du chargement du livre'); }
-      finally { setIsLoading(false); }
+        setChargement(true);
+        const donnees = await appelAPI(`/books/${id}/`);
+        setLivre(donnees);
+      } catch { 
+        setErreur('Erreur lors du chargement du livre'); 
+      } finally { 
+        setChargement(false); 
+      }
     })();
   }, [id]);
-  return { book, isLoading, error };
+
+  return { livre, chargement, erreur };
 }
 
+/**
+ * Récupère la liste des clubs de lecture.
+ */
 export function useClubs() {
   const [clubs, setClubs] = useState<ReadingClub[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState<string | null>(null);
+
   useEffect(() => {
     (async () => {
       try {
-        setIsLoading(true);
-        const data = await apiFetch('/clubs/').catch(() => []);
-        setClubs(data.results || data);
-      } catch { setError('Erreur lors du chargement des clubs'); }
-      finally { setIsLoading(false); }
+        setChargement(true);
+        const donnees = await appelAPI('/clubs/').catch(() => []);
+        setClubs(donnees.results || donnees);
+      } catch { 
+        setErreur('Erreur lors du chargement des clubs'); 
+      } finally { 
+        setChargement(false); 
+      }
     })();
   }, []);
-  return { clubs, isLoading, error };
+
+  return { clubs, chargement, erreur };
 }
 
+/**
+ * Récupère les détails d'un club spécifique.
+ */
 export function useClub(id?: string) {
   const [club, setClub] = useState<ReadingClub | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState<string | null>(null);
+
   useEffect(() => {
     if (!id) return;
     (async () => {
       try {
-        setIsLoading(true);
-        const data = await apiFetch(`/clubs/${id}/`);
-        setClub(data);
-      } catch { setError('Erreur lors du chargement du club'); }
-      finally { setIsLoading(false); }
+        setChargement(true);
+        const donnees = await appelAPI(`/clubs/${id}/`);
+        setClub(donnees);
+      } catch { 
+        setErreur('Erreur lors du chargement du club'); 
+      } finally { 
+        setChargement(false); 
+      }
     })();
   }, [id]);
-  return { club, isLoading, error };
+
+  return { club, chargement, erreur };
 }
 
-export function useEvents() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+/**
+ * Récupère la liste des événements.
+ */
+export function useEvenements() {
+  const [evenements, setEvenements] = useState<Event[]>([]);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState<string | null>(null);
+
   useEffect(() => {
     (async () => {
       try {
-        setIsLoading(true);
-        const data = await apiFetch('/events/').catch(() => []);
-        setEvents(data.results || data);
-      } catch { setError('Erreur lors du chargement des événements'); }
-      finally { setIsLoading(false); }
+        setChargement(true);
+        const donnees = await appelAPI('/events/').catch(() => []);
+        setEvenements(donnees.results || donnees);
+      } catch { 
+        setErreur('Erreur lors du chargement des événements'); 
+      } finally { 
+        setChargement(false); 
+      }
     })();
   }, []);
-  return { events, isLoading, error };
+
+  return { evenements, chargement, erreur };
 }
 
-export function useEvent(id?: string) {
-  const [event, setEvent] = useState<Event | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+/**
+ * Récupère les détails d'un événement spécifique.
+ */
+export function useEvenement(id?: string) {
+  const [evenement, setEvenement] = useState<Event | null>(null);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState<string | null>(null);
+
   useEffect(() => {
     if (!id) return;
     (async () => {
       try {
-        setIsLoading(true);
-        const data = await apiFetch(`/events/${id}/`);
-        setEvent(data);
-      } catch { setError('Erreur lors du chargement de l\'événement'); }
-      finally { setIsLoading(false); }
+        setChargement(true);
+        const donnees = await appelAPI(`/events/${id}/`);
+        setEvenement(donnees);
+      } catch { 
+        setErreur('Erreur lors du chargement de l\'événement'); 
+      } finally { 
+        setChargement(false); 
+      }
     })();
   }, [id]);
-  return { event, isLoading, error };
+
+  return { evenement, chargement, erreur };
 }
 
-export function useNews() {
-  const [news, setNews] = useState<News[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+/**
+ * Récupère la liste des actualités.
+ */
+export function useActualites() {
+  const [actualites, setActualites] = useState<News[]>([]);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState<string | null>(null);
+
   useEffect(() => {
     (async () => {
       try {
-        setIsLoading(true);
-        const data = await apiFetch('/news/').catch(() => []);
-        setNews(data.results || data);
-      } catch { setError('Erreur lors du chargement des actualités'); }
-      finally { setIsLoading(false); }
+        setChargement(true);
+        const donnees = await appelAPI('/news/').catch(() => []);
+        setActualites(donnees.results || donnees);
+      } catch { 
+        setErreur('Erreur lors du chargement des actualités'); 
+      } finally { 
+        setChargement(false); 
+      }
     })();
   }, []);
-  return { news, isLoading, error };
+
+  return { actualites, chargement, erreur };
 }
 
-export function useNewsItem(id?: string) {
-  const [item, setItem] = useState<News | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+/**
+ * Récupère un article d'actualité spécifique.
+ */
+export function useArticleActualite(id?: string) {
+  const [article, setArticle] = useState<News | null>(null);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState<string | null>(null);
+
   useEffect(() => {
     if (!id) return;
     (async () => {
       try {
-        setIsLoading(true);
-        const data = await apiFetch(`/news/${id}/`);
-        setItem(data);
-      } catch { setError('Erreur lors du chargement de l\'actualité'); }
-      finally { setIsLoading(false); }
+        setChargement(true);
+        const donnees = await appelAPI(`/news/${id}/`);
+        setArticle(donnees);
+      } catch { 
+        setErreur('Erreur lors du chargement de l\'actualité'); 
+      } finally { 
+        setChargement(false); 
+      }
     })();
   }, [id]);
-  return { news: item, isLoading, error };
+
+  return { article, chargement, erreur };
 }
 
-export function useReviews(bookId?: string) {
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const fetchReviews = async () => {
+/**
+ * Récupère les avis (commentaires) d'un livre ou tous les avis.
+ */
+export function useAvis(livreId?: string) {
+  const [avis, setAvis] = useState<Review[]>([]);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  const recupererAvis = async () => {
     try {
-      setIsLoading(true);
-      const endpoint = bookId ? `/reviews/?book=${bookId}` : '/reviews/';
-      const data = await apiFetch(endpoint).catch(() => []);
-      setReviews(data.results || data);
-    } catch { setError('Erreur lors du chargement des avis'); }
-    finally { setIsLoading(false); }
+      setChargement(true);
+      const pointEntree = livreId ? `/reviews/?book=${livreId}` : '/reviews/';
+      const donnees = await appelAPI(pointEntree).catch(() => []);
+      setAvis(donnees.results || donnees);
+    } catch { 
+      setErreur('Erreur lors du chargement des avis'); 
+    } finally { 
+      setChargement(false); 
+    }
   };
-  useEffect(() => { void fetchReviews(); }, [bookId]);
-  return { data: reviews, isLoading, error, reload: fetchReviews };
+
+  useEffect(() => { void recupererAvis(); }, [livreId]);
+
+  return { avis, chargement, erreur, recharger: recupererAvis };
 }
 
-export function useBorrows() {
-  const [borrows, setBorrows] = useState<Borrow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+/**
+ * Récupère les emprunts de l'utilisateur.
+ */
+export function useEmprunts() {
+  const [emprunts, setEmprunts] = useState<Borrow[]>([]);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState<string | null>(null);
+
   useEffect(() => {
     (async () => {
       try {
-        setIsLoading(true);
-        const data = await apiFetch('/borrows/').catch(() => []);
-        setBorrows(data.results || data);
-      } catch { setError('Erreur lors du chargement des emprunts'); }
-      finally { setIsLoading(false); }
+        setChargement(true);
+        const donnees = await appelAPI('/borrows/').catch(() => []);
+        setEmprunts(donnees.results || donnees);
+      } catch { 
+        setErreur('Erreur lors du chargement des emprunts'); 
+      } finally { 
+        setChargement(false); 
+      }
     })();
   }, []);
-  return { borrows, isLoading, error };
+
+  return { emprunts, chargement, erreur };
 }
 
+/**
+ * Récupère les réservations de l'utilisateur.
+ */
 export function useReservations() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState<string | null>(null);
+
   useEffect(() => {
     (async () => {
       try {
-        setIsLoading(true);
-        const data = await apiFetch('/reservations/').catch(() => []);
-        setReservations(data.results || data);
-      } catch { setError('Erreur lors du chargement des réservations'); }
-      finally { setIsLoading(false); }
+        setChargement(true);
+        const donnees = await appelAPI('/reservations/').catch(() => []);
+        setReservations(donnees.results || donnees);
+      } catch { 
+        setErreur('Erreur lors du chargement des réservations'); 
+      } finally { 
+        setChargement(false); 
+      }
     })();
   }, []);
-  return { reservations, isLoading, error };
+
+  return { reservations, chargement, erreur };
 }
 
-// ── Hook Chat ─────────────────────────────────────────────────────────────
+// ── SESSIONS DE CHAT (IA Kossi) ──────────────────────────────────────────
 
-export interface ChatSessionData {
+export interface DonneesSessionChat {
   id: number;
   titre: string;
   created_at: string;
   messages: { id: number; role: 'user' | 'assistant'; content: string; created_at: string }[];
 }
 
-export function useChatSessions() {
-  const [sessions, setSessions] = useState<ChatSessionData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+/**
+ * Récupère l'historique des conversations avec Kossi.
+ */
+export function useSessionsChat() {
+  const [sessions, setSessions] = useState<DonneesSessionChat[]>([]);
+  const [chargement, setChargement] = useState(true);
 
-  const fetchSessions = async () => {
+  const recupererSessions = async () => {
     try {
-      setIsLoading(true);
-      const data = await apiFetch('/chat/').catch(() => []);
-      setSessions(data.results || data);
-    } finally { setIsLoading(false); }
+      setChargement(true);
+      const donnees = await appelAPI('/chat/').catch(() => []);
+      setSessions(donnees.results || donnees);
+    } finally { 
+      setChargement(false); 
+    }
   };
 
-  useEffect(() => { void fetchSessions(); }, []);
-  return { sessions, isLoading, reload: fetchSessions };
+  useEffect(() => { void recupererSessions(); }, []);
+
+  return { sessions, chargement, recharger: recupererSessions };
 }
 
-// ── Actions d'écriture ────────────────────────────────────────────────────
+// ── ACTIONS D'ÉCRITURE (Envoi de données) ────────────────────────────────
 
-export async function postReview(bookId: string, rating: number, comment: string) {
-  return apiFetch('/reviews/', {
+/**
+ * Publie un nouvel avis sur un livre.
+ */
+export async function publierAvis(livreId: string, note: number, commentaire: string) {
+  return appelAPI('/reviews/', {
     method: 'POST',
-    body: JSON.stringify({ bookId, rating, comment }),
+    body: JSON.stringify({ bookId: livreId, rating: note, comment: commentaire }),
   });
 }
 
-export async function reserveBook(bookId: string) {
-  return apiFetch('/reservations/', {
+/**
+ * Réserve un livre.
+ */
+export async function reserverLivre(livreId: string) {
+  return appelAPI('/reservations/', {
     method: 'POST',
-    body: JSON.stringify({ book: bookId }),
+    body: JSON.stringify({ book: livreId }),
   });
 }
 
-export async function joinClub(clubId: string) {
-  return apiFetch(`/clubs/${clubId}/join/`, { method: 'POST' });
+/**
+ * Rejoindre un club de lecture.
+ */
+export async function rejoindreClub(clubId: string) {
+  return appelAPI(`/clubs/${clubId}/join/`, { method: 'POST' });
 }
 
-export async function registerEvent(eventId: string) {
-  return apiFetch(`/events/${eventId}/register/`, { method: 'POST' });
+/**
+ * S'inscrire à un événement.
+ */
+export async function sinscrireEvenement(evenementId: string) {
+  return appelAPI(`/events/${evenementId}/register/`, { method: 'POST' });
 }
 
-export async function toggleFavorite(bookId: string) {
-  return apiFetch(`/books/${bookId}/favorite/`, { method: 'POST' });
+/**
+ * Ajouter ou retirer un livre des favoris.
+ */
+export async function inverserFavori(livreId: string) {
+  return appelAPI(`/books/${livreId}/favorite/`, { method: 'POST' });
 }
 
-export async function sendClubContact(clubId: string, nom: string, email: string, message: string) {
-  return apiFetch(`/clubs/${clubId}/contact/`, {
+/**
+ * Envoyer un message de contact à un club.
+ */
+export async function envoyerMessageClub(clubId: string, nom: string, email: string, message: string) {
+  return appelAPI(`/clubs/${clubId}/contact/`, {
     method: 'POST',
     body: JSON.stringify({ nom, email, message }),
   });
 }
 
-export async function createChatSession(titre = 'Nouvelle conversation'): Promise<ChatSessionData> {
-  return apiFetch('/chat/', {
+/**
+ * Créer une nouvelle session de chat avec Kossi.
+ */
+export async function creerSessionChat(titre = 'Nouvelle conversation'): Promise<DonneesSessionChat> {
+  return appelAPI('/chat/', {
     method: 'POST',
     body: JSON.stringify({ titre }),
   });
 }
 
-export async function addChatMessage(sessionId: number, role: 'user' | 'assistant', content: string) {
-  return apiFetch(`/chat/${sessionId}/messages/`, {
+/**
+ * Ajouter un message à une session de chat.
+ */
+export async function ajouterMessageChat(sessionId: number, role: 'user' | 'assistant', contenu: string) {
+  return appelAPI(`/chat/${sessionId}/messages/`, {
     method: 'POST',
-    body: JSON.stringify({ role, content }),
+    body: JSON.stringify({ role, content: contenu }),
   });
 }
 
-export async function getChatSession(sessionId: number): Promise<ChatSessionData> {
-  return apiFetch(`/chat/${sessionId}/`);
+/**
+ * Récupère les détails d'une session de chat (incluant les messages).
+ */
+export async function recupererSessionChat(sessionId: number): Promise<DonneesSessionChat> {
+  return appelAPI(`/chat/${sessionId}/`);
 }
+

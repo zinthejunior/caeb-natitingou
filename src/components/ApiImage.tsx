@@ -9,14 +9,23 @@ interface ApiImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 export function ApiImage({ imageKey, src, fallback = '/avatar-1.jpg', alt, ...rest }: ApiImageProps) {
  
   const [url, setUrl] = useState<string | undefined>(() => {
-    if (src) return src;
-    
+    if (src) {
+      if (src.startsWith('/media/') || src.startsWith('/static/')) {
+        return `http://localhost:8000${src}`;
+      }
+      return src;
+    }
     return undefined;
   });
 
   useEffect(() => {
-    if (src) setUrl(src);
-   
+    if (src) {
+      if (src.startsWith('/media/') || src.startsWith('/static/')) {
+        setUrl(`http://localhost:8000${src}`);
+      } else {
+        setUrl(src);
+      }
+    }
   }, [src]);
 
   const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
