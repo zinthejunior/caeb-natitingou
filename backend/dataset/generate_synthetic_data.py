@@ -40,11 +40,12 @@ log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(message)s")
 
 # ─── Config ───────────────────────────────────────────────────────────────────
-NB_MEMBRES      = 50
-NB_NON_MEMBRES  = 50
+NB_MEMBRES      = 3000
+NB_NON_MEMBRES  = 7000
 NB_EMPRUNTS_MOY = 15
 NB_INTERACT_MOY = 12
-TARGET_LIVRES   = 0        
+TARGET_LIVRES   = 0         # 0 = utiliser uniquement les livres scrappés (recommandé)
+                            # Mettre ex: 50_000 pour compléter avec des livres synthétiques
 
 HUMEURS = ["léger","intense","évasion","neutre","triste",
            "aventurier","romantique","curieux","nostalgique","stressé","détendu"]
@@ -501,7 +502,7 @@ def generate_similarites(livres: list[dict]) -> list[dict]:
             return {}
         if isinstance(v, str):
             try:
-                v = json.loads(v) 
+                v = json.loads(v)
             except Exception:
                 return {}
         mots = v.get("mots_cles", {})
@@ -556,10 +557,9 @@ def generate_similarites(livres: list[dict]) -> list[dict]:
     for lid, lvec in all_vecs:
         genre = genre_by_id.get(lid, "")
         candidates_same  = [(sid, svec) for sid, svec in by_genre.get(genre, []) if sid != lid]
-        diff_pop = [(sid, svec) for sid, svec in all_vecs if sid != lid and sid not in {c[0] for c in candidates_same}]
         candidates_diff  = random.sample(
-            diff_pop,
-            min(SAMPLE_DIFF, len(diff_pop)),
+            [(sid, svec) for sid, svec in all_vecs if sid != lid and sid not in {c[0] for c in candidates_same}],
+            min(SAMPLE_DIFF, len(all_vecs)),
         )
 
         # Trier par score décroissant
@@ -949,9 +949,6 @@ def main():
         if "id" not in livre:
             livre["id"] = f"l-{i:06d}"
 
-    # On ne garde que les 500 premiers livres pour la démo
-    livres_raw = livres_raw[:500]
-    
     # ── Compléter jusqu'à TARGET_LIVRES ───────────────────────────────────────
     livres_raw = generate_livres_synthetiques(livres_raw, TARGET_LIVRES)
 

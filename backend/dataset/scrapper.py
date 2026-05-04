@@ -10,7 +10,7 @@ Collecte livres réels en français + avis réels depuis SIX sources :
   4. Anna's Archive API – métadonnées complètes, livres africains/francophones
 
   AVIS RÉELS (table `interactions` — notes et commentaires en français)
-  5.              – référence française, avis en français
+  5. Babelio            – référence française, avis en français
   6. Fnac.com           – avis français, notes fiables
   (SensCritique scraping désactivé par défaut — Babelio + Fnac suffisent)
 

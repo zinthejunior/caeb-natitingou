@@ -7,9 +7,12 @@ __pycache__/
 # Base de données
 *.sqlite3
 *.db
+*.json
+
+chat/
 
 # Dataset lourd
-backend/dataset/data/
+backend/dataset
 
 # Node
 node_modules/
