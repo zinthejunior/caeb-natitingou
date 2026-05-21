@@ -1,5 +1,5 @@
 // Page des clubs — CAEB Design System
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, Search, User, Users2, Sparkles, X, ExternalLink } from 'lucide-react';
 import { ClubContactForm } from '@/components/ClubContactForm';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,8 @@ import { toast } from 'sonner';
 import { Navbar } from '@/components/Navbar';
 import { ApiImage } from '@/components/ApiImage';
 import type { ReadingClub, User as UserType } from '@/types';
-import { useClubs, rejoindreClub } from '@/hooks/useData';
+import { useClubs, rejoindreClub, quitterClub } from '@/hooks/useData';
+import { useSEO } from '@/lib/utils';
 
 interface ClubsPageProps {
   onClubClick: (clubId: string) => void;
@@ -19,9 +20,17 @@ interface ClubsPageProps {
 export function ClubsPage({ onClubClick, user }: ClubsPageProps) {
   const { clubs } = useClubs();
   const [searchQuery, setSearchQuery] = useState('');
-  const [joinedClubs, setJoinedClubs] = useState<string[]>(clubs.filter(c => c.isJoined).map(c => c.id));
+  const [joinedClubs, setJoinedClubs] = useState<string[]>([]);
   const [showContactForm, setShowContactForm] = useState(false);
   const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
+  
+  useSEO("Clubs Culturels", "Rejoignez nos clubs de lecture, de danse, d'anglais et d'IA. Un espace d'échange et d'apprentissage à Natitingou.");
+
+  useEffect(() => {
+    if (clubs.length > 0) {
+      setJoinedClubs(clubs.filter(c => c.isJoined || c.estMembre).map(c => c.id));
+    }
+  }, [clubs]);
   const selectedClub = selectedClubId ? clubs.find(c => c.id === selectedClubId) : null;
 
   const filteredClubs = clubs.filter(c =>
@@ -47,10 +56,15 @@ export function ClubsPage({ onClubClick, user }: ClubsPageProps) {
       toast.error('Erreur lors de l\'adhésion au club');
     }
   };
-  const handleLeaveClub = (clubId: string, e: React.MouseEvent) => {
+  const handleLeaveClub = async (clubId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setJoinedClubs(prev => prev.filter(id => id !== clubId));
-    toast.success('Vous avez quitté le club');
+    try {
+      await quitterClub(clubId);
+      setJoinedClubs(prev => prev.filter(id => id !== clubId));
+      toast.success('Vous avez quitté le club');
+    } catch (error) {
+      toast.error('Erreur lors du départ du club');
+    }
   };
 
   const audienceConfig: Record<string, { label: string; icon: React.ReactNode }> = {
@@ -100,13 +114,14 @@ export function ClubsPage({ onClubClick, user }: ClubsPageProps) {
             <>
               {myClubs.length > 0 && (
                 <>
-                  <div className="col-span-full mb-2">
-                    <h2 className="font-display text-xl font-semibold text-primary flex items-center gap-2.5">
-                      <div className="p-1.5 bg-[var(--library-accent)]/10 border border-[var(--library-accent)]/20 rounded-lg">
-                        <Sparkles className="w-5 h-5 text-accent" />
+                  <div className="col-span-full mb-6">
+                    <h2 className="font-display text-2xl font-bold text-primary flex items-center gap-3">
+                      <div className="p-2 bg-accent/10 border border-accent/20 rounded-xl shadow-glow">
+                        <Sparkles className="w-6 h-6 text-accent" />
                       </div>
-                      Mes clubs
-                    </h2>                  </div>
+                      <span className="text-gradient">Mes clubs</span>
+                    </h2>
+                  </div>
                   {myClubs.map((club) => (
                     <ClubCard key={club.id} club={club} isJoined audienceConfig={audienceConfig}
                       onClick={() => onClubClick(club.id)}
@@ -117,12 +132,12 @@ export function ClubsPage({ onClubClick, user }: ClubsPageProps) {
               )}
               {discoverClubs.length > 0 && (
                 <>
-                  <div className={`col-span-full mb-2 ${myClubs.length > 0 ? 'mt-6' : ''}`}>
-                    <h2 className="font-display text-xl font-semibold text-primary flex items-center gap-2.5">
-                      <div className="p-1.5 bg-[var(--library-accent)]/10 border border-[var(--library-accent)]/20 rounded-lg">
-                        <Users className="w-5 h-5 text-accent" />
+                  <div className={`col-span-full mb-6 ${myClubs.length > 0 ? 'mt-12' : ''}`}>
+                    <h2 className="font-display text-2xl font-bold text-primary flex items-center gap-3">
+                      <div className="p-2 bg-accent/10 border border-accent/20 rounded-xl">
+                        <Users className="w-6 h-6 text-accent" />
                       </div>
-                      Clubs à rejoindre
+                      Clubs à découvrir
                     </h2>
                   </div>
                   {discoverClubs.map((club) => (
@@ -164,7 +179,7 @@ function ClubCard({ club, isJoined, audienceConfig, onClick, onJoin, onLeave }: 
   const audience = audienceConfig[club.publicCible || 'all'] || audienceConfig.all;
   return (
     <div onClick={onClick}
-      className="surface rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover border border-[var(--border-color)] hover:border-[var(--library-accent)]/20 hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
+      className="glass-effect rounded-[2rem] overflow-hidden shadow-card hover:shadow-glow border border-white/10 hover:border-accent/30 hover:-translate-y-2 transition-all duration-500 cursor-pointer group animate-flow-in">
 
       {/* Image */}
       <div className="relative h-40 overflow-hidden surface-weak">
@@ -192,8 +207,8 @@ function ClubCard({ club, isJoined, audienceConfig, onClick, onJoin, onLeave }: 
           <div className="flex items-center gap-2">
             {(club.lienExterne || club.externalLink) && (
               <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); window.open(club.lienExterne || club.externalLink, '_blank'); }}
-                className="border-[var(--border-color)] text-primary hover:border-[var(--library-accent)]/30 font-semibold">
-                <ExternalLink className="w-3.5 h-3.5 mr-1" />Visiter
+                className="border-[var(--border-color)] text-primary hover:border-[var(--library-accent)]/30 font-semibold px-3">
+                <ExternalLink className="w-3.5 h-3.5 mr-1" />Cours & Ateliers
               </Button>
             )}
             {isJoined ? (

@@ -7,6 +7,7 @@ import type { User } from '@/types';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useSEO } from '@/lib/utils';
 
 interface SettingsPageProps {
   user: User | null;
@@ -16,15 +17,21 @@ interface SettingsPageProps {
 
 const Toggle = ({ active, onToggle }: { active: boolean; onToggle: () => void }) => (
   <button onClick={onToggle} aria-pressed={active}
-    className={`relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-[var(--library-accent)] focus:ring-offset-2 ${active ? 'bg-[var(--library-accent)]' : 'bg-[var(--border-color)]'}`}>
-    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-soft transition-transform duration-300 ${active ? 'translate-x-5' : 'translate-x-0'}`} />
+    className={`relative w-12 h-7 rounded-full transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-accent/20 ${active ? 'bg-accent shadow-glow' : 'bg-white/10'}`}>
+    <span className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-medium transition-transform duration-500 ${active ? 'translate-x-5' : 'translate-x-0'}`} />
   </button>
 ); 
 
 const SectionTitle = ({ icon: Icon, title }: { icon?: React.ElementType; title: string }) => (
-  <h2 className="text-xl font-bold text-primary mb-6 flex items-center gap-2.5">
-    {Icon ? <Icon className="w-5 h-5 text-accent" /> : <span className="w-4 h-4 rounded bg-[var(--library-accent)]" />}
-    {title}
+  <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
+    {Icon ? (
+      <div className="p-2 bg-accent/10 rounded-xl border border-accent/20 shadow-glow">
+        <Icon className="w-5 h-5 text-accent" />
+      </div>
+    ) : (
+      <div className="w-2 h-8 bg-accent rounded-full shadow-glow" />
+    )}
+    <span className="text-gradient">{title}</span>
   </h2>
 );
 
@@ -38,8 +45,8 @@ const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) =>
 );
 
 const ToggleRow = ({ label, active, onToggle }: { label: string; active: boolean; onToggle: () => void }) => (
-  <div className="flex items-center justify-between p-4 surface-alt rounded-xl border border-[var(--border-color)]">
-    <span className="font-semibold text-primary">{label}</span>
+  <div className="flex items-center justify-between p-5 glass-effect rounded-2xl border border-white/5 hover:border-accent/20 transition-all duration-300">
+    <span className="font-bold text-primary">{label}</span>
     <Toggle active={active} onToggle={onToggle} />
   </div>
 );
@@ -60,6 +67,8 @@ export function SettingsPage({ user, onLogout, onChangePassword }: SettingsPageP
   const [passData, setPassData] = useState({ old: '', new: '', confirm: '' });
   
   const { isInstallable, promptInstall } = usePWAInstall();
+
+  useSEO("Paramètres", "Personnalisez votre compte, gérez vos notifications et choisissez votre thème préféré sur CAEB Natitingou.");
 
   const handleToggleDarkMode = () => {
     const next = !darkMode;
@@ -123,22 +132,24 @@ export function SettingsPage({ user, onLogout, onChangePassword }: SettingsPageP
       <Navbar user={user} />
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
 
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-[var(--library-accent)]/10 border border-[var(--library-accent)]/20 rounded-xl flex items-center justify-center">
-              <Settings className="w-5 h-5 text-accent" />
+        <div className="mb-12">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 bg-accent/10 border border-accent/20 rounded-2xl flex items-center justify-center shadow-glow">
+              <Settings className="w-6 h-6 text-accent" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-primary">Paramètres</h1>
+            <h1 className="font-display text-4xl md:text-5xl font-bold">
+              <span className="text-gradient">Paramètres</span>
+            </h1>
           </div>
-          <p className="text-muted pl-1">Personnalisez votre expérience et gérez votre compte</p>
+          <p className="text-muted text-lg pl-1 font-medium">Configurez votre expérience au sein de l'excellence culturelle.</p>
         </div>
 
         <div className="space-y-5">
           {/* Compte */}
-          <section className="surface rounded-2xl p-6 shadow-card border border-[var(--border-color)]">
+          <section className="glass-effect rounded-[2.5rem] p-8 shadow-card border border-white/5 animate-flow-in">
             <SectionTitle title="Informations du compte" />
-            <div className="space-y-3">
-              <InfoRow label="Nom d'utilisateur" value={`${user.firstName} ${user.lastName}`} />
+            <div className="space-y-4">
+              <InfoRow label="Identité" value={`${user.firstName} ${user.lastName}`} />
               <InfoRow label="Email" value={user.email} />
               <InfoRow label="Statut" value={
                 <Badge className={user.isMember
@@ -151,22 +162,22 @@ export function SettingsPage({ user, onLogout, onChangePassword }: SettingsPageP
           </section>
 
           {/* Apparence */}
-          <section className="surface rounded-2xl p-6 shadow-card border border-[var(--border-color)]">
+          <section className="glass-effect rounded-[2.5rem] p-8 shadow-card border border-white/5 animate-flow-in" style={{ animationDelay: '100ms' }}>
             <SectionTitle title="Apparence" />
             <button onClick={handleToggleDarkMode}
-              className="w-full flex items-center justify-between p-4 surface-alt rounded-xl border border-[var(--border-color)] hover:border-[var(--library-accent)]/30 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--library-accent)]">
-              <div className="flex items-center gap-3">
-                {darkMode
-                  ? <Moon className="w-5 h-5 text-accent" />
-                  : <Sun className="w-5 h-5 text-accent" />}
+              className="w-full flex items-center justify-between p-5 glass-effect rounded-2xl border border-white/5 hover:border-accent/30 transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-accent/20">
+              <div className="flex items-center gap-4">
+                <div className={`p-2 rounded-xl ${darkMode ? 'bg-accent/20' : 'bg-blue-500/10'}`}>
+                  {darkMode
+                    ? <Moon className="w-6 h-6 text-accent" />
+                    : <Sun className="w-6 h-6 text-blue-500" />}
+                </div>
                 <div className="text-left">
-                  <p className="font-semibold text-primary">Mode sombre</p>
-                  <p className="text-xs text-muted">{darkMode ? 'Palette Chocolat & Or — activé' : 'Palette Bleu & Blanc — activé'}</p>
+                  <p className="font-bold text-primary">Mode d'affichage</p>
+                  <p className="text-xs text-muted font-medium">{darkMode ? 'Thème Midnight Gold — actif' : 'Thème Clair Saphir — actif'}</p>
                 </div>
               </div>
-              <div className={`relative w-11 h-6 rounded-full transition-colors duration-300 ${darkMode ? 'bg-[var(--library-accent)]' : 'bg-[var(--border-color)]'}`}>
-                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-soft transition-transform duration-300 ${darkMode ? 'translate-x-5' : 'translate-x-0'}`} />
-              </div>
+              <Toggle active={darkMode} onToggle={() => {}} />
             </button>
             
             {isInstallable && (

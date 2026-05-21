@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Utilisateur } from '@/types';
+import { fetchWithAuth } from '@/lib/api';
 
 const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -15,14 +16,22 @@ interface EtatAuthentification {
 function normaliserUtilisateur(raw: any): Utilisateur {
   return {
     ...raw,
-    prenom: raw.prenom ?? '',
-    nom:    raw.nom    ?? '',
-    estMembre:  raw.type_compte === 'membre',
-    date_inscription: raw.date_inscription ?? '',
-    date_naissance:   raw.date_naissance   ?? '',
-    genresPreferes:  raw.genre_prefere
+    prenom: raw.prenom || raw.firstName || '',
+    nom:    raw.nom    || raw.lastName  || '',
+    firstName: raw.firstName || raw.prenom || '',
+    lastName:  raw.lastName  || raw.nom    || '',
+    estMembre:  raw.estMembre ?? raw.isMember ?? (raw.type_compte === 'membre'),
+    isMember:   raw.isMember  ?? raw.estMembre ?? (raw.type_compte === 'membre'),
+    estEnAttente: raw.type_compte === 'en_attente',
+    date_inscription: raw.date_inscription || raw.createdAt || '',
+    createdAt:        raw.createdAt        || raw.date_inscription || '',
+    date_naissance:   raw.date_naissance   || '',
+    genresPreferes:   raw.preferredGenres || (raw.genre_prefere
       ? (Array.isArray(raw.genre_prefere) ? raw.genre_prefere : raw.genre_prefere.split(',').filter(Boolean))
-      : [],
+      : []),
+    preferredGenres:  raw.preferredGenres || (raw.genre_prefere
+      ? (Array.isArray(raw.genre_prefere) ? raw.genre_prefere : raw.genre_prefere.split(',').filter(Boolean))
+      : []),
     favoris:       raw.favorites    ?? [],
     intentions:    raw.intentions   ?? [],
     clubsSuivis:   raw.followedClubs ?? [],
@@ -59,14 +68,15 @@ export function useAuthentification() {
     chargement: true,
   });
 
-  const recupererUtilisateur = useCallback(async (token: string): Promise<boolean> => {
+  const deconnexion = useCallback(() => {
+    localStorage.removeItem('caeb_token');
+    localStorage.removeItem('caeb_refresh');
+    setEtat({ utilisateur: null, estAuthentifie: false, chargement: false });
+  }, []);
+
+  const recupererUtilisateur = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/utilisateurs/me/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetchWithAuth('/utilisateurs/me/');
       if (response.ok) {
         const raw = await response.json();
         setEtat({ utilisateur: normaliserUtilisateur(raw), estAuthentifie: true, chargement: false });
@@ -75,6 +85,7 @@ export function useAuthentification() {
     } catch (erreur) {
       console.error('Échec de la récupération de l\'utilisateur:', erreur);
     }
+    setEtat(prev => ({ ...prev, chargement: false }));
     return false;
   }, []);
 
@@ -82,16 +93,16 @@ export function useAuthentification() {
   useEffect(() => {
     const token = localStorage.getItem('caeb_token');
     if (token) {
-      void recupererUtilisateur(token).then(succes => {
-        if (!succes) {
-          localStorage.removeItem('caeb_token');
-          setEtat(prev => ({ ...prev, chargement: false }));
-        }
-      });
+      void recupererUtilisateur();
     } else {
       setEtat(prev => ({ ...prev, chargement: false }));
     }
-  }, [recupererUtilisateur]);
+
+    // Ecouter les déconnexions globales (ex: échec refresh dans api.ts)
+    const handleLogout = () => deconnexion();
+    window.addEventListener('app:logout', handleLogout);
+    return () => window.removeEventListener('app:logout', handleLogout);
+  }, [recupererUtilisateur, deconnexion]);
 
   const connexion = useCallback(async (email: string, motDePasse: string): Promise<boolean> => {
     if (!email || !motDePasse) return false;
@@ -106,7 +117,7 @@ export function useAuthentification() {
         const data = await response.json();
         localStorage.setItem('caeb_token',   data.access);
         localStorage.setItem('caeb_refresh', data.refresh);
-        return await recupererUtilisateur(data.access);
+        return await recupererUtilisateur();
       }
     } catch (err) {
       console.error('Erreur de connexion:', err);
@@ -128,7 +139,7 @@ export function useAuthentification() {
         date_naissance:    donnees.birthDate || null,
         niveau_etude:      donnees.educationLevel || null,
         classe:            donnees.classe || null,
-        genre_prefere:     Array.isArray(donnees.genres) ? donnees.genres.join(',') : '',
+        genre_prefere:     Array.isArray(donnees.preferredGenres) ? donnees.preferredGenres.join(',') : '',
         intentions:        donnees.intentions || [],
         profil_complet:    true,
       };
@@ -150,45 +161,34 @@ export function useAuthentification() {
     return false;
   }, [connexion]);
 
-  const deconnexion = useCallback(() => {
-    localStorage.removeItem('caeb_token');
-    localStorage.removeItem('caeb_refresh');
-    setEtat({ utilisateur: null, estAuthentifie: false, chargement: false });
-  }, []);
-
   const mettreAJourUtilisateur = useCallback(async (updates: Partial<Utilisateur>) => {
-    if (!etat.utilisateur) return;
-    const token = localStorage.getItem('caeb_token');
+    if (!etat.utilisateur) return false;
     try {
       const body = denormaliserMisesAJour(updates as any);
-      const response = await fetch(`${API_BASE_URL}/utilisateurs/me/update/`, {
+      const response = await fetchWithAuth('/utilisateurs/me/update/', {
         method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(body),
       });
+
       if (response.ok) {
         const raw = await response.json();
         setEtat(prev => ({ ...prev, utilisateur: normaliserUtilisateur(raw) }));
+        return true;
       } else {
-        console.error('Erreur PATCH user:', await response.text());
+        const errText = await response.text();
+        console.error('Erreur PATCH user:', errText);
+        return false;
       }
     } catch (err) {
       console.error('Erreur lors de la mise à jour de l\'utilisateur:', err);
+      return false;
     }
   }, [etat.utilisateur]);
 
   const changerMotDePasse = useCallback(async (ancienMotDePasse: string, nouveauMotDePasse: string): Promise<boolean> => {
-    const token = localStorage.getItem('caeb_token');
     try {
-      const response = await fetch(`${API_BASE_URL}/utilisateurs/me/change-password/`, {
+      const response = await fetchWithAuth('/utilisateurs/me/change-password/', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ old_password: ancienMotDePasse, new_password: nouveauMotDePasse }),
       });
       return response.ok;
@@ -200,9 +200,6 @@ export function useAuthentification() {
 
   return {
     ...etat,
-    utilisateur: etat.utilisateur,
-    estAuthentifie: etat.estAuthentifie,
-    chargement: etat.chargement,
     connexion,
     inscription,
     deconnexion,
@@ -211,5 +208,4 @@ export function useAuthentification() {
   };
 }
 
-// Alias pour compatibilité temporaire si nécessaire
 export const useAuth = useAuthentification;

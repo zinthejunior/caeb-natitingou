@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import type { User } from '@/types';
 import { useNewsItem } from '@/hooks/useData';
 import { toast } from 'sonner';
+import { useSEO } from '@/lib/utils';
 
 interface NewsDetailPageProps {
   newsId: string;
@@ -16,6 +17,8 @@ interface NewsDetailPageProps {
 
 export function NewsDetailPage({ newsId, user, onBack }: NewsDetailPageProps) {
   const { news: newsItem, isLoading } = useNewsItem(newsId);
+
+  useSEO(newsItem?.title || "Actualité", newsItem?.excerpt || "Détails de l'actualité à la bibliothèque CAEB Natitingou.");
 
   if (isLoading) return (
     <div className="min-h-screen bg-library-bg flex items-center justify-center">
@@ -75,20 +78,20 @@ export function NewsDetailPage({ newsId, user, onBack }: NewsDetailPageProps) {
       <Navbar user={user} />
 
       <main className="max-w-4xl mx-auto px-4 py-8 pt-24">
-        {/* Bouton retour */}
+        {/* Bouton retour Premium */}
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-[var(--library-accent)] mb-6 hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--library-accent)]/30 rounded px-2 py-1"
-          title="Retour aux actualités"
-          aria-label="Retour aux actualités"
+          className="flex items-center gap-3 text-accent mb-8 hover:scale-105 transition-all focus:outline-none group"
         >
-          <ChevronLeft className="w-5 h-5" />
-          <span className="hidden sm:inline">Retour aux actualités</span>
-          <span className="sm:hidden">Retour</span>
+          <div className="w-10 h-10 glass-effect rounded-xl flex items-center justify-center border border-white/10 shadow-glow">
+            <ChevronLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
+          </div>
+          <span className="font-bold text-lg hidden sm:inline">Retour aux actualités</span>
+          <span className="font-bold text-lg sm:hidden">Retour</span>
         </button>
 
-        {/* Carte de l'article */}
-        <article className="surface rounded-2xl overflow-hidden border border-[var(--border-color)] shadow-elevated">
+        {/* Carte de l'article Premium */}
+        <article className="glass-effect rounded-[2.5rem] overflow-hidden border border-white/10 shadow-elevated animate-flow-in">
 
           {/* Image optionnelle */}
           {newsItem.image && (
@@ -106,26 +109,26 @@ export function NewsDetailPage({ newsId, user, onBack }: NewsDetailPageProps) {
 
             {/* Header */}
             <div className="mb-6">
-              <div className="flex items-center gap-3 mb-4 flex-wrap">
+              <div className="flex items-center gap-3 mb-6 flex-wrap">
                 {newsItem.category && (
-                  <Badge className={`text-xs font-semibold px-3 py-1 border ${categoryColors[newsItem.category] || categoryColors.general}`}>
+                  <Badge className={`text-xs font-black px-4 py-1.5 border uppercase tracking-widest ${categoryColors[newsItem.category] || categoryColors.general}`}>
                     {categoryLabels[newsItem.category] || 'Actualité'}
                   </Badge>
                 )}
                 {newsItem.featured && (
-                  <Badge className="bg-[var(--library-accent)]/15 text-[var(--library-accent)] border border-[var(--library-accent)]/25 text-xs font-semibold px-3 py-1">
-                    ★ À la une
+                  <Badge className="bg-accent text-white shadow-glow border-none text-xs font-black px-4 py-1.5 uppercase tracking-widest">
+                    ✦ À la une
                   </Badge>
                 )}
               </div>
 
-              <h1 className="text-3xl md:text-4xl font-display font-bold text-[var(--library-text)] mb-4 leading-tight">
-                {newsItem.title}
+              <h1 className="text-4xl md:text-5xl font-display font-bold mb-6 leading-tight">
+                <span className="text-gradient">{newsItem.title}</span>
               </h1>
 
               <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-2 text-sm text-[var(--library-muted)]">
-                  <Calendar className="w-4 h-4" />
+                <div className="flex items-center gap-2 text-sm text-muted font-bold uppercase tracking-widest">
+                  <Calendar className="w-4 h-4 text-accent" />
                   {newsDate.toLocaleDateString('fr-FR', {
                     year: 'numeric',
                     month: 'long',
@@ -135,11 +138,10 @@ export function NewsDetailPage({ newsId, user, onBack }: NewsDetailPageProps) {
                 <Button
                   onClick={handleShare}
                   variant="outline"
-                  className="gap-2 border-[var(--border-color)] text-[var(--library-text)] hover:border-[var(--library-accent)]/40"
-                  title="Partager cette actualité"
+                  className="glass-effect gap-3 border-white/10 text-primary hover:border-accent/40 font-bold h-11 px-6 rounded-2xl"
                 >
-                  <Share2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Partager</span>
+                  <Share2 className="w-5 h-5 text-accent" />
+                  <span>Partager</span>
                 </Button>
               </div>
             </div>
@@ -158,16 +160,15 @@ export function NewsDetailPage({ newsId, user, onBack }: NewsDetailPageProps) {
             </div>
 
             {/* CTA */}
-            <div className="pt-6 border-t border-[var(--border-color)]">
-              <p className="text-sm text-[var(--library-muted)] mb-4">
-                Une question sur cette actualité ? L'équipe de la CAEB vous répond.
+            <div className="pt-8 border-t border-white/10">
+              <p className="text-muted font-medium mb-6">
+                Une question sur cette actualité ? L'équipe de la CAEB est à votre écoute.
               </p>
               <Button
-                className="gap-2 bg-[var(--library-accent)] text-[var(--library-on-accent)] hover:opacity-90 sheen"
-                title="Nous contacter pour plus d'informations"
+                className="gap-3 bg-accent text-white hover:opacity-90 shadow-glow font-black h-12 px-8 rounded-2xl animate-pulse-soft"
               >
                 <span className="truncate">Contacter la bibliothèque</span>
-                <ArrowRight className="w-4 h-4 flex-shrink-0" />
+                <ArrowRight className="w-5 h-5 flex-shrink-0" />
               </Button>
             </div>
           </div>

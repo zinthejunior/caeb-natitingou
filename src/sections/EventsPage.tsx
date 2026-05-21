@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Navbar } from '@/components/Navbar';
 import type { Event, User, ReadingClub } from '@/types';
 import { useEvents, useClubs, registerEvent } from '@/hooks/useData';
+import { useSEO } from '@/lib/utils';
 
 interface EventsPageProps {
   user: User | null;
@@ -49,6 +50,8 @@ export function EventsPage({ user, onEventClick }: EventsPageProps) {
   const [participatingEvents, setParticipatingEvents] = useState<string[]>(
     events.filter(e => e.isParticipating).map(e => e.id)
   );
+
+  useSEO("Événements Culturels", "Participez à nos conférences, ateliers et clubs de lecture. Agenda culturel de la bibliothèque CAEB à Natitingou.");
 
   const filteredEvents = events.filter(e => filter === 'all' || e.type === filter);
 
@@ -95,13 +98,13 @@ export function EventsPage({ user, onEventClick }: EventsPageProps) {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
 
-        {/* Filtres */}
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-8 -mx-4 px-4 scrollbar-hide">
+        {/* Filtres Modernisés */}
+        <div className="flex gap-3 overflow-x-auto pb-6 mb-10 -mx-4 px-4 scrollbar-hide">
           {filterOptions.map((f) => (
             <button key={f.id} onClick={() => setFilter(f.id)}
-              className={`px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 border flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-[var(--library-accent)] focus:ring-offset-0 tap-feedback ${filter === f.id
-                  ? 'bg-[var(--library-accent)] text-[var(--library-on-accent)] border-[var(--library-accent)] shadow-soft'
-                  : 'surface border-[var(--border-color)] text-primary hover:border-[var(--library-accent)]/30 hover:text-accent'
+              className={`px-6 py-3 rounded-2xl text-sm font-bold whitespace-nowrap transition-all duration-300 border flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-accent/20 tap-feedback ${filter === f.id
+                  ? 'bg-accent text-white border-accent shadow-glow scale-105'
+                  : 'glass-effect border-white/10 text-primary hover:border-accent/30 hover:text-accent'
                 }`}>
               {f.label}
             </button>
@@ -115,9 +118,9 @@ export function EventsPage({ user, onEventClick }: EventsPageProps) {
           <div className="space-y-12">
             {Object.entries(groupedEvents).map(([month]) => (
               <section key={month}>
-                <h2 className="font-display text-xl font-semibold text-primary mb-6 capitalize flex items-center gap-2">
-                  <span className="w-2 h-6 bg-[var(--library-accent)] rounded-full" />
-                  {month}
+                <h2 className="font-display text-2xl font-bold text-primary mb-8 capitalize flex items-center gap-3">
+                  <div className="w-2 h-8 bg-accent rounded-full shadow-glow" />
+                  <span className="text-gradient">{month}</span>
                 </h2>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {groupedEvents[month].map((event) => (
@@ -153,7 +156,7 @@ function EventCard({ event, clubs, isParticipating, onParticipate, onClick, type
 
   return (
     <div onClick={onClick}
-      className="surface rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover border border-[var(--border-color)] hover:border-[var(--library-accent)]/20 hover:-translate-y-1 transition-all duration-300 cursor-pointer group tap-feedback">
+      className="glass-effect rounded-[2.5rem] overflow-hidden shadow-card hover:shadow-glow border border-white/10 hover:border-accent/30 hover:-translate-y-2 transition-all duration-500 cursor-pointer group tap-feedback animate-flow-in">
 
       {/* Visuel */}
       <div className="relative h-32 surface-alt overflow-hidden">

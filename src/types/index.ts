@@ -39,12 +39,12 @@ export interface Utilisateur {
   prenom:    string;
   nom:       string;
   email:     string;
-  type_compte : 'membre'|'non_membre'|'anonyme';
+  type_compte : 'membre'|'non_membre'|'anonyme'|'en_attente';
   pseudo?:   string;
   username?: string; // Pour compatibilité Django/Auth
   bio?:      string;
   avatar?:   string;
-
+  
   // Aliases anglais (compatibilité UI)
   firstName?: string;
   lastName?:  string;
@@ -55,6 +55,7 @@ export interface Utilisateur {
 
   // Statut & adhésion
   estMembre:  boolean;
+  estEnAttente?: boolean;
   date_inscription: string;
   date_naissance:   string;
 
@@ -96,7 +97,7 @@ export interface Livre {
   note:        number;
   nbAvis:      number;
 
-  estDisponible: boolean;
+  exemplaires:   number;
   estNouveau?:   boolean;
   estPopulaire?: boolean;
 

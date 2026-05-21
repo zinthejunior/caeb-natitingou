@@ -125,7 +125,7 @@ export function Navbar({ utilisateur, user: userProp }: NavbarProps) {
                 </div>
                 <div className="hidden sm:block text-left">
                   <p className="text-sm font-semibold text-primary dark:text-library-text leading-none">{user?.prenom || user?.username || 'Utilisateur'}</p>
-                  <p className="text-xs text-muted dark:text-library-muted mt-0.5">{user?.estMembre ? 'Premium' : 'Gratuit'}</p>
+                  <p className="text-xs text-muted dark:text-library-muted mt-0.5">{user?.estMembre ? 'Membre' : 'Public'}</p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted dark:text-library-muted hidden sm:block group-hover:translate-x-0.5 transition-transform" />
               </button>

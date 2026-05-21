@@ -2,23 +2,38 @@ from rest_framework import serializers
 from .models import (
     User, Book, Borrow, Interaction, Notification,
     ReadingClub, Event, News, Review, Reservation,
-    ClubContactMessage, ChatSession, ChatMessage
+    ClubContactMessage, ChatSession, ChatMessage,
+    LabStation, LabReservation, ParticipationEvent
 )
 
 
 class UserSerializer(serializers.ModelSerializer):
-    prenom = serializers.CharField(source='first_name')
-    nom    = serializers.CharField(source='last_name')
-    password  = serializers.CharField(write_only=True, required=False)
+    prenom         = serializers.CharField(source='first_name', required=False)
+    nom            = serializers.CharField(source='last_name', required=False)
+    firstName      = serializers.CharField(source='first_name', required=False)
+    lastName       = serializers.CharField(source='last_name', required=False)
+    isMember       = serializers.SerializerMethodField()
+    estMembre      = serializers.SerializerMethodField()
+    createdAt      = serializers.DateTimeField(source='date_joined', read_only=True)
+    educationLevel = serializers.CharField(source='niveau_etude', required=False)
+    preferredGenres = serializers.JSONField(source='genres_preferes', required=False)
+    password       = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model  = User
         fields = [
-            'id', 'username', 'password', 'prenom', 'nom', 'email',
-            'type_compte', 'date_naissance', 'niveau_etude', 'classe',
-            'date_inscription', 'favorites', 'intentions',
+            'id', 'username', 'password', 'prenom', 'nom', 'firstName', 'lastName', 'email', 'telephone',
+            'type_compte', 'date_naissance', 'niveau_etude', 'educationLevel', 'classe',
+            'date_inscription', 'createdAt', 'favorites', 'intentions', 'estMembre', 'isMember',
+            'preferredGenres', 'sous_genre_prefere', 'pseudo', 'bio', 'avatar'
         ]
-        read_only_fields = ['id', 'date_inscription']
+        read_only_fields = ['id', 'date_inscription', 'createdAt']
+
+    def get_isMember(self, obj):
+        return obj.type_compte == 'membre'
+    
+    def get_estMembre(self, obj):
+        return obj.type_compte == 'membre'
 
     def create(self, validated_data):
         import uuid
@@ -54,37 +69,49 @@ class UserPasswordSerializer(serializers.Serializer):
 class BookSerializer(serializers.ModelSerializer):
     couverture  = serializers.CharField(source='couverture_url', allow_null=True, required=False)
     note        = serializers.FloatField(source='note_moyenne', required=False)
-    nb_avis     = serializers.IntegerField(source='nb_notes', required=False)
-    nouveau     = serializers.SerializerMethodField()
-    populaire   = serializers.SerializerMethodField()
-    public_cible = serializers.CharField(source='categorie_age', required=False)
+    nbAvis      = serializers.IntegerField(source='nb_notes', required=False)
+    nbPages     = serializers.IntegerField(source='nb_pages', required=False)
+    estNouveau  = serializers.SerializerMethodField()
+    estPopulaire = serializers.SerializerMethodField()
+    publicCible = serializers.CharField(source='categorie_age', required=False)
+    # Aliases En
+    cover       = serializers.CharField(source='couverture_url', allow_null=True, required=False)
+    synopsis    = serializers.CharField(source='resume', required=False)
+    targetAudience = serializers.CharField(source='categorie_age', required=False)
 
-    def get_nouveau(self, obj):
+    def get_estNouveau(self, obj):
         return getattr(obj, 'is_new', False)
         
-    def get_populaire(self, obj):
+    def get_estPopulaire(self, obj):
         return getattr(obj, 'is_popular', False)
 
     class Meta:
         model  = Book
         fields = [
-            'id', 'titre', 'auteur', 'couverture', 'genre', 'sous_genre',
-            'annee', 'nb_pages', 'langue', 'resume', 'note', 'nb_avis',
-            'disponible', 'nouveau', 'populaire', 'public_cible',
+            'id', 'titre', 'auteur', 'couverture', 'cover', 'genre', 'sous_genre',
+            'annee', 'nbPages', 'langue', 'resume', 'synopsis', 'note', 'nbAvis',
+            'exemplaires', 'estNouveau', 'estPopulaire', 'publicCible', 'targetAudience'
         ]
 
 
 class BorrowSerializer(serializers.ModelSerializer):
-    livre           = BookSerializer(source='livre', read_only=True)
+    livre           = BookSerializer(read_only=True)
     utilisateur_id  = serializers.CharField(source='user_id')
     date_emprunt    = serializers.DateField(source='date_emprunt')
-    date_prevue     = serializers.DateField(source='date_prevue')
-    date_retour     = serializers.DateField(source='date_retour', required=False, allow_null=True)
+    date_prevue     = serializers.DateField()
+    date_retour     = serializers.DateField(required=False, allow_null=True)
     prolonge        = serializers.BooleanField(source='renouvele', required=False)
+    book            = BookSerializer(source='livre', read_only=True)
+    borrowDate      = serializers.DateField(source='date_emprunt', read_only=True)
+    returnDate      = serializers.DateField(source='date_prevue', read_only=True)
+    isExtended      = serializers.BooleanField(source='renouvele', read_only=True)
 
     class Meta:
         model  = Borrow
-        fields = ['id', 'utilisateur_id', 'livre', 'date_emprunt', 'date_prevue', 'date_retour', 'renouvele', 'prolonge', 'statut']
+        fields = [
+            'id', 'utilisateur_id', 'livre', 'book', 'date_emprunt', 'borrowDate', 
+            'date_prevue', 'returnDate', 'date_retour', 'renouvele', 'isExtended', 'prolonge', 'statut'
+        ]
 
 
 class InteractionSerializer(serializers.ModelSerializer):
@@ -106,54 +133,130 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 
 class ReadingClubSerializer(serializers.ModelSerializer):
-    public_cible = serializers.CharField(source='target_audience')
-    nb_membres   = serializers.IntegerField(source='member_count')
+    nom          = serializers.CharField(source='name')
+    name         = serializers.CharField()
+    publicCible  = serializers.CharField(source='target_audience')
+    targetAudience = serializers.CharField(source='target_audience')
+    nbMembres    = serializers.IntegerField(source='member_count')
+    memberCount  = serializers.IntegerField(source='member_count')
     responsable  = serializers.SerializerMethodField()
+    manager      = serializers.SerializerMethodField()
+
+    estMembre    = serializers.SerializerMethodField()
+    isJoined     = serializers.SerializerMethodField()
 
     class Meta:
         model  = ReadingClub
-        fields = ['id', 'name', 'description', 'image', 'public_cible', 'nb_membres', 'responsable']
+        fields = [
+            'id', 'nom', 'name', 'description', 'image', 'publicCible', 'targetAudience', 
+            'nbMembres', 'memberCount', 'responsable', 'manager', 'estMembre', 'isJoined'
+        ]
+
+    def get_estMembre(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.members.filter(pk=request.user.pk).exists()
+
+    def get_isJoined(self, obj):
+        return self.get_estMembre(obj)
 
     def get_responsable(self, obj):
         return {'nom': obj.manager_name, 'role': obj.manager_role, 'email': obj.manager_email}
+    
+    def get_manager(self, obj):
+        return {'name': obj.manager_name, 'role': obj.manager_role, 'email': obj.manager_email}
 
 
 class EventSerializer(serializers.ModelSerializer):
+    titre           = serializers.CharField(source='title')
+    title           = serializers.CharField()
+    heure           = serializers.CharField(source='time')
+    time            = serializers.CharField()
     type            = serializers.CharField(source='type_event')
-    nb_participants = serializers.IntegerField(source='participant_count')
+    nbParticipants  = serializers.IntegerField(source='participant_count')
+    participantCount = serializers.IntegerField(source='participant_count')
     club_id         = serializers.CharField(required=False, allow_null=True)
+    clubId          = serializers.CharField(source='club_id', required=False, allow_null=True)
+
+    estInscrit      = serializers.SerializerMethodField()
+    isRegistered    = serializers.SerializerMethodField()
 
     class Meta:
         model  = Event
-        fields = ['id', 'title', 'description', 'type', 'date', 'time', 'location', 'nb_participants', 'club_id']
+        fields = [
+            'id', 'titre', 'title', 'description', 'type', 'date', 'heure', 'time', 
+            'location', 'nbParticipants', 'participantCount', 'club_id', 'clubId',
+            'estInscrit', 'isRegistered'
+        ]
+
+    def get_estInscrit(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.participants.filter(user=request.user).exists()
+
+    def get_isRegistered(self, obj):
+        return self.get_estInscrit(obj)
 
 
 class NewsSerializer(serializers.ModelSerializer):
+    titre       = serializers.CharField(source='title')
+    title       = serializers.CharField()
+    resume      = serializers.CharField(source='excerpt')
+    excerpt     = serializers.CharField()
+    contenu     = serializers.CharField(source='content')
+    content     = serializers.CharField()
+    categorie   = serializers.CharField(source='category')
+    category    = serializers.CharField()
+    misEnAvant  = serializers.BooleanField(source='featured')
+    featured    = serializers.BooleanField()
+
     class Meta:
         model  = News
-        fields = '__all__'
+        fields = [
+            'id', 'titre', 'title', 'resume', 'excerpt', 'contenu', 'content', 
+            'image', 'date', 'categorie', 'category', 'misEnAvant', 'featured'
+        ]
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    livre_id         = serializers.CharField(required=False)
+    # Champs lecture (réponse API)
     utilisateur_id   = serializers.CharField(source='user_id', read_only=True)
     nom_utilisateur  = serializers.CharField(source='user.username', read_only=True)
+    prenom_utilisateur = serializers.CharField(source='user.first_name', read_only=True)
     date_creation    = serializers.DateTimeField(source='created_at', read_only=True)
+
+    # Champs écriture — accepte alias frontend ET noms Django
+    livre_id         = serializers.CharField(required=False, write_only=True)
+    book             = serializers.CharField(required=False, write_only=True)   # alias frontend
+    bookId           = serializers.CharField(required=False, write_only=True)   # alias frontend
+    rating           = serializers.IntegerField(required=False, write_only=True, min_value=1, max_value=5)
+    comment          = serializers.CharField(required=False, write_only=True, allow_blank=True)
 
     class Meta:
         model  = Review
-        fields = ['id', 'utilisateur_id', 'livre_id', 'nom_utilisateur', 'note', 'commentaire', 'date_creation']
+        fields = [
+            'id', 'utilisateur_id', 'livre_id', 'nom_utilisateur', 'prenom_utilisateur',
+            'note', 'commentaire', 'date_creation',
+            # write-only aliases
+            'book', 'bookId', 'rating', 'comment',
+        ]
+        read_only_fields = ['id', 'utilisateur_id', 'nom_utilisateur', 'prenom_utilisateur', 'date_creation']
 
 
 class ReservationSerializer(serializers.ModelSerializer):
-    livre            = BookSerializer(source='livre', read_only=True)
+    livre            = BookSerializer(read_only=True)
     livre_id         = serializers.CharField(required=False)
     utilisateur_id   = serializers.CharField(source='user_id', read_only=True)
     date_reservation = serializers.DateTimeField(read_only=True)
+    book            = BookSerializer(source='livre', read_only=True)
+    status          = serializers.CharField(source='statut')
+    reservedAt      = serializers.DateTimeField(source='date_reservation', read_only=True)
 
     class Meta:
         model  = Reservation
-        fields = ['id', 'utilisateur_id', 'livre', 'livre_id', 'date_reservation', 'statut']
+        fields = ['id', 'utilisateur_id', 'livre', 'book', 'livre_id', 'date_reservation', 'reservedAt', 'statut', 'status']
 
 
 class ClubContactMessageSerializer(serializers.ModelSerializer):
@@ -179,3 +282,27 @@ class ChatSessionSerializer(serializers.ModelSerializer):
         model  = ChatSession
         fields = ['id', 'titre', 'created_at', 'updated_at', 'messages']
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class LabStationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = LabStation
+        fields = '__all__'
+
+
+class LabReservationSerializer(serializers.ModelSerializer):
+    station_name = serializers.CharField(source='station.name', read_only=True)
+    
+    class Meta:
+        model  = LabReservation
+        fields = ['id', 'user', 'station', 'station_name', 'date', 'start_time', 'end_time', 'purpose', 'created_at']
+        read_only_fields = ['id', 'user', 'created_at']
+
+
+class ParticipationEventSerializer(serializers.ModelSerializer):
+    event_title = serializers.CharField(source='event.title', read_only=True)
+    
+    class Meta:
+        model  = ParticipationEvent
+        fields = ['id', 'user', 'event', 'event_title', 'date_inscription', 'nom_complet', 'email', 'telephone', 'motivations']
+        read_only_fields = ['id', 'user', 'date_inscription']

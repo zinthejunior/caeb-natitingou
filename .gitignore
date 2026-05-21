@@ -12,7 +12,9 @@ __pycache__/
 chat/
 
 # Dataset lourd
-backend/dataset
+backend/dataset/
+backend/ia/
+
 
 # Node
 node_modules/

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -210,6 +211,36 @@ export function getAdaptiveTextClasses(
   } else if (isDarkMode) {
     return 'text-[#3D2817] hover:text-[#5A4535] focus:text-[#3D2817]'
   } else {
-    return 'text-library-primary hover:text-library-primary/80 focus:text-library-primary'
+  return 'text-library-primary hover:text-library-primary/80 focus:text-library-primary'
   }
 }
+
+/**
+ * Hook SEO pour gérer le titre et la meta description dynamiquement
+ */
+export function useSEO(title: string, description?: string) {
+  useEffect(() => {
+    const prevTitle = document.title;
+    document.title = `${title} | CAEB Natitingou`;
+
+    let metaDescription = document.querySelector('meta[name="description"]');
+    const prevDescription = metaDescription?.getAttribute('content');
+
+    if (description) {
+      if (!metaDescription) {
+        metaDescription = document.createElement('meta');
+        metaDescription.setAttribute('name', 'description');
+        document.head.appendChild(metaDescription);
+      }
+      metaDescription.setAttribute('content', description);
+    }
+
+    return () => {
+      document.title = prevTitle;
+      if (prevDescription) {
+        metaDescription?.setAttribute('content', prevDescription);
+      }
+    };
+  }, [title, description]);
+}
+

@@ -30,29 +30,30 @@ export function LoginPage({ onLogin, onBack, onRegisterClick, isLoading }: Login
     'w-full h-12 px-4 surface-alt border border-[var(--border-color)] rounded-xl text-primary placeholder:text-muted focus:border-[var(--library-accent)] focus:ring-2 focus:ring-[var(--library-accent)]/20 transition-all';
 
   return (
-    <div className="min-h-screen bg-library-bg page-login adaptive-fg flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="bg-blob blob-1" />
-      <div className="bg-blob blob-2" />
+    <div className="min-h-screen bg-library-bg mesh-gradient-light dark:mesh-gradient-dark flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute inset-0 bg-accent/5 animate-pulse-soft pointer-events-none" />
 
-      <div className="w-full max-w-md relative z-10">
-        {/* Carte principale */}
-        <div className="surface rounded-3xl shadow-elevated border border-[var(--border-color)] overflow-hidden">
+      <div className="w-full max-w-md relative z-10 animate-scale-in">
+        {/* Carte principale en verre */}
+        <div className="glass-effect rounded-[2.5rem] shadow-elevated border border-white/10 overflow-hidden">
 
           {/* Header */}
-          <div className="px-8 pt-8 pb-6 border-b border-[var(--border-color)]">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-[var(--library-primary-pale)] shadow-soft flex-shrink-0">
+          <div className="px-10 pt-10 pb-6 border-b border-white/5">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-accent/20 shadow-glow flex-shrink-0 bg-white p-1">
                 <img src="/logo.jpg" alt="CAEB" className="w-full h-full object-contain" />
               </div>
               <div>
                 <div className="flex items-baseline gap-2">
-                  <span className="caeb-brand text-lg tracking-widest">CAEB</span>
-                  <span className="text-xs text-muted font-medium tracking-wider caeb-brand--solid">Natitingou</span>
+                  <span className="caeb-brand text-xl tracking-[0.2em] font-bold">CAEB</span>
                 </div>
+                <span className="text-[10px] text-accent font-bold tracking-[0.3em] uppercase">Natitingou</span>
               </div>
             </div>
-            <h1 className="font-display text-3xl font-bold text-primary mb-1">Connexion</h1>
-            <p className="text-muted text-sm">Heureux de vous revoir parmi nous</p>
+            <h1 className="font-display text-4xl font-bold mb-1">
+              <span className="text-gradient">Connexion</span>
+            </h1>
+            <p className="text-muted text-sm font-medium">Accédez à l'excellence culturelle</p>
           </div>
 
           {/* Formulaire */}

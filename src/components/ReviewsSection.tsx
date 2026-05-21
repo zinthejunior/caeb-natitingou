@@ -29,7 +29,7 @@ export function ReviewsSection({ reviews, onAddReview, isAuthenticated }: Omit<R
   };
 
   const averageRating = reviews.length > 0
-    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+    ? (reviews.reduce((sum, r) => sum + (r.rating ?? 0), 0) / reviews.length).toFixed(1)
     : 0;
 
   return (
@@ -56,7 +56,7 @@ export function ReviewsSection({ reviews, onAddReview, isAuthenticated }: Omit<R
             {/* Distribution des notes */}
             <div className="flex-1 space-y-1">
               {[5, 4, 3, 2, 1].map((star) => {
-                const count = reviews.filter(r => r.rating === star).length;
+                const count = reviews.filter(r => (r.rating ?? 0) === star).length;
                 const percentage = (count / reviews.length) * 100;
                 return (
                   <div key={star} className="flex items-center gap-2">
@@ -181,14 +181,14 @@ export function ReviewsSection({ reviews, onAddReview, isAuthenticated }: Omit<R
                 <div className="flex items-start gap-3 flex-1">
                   {/* Avatar */}
                   <div className="w-10 h-10 rounded-full bg-library-primary dark:bg-library-dark-accent flex items-center justify-center flex-shrink-0 text-white dark:text-library-dark-bg font-bold">
-                    {review.userName[0]}
+                    {review.userName ? review.userName[0].toUpperCase() : '?'}
                   </div>
 
                   {/* Info utilisateur */}
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <h4 className="font-semibold text-primary dark:text-library-dark-light">
-                        {review.userName}
+                        {review.userName || 'Utilisateur anonyme'}
                       </h4>
                       {review.isUserReview && (
                         <Badge className="bg-library-primary dark:bg-library-dark-accent text-white text-xs">
@@ -203,14 +203,14 @@ export function ReviewsSection({ reviews, onAddReview, isAuthenticated }: Omit<R
                         {[...Array(5)].map((_, i) => (
                           <span
                             key={i}
-                            className={i < review.rating ? 'text-yellow-500' : 'text-slate-300 dark:text-slate-600'}
+                            className={i < (review.rating ?? 0) ? 'text-yellow-500' : 'text-slate-300 dark:text-slate-600'}
                           >
                             ★
                           </span>
                         ))}
                       </div>
                       <span className="text-xs text-slate-700 dark:text-library-dark-muted">
-                        {new Date(review.createdAt).toLocaleDateString('fr-FR')}
+                        {review.createdAt ? new Date(review.createdAt).toLocaleDateString('fr-FR') : ''}
                       </span>
                     </div>
                   </div>
@@ -231,7 +231,7 @@ export function ReviewsSection({ reviews, onAddReview, isAuthenticated }: Omit<R
               <div className="flex items-center gap-4 pt-3 border-t border-muted dark:border-library-dark-secondary/50">
                 <button className="flex items-center gap-1 text-xs text-slate-700 dark:text-library-dark-muted hover:text-library-primary dark:hover:text-library-dark-accent transition-colors">
                   <ThumbsUp className="w-4 h-4" />
-                  {review.likes > 0 && `${review.likes}`}
+                  {(review.likes ?? 0) > 0 && `${review.likes}`}
                 </button>
               </div>
             </div>

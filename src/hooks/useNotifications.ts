@@ -42,6 +42,9 @@ export function useNotifications(_intervalleSondage = 30000) {
           notif.type === 'rappel_retour'    ? 'Rappel de retour'   :
           notif.type === 'livre_disponible' ? 'Livre disponible'   :
           notif.type === 'retard'           ? 'Retard'             :
+          notif.type === 'demande_adhesion' ? 'Demande d\'adhésion' :
+          notif.type === 'adhesion_confirmee' ? 'Adhésion confirmée' :
+          notif.type === 'inscription_evenement' ? 'Inscription événement' :
           'Notification',
         body: notif.message,
         message: notif.message,

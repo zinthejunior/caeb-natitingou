@@ -1,122 +1,78 @@
 import os
 import django
-from datetime import datetime
+import uuid
+from datetime import datetime, date
 
 # Configuration de Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
 
-from api.models import User, Book, Club, Event, News, Genre, EducationLevel
+from api.models import User, Book, ReadingClub, Event, News
 
 def seed_data():
     print("Démarrage du peuplement (seeding) de la base de données...")
-
-    # --- GENRES ---
-    genres_list = [
-        'Roman', 'Policier', 'Thriller', 'Romance', 'Science-Fiction', 'Fantastique',
-        'Historique', 'Biographie', 'Développement personnel', 'Horreur', 'Aventure',
-        'Philosophie', 'Poésie', 'Jeunesse', 'Cuisine', 'Voyage', 'Classique', 'Humour', 'Essai',
-    ]
-    for g_name in genres_list:
-        Genre.objects.get_or_create(name=g_name)
-    print(f"Genres: {Genre.objects.count()} en base.")
-
-    # --- NIVEAUX D'ÉTUDE ---
-    levels_data = [
-        {'name': 'école', 'has_classes': True},
-        {'name': 'lycée', 'has_classes': True},
-        {'name': 'étudiant', 'has_classes': True},
-        {'name': 'professionnel', 'has_classes': True},
-        {'name': 'autre', 'has_classes': False},
-    ]
-    for l in levels_data:
-        EducationLevel.objects.get_or_create(name=l['name'], defaults={'has_classes': l['has_classes']})
-    print(f"Niveaux d'étude: {EducationLevel.objects.count()} en base.")
 
     # --- LIVRES ---
     books_data = [
         {
             "id": "livre-001",
-            "title": "L'Enfant noir",
-            "author": "Camara Laye",
-            "cover": "/book-6.jpg",
+            "titre": "L'Enfant noir",
+            "auteur": "Camara Laye",
+            "couverture_url": "/book-6.jpg",
             "genre": "Classique",
-            "year": 1953,
-            "pages": 224,
-            "target_audience": "adult",
-            "synopsis": "Récit autobiographique de Camara Laye, qui narre son enfance en Guinée, la chaleur de sa famille et l'apprentissage des traditions de son peuple.",
-            "rating": 4.8,
-            "review_count": 312,
-            "is_available": True,
-            "is_new": False,
-            "is_popular": True,
+            "annee": 1953,
+            "nb_pages": 224,
+            "categorie_age": "adulte",
+            "resume": "Récit autobiographique de Camara Laye, qui narre son enfance en Guinée.",
+            "note_moyenne": 4.8,
+            "nb_notes": 312,
+            "exemplaires": 3,
         },
         {
             "id": "livre-002",
-            "title": "Une si longue lettre",
-            "author": "Mariama Bâ",
-            "cover": "/book-1.jpg",
+            "titre": "Une si longue lettre",
+            "auteur": "Mariama Bâ",
+            "couverture_url": "/book-1.jpg",
             "genre": "Roman",
-            "year": 1980,
-            "pages": 168,
-            "target_audience": "adult",
-            "synopsis": "À travers une longue lettre adressée à son amie Aïssatou, Ramatoulaye revisite sa vie de femme africaine confrontée à la polygamie.",
-            "rating": 4.7,
-            "review_count": 278,
-            "is_available": True,
-            "is_new": False,
-            "is_popular": True,
+            "annee": 1980,
+            "nb_pages": 168,
+            "categorie_age": "adulte",
+            "resume": "À travers une longue lettre adressée à son amie Aïssatou, Ramatoulaye revisite sa vie.",
+            "note_moyenne": 4.7,
+            "nb_notes": 278,
+            "exemplaires": 2,
         },
         {
             "id": "livre-003",
-            "title": "Nexus 2084",
-            "author": "A.R. Vasquez",
-            "cover": "/book-3.jpg",
+            "titre": "Nexus 2084",
+            "auteur": "A.R. Vasquez",
+            "couverture_url": "/book-3.jpg",
             "genre": "Science-Fiction",
-            "year": 2022,
-            "pages": 412,
-            "target_audience": "adult",
-            "synopsis": "Dans un world où l'intelligence artificielle gouverne les villes, un ingénieur découvre une faille dans le système.",
-            "rating": 4.6,
-            "review_count": 198,
-            "is_available": True,
-            "is_new": True,
-            "is_popular": True,
-        },
-        {
-            "id": "livre-004",
-            "title": "L'Écho du Silence",
-            "author": "Céline Dubois",
-            "cover": "/book-2.jpg",
-            "genre": "Roman",
-            "year": 2021,
-            "pages": 320,
-            "target_audience": "adult",
-            "synopsis": "Un roman bouleversant sur le deuil et la reconstruction.",
-            "rating": 4.5,
-            "review_count": 156,
-            "is_available": False,
-            "is_new": False,
-            "is_popular": True,
+            "annee": 2022,
+            "nb_pages": 412,
+            "categorie_age": "adulte",
+            "resume": "Dans un monde où l'intelligence artificielle gouverne les villes.",
+            "note_moyenne": 4.6,
+            "nb_notes": 198,
+            "exemplaires": 5,
         },
     ]
 
     for b in books_data:
         Book.objects.get_or_create(
-            title=b["title"],
+            id=b["id"],
             defaults={
-                "author": b["author"],
-                "cover": b["cover"],
+                "titre": b["titre"],
+                "auteur": b["auteur"],
+                "couverture_url": b["couverture_url"],
                 "genre": b["genre"],
-                "year": b["year"],
-                "pages": b["pages"],
-                "target_audience": b["target_audience"],
-                "synopsis": b["synopsis"],
-                "rating": b["rating"],
-                "review_count": b["review_count"],
-                "is_available": b["is_available"],
-                "is_new": b["is_new"],
-                "is_popular": b["is_popular"],
+                "annee": b["annee"],
+                "nb_pages": b["nb_pages"],
+                "categorie_age": b["categorie_age"],
+                "resume": b["resume"],
+                "note_moyenne": b["note_moyenne"],
+                "nb_notes": b["nb_notes"],
+                "exemplaires": b["exemplaires"],
             }
         )
     print(f"Livres: {Book.objects.count()} en base.")
@@ -124,35 +80,51 @@ def seed_data():
     # --- CLUBS ---
     clubs_data = [
         {
+            "id": "club-001",
             "name": "Les Classiques Revisités",
-            "description": "Un club dédié à la redécouverte des grands textes de la littérature africaine et mondiale.",
-            "cover": "/club-1.jpg",
+            "description": "Un club dédié à la redécouverte des grands textes.",
+            "image": "/club-1.jpg",
+            "target_audience": "adult",
         },
         {
+            "id": "club-002",
             "name": "Club Anglais CAEB",
-            "description": "Pratiquez et améliorez votre anglais à travers la lecture de romans.",
-            "cover": "/club-2.jpg",
+            "description": "Pratiquez votre anglais à travers la lecture.",
+            "image": "/club-2.jpg",
+            "target_audience": "teen",
         },
     ]
     for c in clubs_data:
-        Club.objects.get_or_create(name=c["name"], defaults={"description": c["description"], "cover": c["cover"]})
-    print(f"Clubs: {Club.objects.count()} en base.")
+        ReadingClub.objects.get_or_create(
+            id=c["id"], 
+            defaults={"name": c["name"], "description": c["description"], "image": c["image"], "target_audience": c["target_audience"]}
+        )
+    print(f"Clubs: {ReadingClub.objects.count()} en base.")
 
     # --- NEWS ---
     news_data = [
         {
-            "title": "50 nouvelles acquisitions au catalogue",
-            "content": "La CAEB enrichit son catalogue avec 50 nouveaux titres.",
-            "cover": "/news-1.jpg",
-        },
-        {
-            "title": "Le labo IA ouvre ses portes aux lycéens",
-            "content": "Dès avril 2026, les lycéens de Natitingou accèdent au laboratoire IA.",
-            "cover": "/news-2.jpg",
+            "id": "news-001",
+            "title": "50 nouvelles acquisitions",
+            "excerpt": "La CAEB enrichit son catalogue.",
+            "content": "Contenu détaillé ici...",
+            "image": "/news-1.jpg",
+            "date": date.today(),
+            "category": "announcement",
         },
     ]
     for n in news_data:
-        News.objects.get_or_create(title=n["title"], defaults={"content": n["content"], "cover": n["cover"]})
+        News.objects.get_or_create(
+            id=n["id"], 
+            defaults={
+                "title": n["title"], 
+                "excerpt": n["excerpt"], 
+                "content": n["content"], 
+                "image": n["image"], 
+                "date": n["date"], 
+                "category": n["category"]
+            }
+        )
     print(f"News: {News.objects.count()} en base.")
 
     print("Peuplement terminé avec succès !")

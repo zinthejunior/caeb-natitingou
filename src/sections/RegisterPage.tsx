@@ -356,45 +356,46 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
   ];
 
   return (
-    <div className="min-h-screen bg-library-bg page-register adaptive-fg flex items-center justify-center py-8 px-4 relative overflow-hidden">
-      <div className="bg-blob blob-1" />
-      <div className="bg-blob blob-2" />
+    <div className="min-h-screen bg-library-bg mesh-gradient-light dark:mesh-gradient-dark flex items-center justify-center py-12 px-4 relative overflow-hidden">
+      <div className="absolute inset-0 bg-accent/5 animate-pulse-soft pointer-events-none" />
 
-      <div className="w-full max-w-md relative z-10">
-        {/* Carte */}
-        <div className="surface rounded-3xl shadow-elevated border border-[var(--border-color)] overflow-hidden">
-          <div className="px-8 pt-8 pb-6 border-b border-[var(--border-color)]">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-[var(--library-primary-pale)] shadow-soft flex-shrink-0">
+      <div className="w-full max-w-md relative z-10 animate-scale-in">
+        {/* Carte en verre */}
+        <div className="glass-effect rounded-[2.5rem] shadow-elevated border border-white/10 overflow-hidden">
+          <div className="px-10 pt-10 pb-6 border-b border-white/5">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-accent/20 shadow-glow flex-shrink-0 bg-white p-1">
                 <img src="/logo.jpg" alt="CAEB" className="w-full h-full object-contain" />
               </div>
               <div>
                 <div className="flex items-baseline gap-2">
-                  <span className="caeb-brand text-lg tracking-widest">CAEB</span>
-                  <span className="text-xs text-muted font-medium caeb-brand--solid">Natitingou</span>
+                  <span className="caeb-brand text-xl tracking-[0.2em] font-bold">CAEB</span>
                 </div>
+                <span className="text-[10px] text-accent font-bold tracking-[0.3em] uppercase">Natitingou</span>
               </div>
             </div>
 
-            <h1 className="font-display text-3xl font-bold text-primary mb-1">Inscription</h1>
-            <p className="text-muted text-sm">{stepTitles[step - 1].subtitle}</p>
+            <h1 className="font-display text-4xl font-bold mb-1">
+              <span className="text-gradient">Inscription</span>
+            </h1>
+            <p className="text-muted text-sm font-medium">{stepTitles[step - 1].subtitle}</p>
           </div>
 
-          <div className="px-8 pt-6 pb-2">
-            {/* Étapes */}
-            <div className="flex items-center justify-between mb-8">
+          <div className="px-10 pt-6 pb-2">
+            {/* Étapes Modernisées */}
+            <div className="flex items-center justify-between mb-10">
               {[1, 2, 3].map((s) => (
                 <div key={s} className="flex items-center flex-1">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${s < step
-                      ? 'bg-[var(--library-accent)]/20 text-[var(--library-accent)]'
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-base transition-all duration-500 ${s < step
+                      ? 'bg-accent/20 text-accent border border-accent/30'
                       : s === step
-                        ? 'bg-[var(--library-accent)] text-[var(--library-on-accent)] shadow-soft'
-                        : 'surface-alt text-muted border border-[var(--border-color)]'
+                        ? 'bg-accent text-white shadow-glow scale-110'
+                        : 'glass-effect text-muted border border-white/10'
                     }`}>
-                    {s < step ? <Check className="w-4 h-4" /> : s}
+                    {s < step ? <Check className="w-5 h-5" /> : s}
                   </div>
                   {s < 3 && (
-                    <div className={`flex-1 h-1 mx-2 rounded-full transition-all duration-500 ${s < step ? 'bg-[var(--library-accent)]/40' : 'bg-[var(--border-color)]'
+                    <div className={`flex-1 h-1 mx-3 rounded-full transition-all duration-700 ${s < step ? 'bg-accent/40' : 'bg-white/5'
                       }`} />
                   )}
                 </div>
@@ -417,10 +418,10 @@ export function RegisterPage({ onRegister, onBack, onLoginClick, isLoading }: Re
             </div>
           </div>
 
-          <div className="px-8 py-4 surface-alt border-t border-[var(--border-color)] text-center">
-            <p className="text-sm text-muted">
+          <div className="px-10 py-6 bg-white/5 border-t border-white/5 text-center">
+            <p className="text-sm text-muted font-medium">
               Déjà un compte ?{' '}
-              <button onClick={onLoginClick} className="text-accent font-bold hover:opacity-75 transition-opacity">
+              <button onClick={onLoginClick} className="text-accent font-bold hover:opacity-75 transition-all">
                 Se connecter
               </button>
             </p>

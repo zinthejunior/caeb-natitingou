@@ -5,6 +5,7 @@ class User(AbstractUser):
     TYPE_COMPTE_CHOICES = [
         ('anonyme', 'Anonyme'),
         ('non_membre', 'Non-membre'),
+        ('en_attente', 'En attente'),
         ('membre', 'Membre'),
     ]
     
@@ -16,6 +17,12 @@ class User(AbstractUser):
     date_inscription = models.DateTimeField(auto_now_add=True)
     favorites = models.JSONField(default=list, blank=True)
     intentions = models.JSONField(default=list, blank=True)
+    genres_preferes = models.JSONField(default=list, blank=True)
+    sous_genre_prefere = models.JSONField(default=list, blank=True)
+    pseudo = models.CharField(max_length=50, null=True, blank=True)
+    bio = models.TextField(null=True, blank=True)
+    avatar = models.CharField(max_length=300, null=True, blank=True)
+    telephone = models.CharField(max_length=20, null=True, blank=True)
     
     # Champs surchargés pour éviter les conflits ou correspondre au schéma
     first_name = models.CharField(max_length=100)
@@ -44,14 +51,17 @@ class Book(models.Model):
     categorie_age = models.CharField(max_length=10, choices=CATEGORIE_AGE_CHOICES, default='adulte')
     note_moyenne = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
     nb_notes = models.IntegerField(default=0)
-    disponible = models.BooleanField(default=True)
+    exemplaires = models.IntegerField(default=1)
     resume = models.TextField(null=True, blank=True)
     couverture_url = models.CharField(max_length=300, null=True, blank=True)
+    # Nouveaux champs enrichis
+    mots_cles = models.TextField(null=True, blank=True)        # mots-clés libres
+    localisation = models.CharField(max_length=100, null=True, blank=True)  # cote / localisation physique
+    section = models.CharField(max_length=200, null=True, blank=True)       # section de la bibliothèque
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.titre
-
 
 
 class Borrow(models.Model):
@@ -119,6 +129,9 @@ class Notification(models.Model):
         ('rappel_retour', 'Rappel retour'),
         ('retard', 'Retard'),
         ('livre_disponible', 'Livre disponible'),
+        ('demande_adhesion', 'Demande adhésion'),
+        ('adhesion_confirmee', 'Adhésion confirmée'),
+        ('inscription_evenement', 'Inscription événement'),
     ]
     
     id = models.CharField(max_length=20, primary_key=True)
@@ -143,6 +156,7 @@ class ReadingClub(models.Model):
     image = models.CharField(max_length=300, null=True, blank=True)
     target_audience = models.CharField(max_length=20, choices=AUDIENCE_CHOICES, default='all')
     member_count = models.IntegerField(default=0)
+    members = models.ManyToManyField(User, related_name='clubs_adherant', blank=True)
     
     # Manager info
     manager_name = models.CharField(max_length=100, null=True, blank=True)
@@ -170,6 +184,18 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+
+class ParticipationEvent(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='event_participations')
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='participants')
+    date_inscription = models.DateTimeField(auto_now_add=True)
+    nom_complet = models.CharField(max_length=200)
+    email = models.EmailField()
+    telephone = models.CharField(max_length=20)
+    motivations = models.TextField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.nom_complet} - {self.event.title}"
 
 class News(models.Model):
     CATEGORY_CHOICES = [
@@ -255,3 +281,26 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f"[{self.role}] {self.content[:50]}"
+
+
+class LabStation(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+    specifications = models.TextField(null=True, blank=True)
+    isActive = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+class LabReservation(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lab_reservations')
+    station = models.ForeignKey(LabStation, on_delete=models.CASCADE, related_name='reservations')
+    date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    purpose = models.CharField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Réservation de {self.user.username} - {self.station.name} le {self.date}"

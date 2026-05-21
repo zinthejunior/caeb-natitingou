@@ -2,3 +2,9 @@ django
 djangorestframework
 django-cors-headers
 djangorestframework-simplejwt
+scikit-learn
+numpy
+requests
+psycopg2-binary
+dj-database-url
+python-dotenv

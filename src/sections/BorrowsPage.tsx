@@ -4,11 +4,11 @@ import { Navbar } from '@/components/Navbar';
 import { ApiImage } from '@/components/ApiImage';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import type { User } from '@/types';
 import { useEmprunts, useReservations } from '@/hooks/useData';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { useSEO } from '@/lib/utils';
 
 interface BorrowsPageProps {
   user: User | null;
@@ -71,14 +71,16 @@ function EmptyReservations() {
 }
 
 export function BorrowsPage({ user }: BorrowsPageProps) {
-  const [activeTab, setActiveTab] = useState<'borrows' | 'reservations'>('borrows');
   const { emprunts = [] } = useEmprunts();
   const { reservations = [] } = useReservations();
+  const [activeTab, setActiveTab] = useState<'borrows' | 'reservations'>('borrows');
+
+  useSEO("Mes Emprunts", "Gérez vos emprunts en cours et vos réservations de livres à la bibliothèque CAEB Natitingou.");
 
   if (!user) {
     return (
       <div className="min-h-screen bg-library-bg pb-24">
-        <Navbar utilisateur={user} />
+        <Navbar user={user} />
         <main className="max-w-4xl mx-auto px-4 py-8 pt-24">
           <div className="surface rounded-2xl p-8 text-center border border-[var(--border-color)]">
             <p className="text-muted">Veuillez vous connecter pour voir vos emprunts</p>
@@ -98,41 +100,49 @@ export function BorrowsPage({ user }: BorrowsPageProps) {
   };
 
   const tabClass = (active: boolean) =>
-    `pb-3 px-2 font-semibold transition-all focus:outline-none rounded text-sm tap-feedback ${active
-      ? 'text-accent border-b-2 border-[var(--library-accent)]'
+    `pb-4 px-6 font-bold transition-all duration-300 focus:outline-none rounded-t-2xl text-sm tap-feedback relative ${active
+      ? 'text-accent'
       : 'text-muted hover:text-primary'
     }`;
 
   return (
     <div className="min-h-screen bg-library-bg pb-24">
-      <Navbar utilisateur={user} />
+      <Navbar user={user} />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
 
-        {/* En-tête */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-[var(--library-accent)]/10 border border-[var(--library-accent)]/20 rounded-xl flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-accent" />
+        {/* En-tête Modernisé */}
+        <div className="mb-12">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 bg-accent/10 border border-accent/20 rounded-2xl flex items-center justify-center shadow-glow">
+              <BookOpen className="w-6 h-6 text-accent" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-primary">Mes emprunts</h1>
+            <h1 className="font-display text-4xl md:text-5xl font-bold">
+              <span className="text-gradient">Mes Emprunts</span>
+            </h1>
           </div>
-          <p className="text-muted pl-1">Suivez vos emprunts en cours et vos réservations en attente</p>
+          <p className="text-muted text-lg pl-1 font-medium">Suivez vos lectures actuelles et vos prochaines découvertes.</p>
         </div>
 
-        {/* Onglets */}
-        <div className="flex gap-4 mb-8 border-b border-[var(--border-color)]">
+        {/* Onglets Premium */}
+        <div className="flex gap-2 mb-10 border-b border-white/10">
           <button onClick={() => setActiveTab('borrows')} className={tabClass(activeTab === 'borrows')}
             aria-selected={activeTab === 'borrows'} role="tab">
-            <span className="hidden sm:inline">Emprunts actuels</span>
+            <span className="hidden sm:inline">Emprunts en cours</span>
             <span className="sm:hidden">Emprunts</span>
-            <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded-full surface-alt border border-[var(--border-color)]">{emprunts.length}</span>
+            <span className={`ml-3 text-[10px] font-black px-2 py-0.5 rounded-full ${activeTab === 'borrows' ? 'bg-accent/20 text-accent' : 'bg-white/5 text-muted'}`}>
+              {emprunts.length}
+            </span>
+            {activeTab === 'borrows' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-accent rounded-t-full shadow-glow" />}
           </button>
           <button onClick={() => setActiveTab('reservations')} className={tabClass(activeTab === 'reservations')}
             aria-selected={activeTab === 'reservations'} role="tab">
-            <span className="hidden sm:inline">Réservations</span>
+            <span className="hidden sm:inline">Liste de réservation</span>
             <span className="sm:hidden">Réservés</span>
-            <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded-full surface-alt border border-[var(--border-color)]">{reservations.length}</span>
+            <span className={`ml-3 text-[10px] font-black px-2 py-0.5 rounded-full ${activeTab === 'reservations' ? 'bg-accent/20 text-accent' : 'bg-white/5 text-muted'}`}>
+              {reservations.length}
+            </span>
+            {activeTab === 'reservations' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-accent rounded-t-full shadow-glow" />}
           </button>
         </div>
 
@@ -147,7 +157,7 @@ export function BorrowsPage({ user }: BorrowsPageProps) {
                 const progressValue = Math.max(0, Math.min(100, ((14 - Math.max(0, daysRemaining)) / 14) * 100));
 
                 return (
-                  <div key={emprunt.id} className="surface rounded-2xl p-5 shadow-card hover:shadow-card-hover border border-[var(--border-color)] hover:border-[var(--library-accent)]/20 transition-all">
+                  <div key={emprunt.id} className="glass-effect rounded-[2rem] p-6 shadow-card hover:shadow-glow border border-white/10 hover:border-accent/30 transition-all duration-500 animate-flow-in">
                     <div className="flex gap-4">
                       <div className="hidden sm:block w-16 h-24 rounded-xl overflow-hidden flex-shrink-0 shadow-soft">
                         <ApiImage src={emprunt.book.cover} alt={emprunt.book.title} className="w-full h-full object-cover" />
@@ -180,12 +190,19 @@ export function BorrowsPage({ user }: BorrowsPageProps) {
                           </div>
                         </div>
 
-                        <div className="mb-3">
-                          <div className="flex justify-between text-xs text-muted mb-1.5">
-                            <span>{Math.max(0, daysRemaining)} jour{Math.max(0, daysRemaining) !== 1 ? 's' : ''} restant{Math.max(0, daysRemaining) !== 1 ? 's' : ''}</span>
-                            <span>14 jours</span>
+                        <div className="mb-4">
+                          <div className="flex justify-between text-xs font-bold text-muted mb-2">
+                            <span className={isOverdue ? 'text-red-500' : isWarning ? 'text-amber-500' : 'text-accent'}>
+                              {Math.max(0, daysRemaining)} jour{Math.max(0, daysRemaining) !== 1 ? 's' : ''} restant{Math.max(0, daysRemaining) !== 1 ? 's' : ''}
+                            </span>
+                            <span>Cycle de 14 jours</span>
                           </div>
-                          <Progress value={progressValue} className="h-2" />
+                          <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                            <div 
+                              className={`h-full transition-all duration-1000 shadow-glow ${isOverdue ? 'bg-red-500 shadow-red-500/20' : isWarning ? 'bg-amber-500 shadow-amber-500/20' : 'bg-accent'}`}
+                              style={{ width: `${progressValue}%` }}
+                            />
+                          </div>
                         </div>
 
                         <div className="flex gap-2">

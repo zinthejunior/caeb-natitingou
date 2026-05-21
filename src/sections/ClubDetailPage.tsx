@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 import { Navbar } from '@/components/Navbar';
 import { ClubContactForm } from '@/components/ClubContactForm';
 import type { Event, User as UserType } from '@/types';
-import { useClub, useEvents, rejoindreClub } from '@/hooks/useData';
+import { useClub, useEvents, rejoindreClub, quitterClub } from '@/hooks/useData';
+import { useSEO } from '@/lib/utils';
 
 interface ClubDetailPageProps {
   clubId: string;
@@ -16,13 +17,15 @@ interface ClubDetailPageProps {
 
 export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
   const { club, chargement: isClubLoading } = useClub(clubId);
-  const { evenements: events, chargement: isEventsLoading } = useEvents();
+  const { events, isLoading: isEventsLoading } = useEvents();
   const [isJoined, setIsJoined] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
 
   useEffect(() => {
     if (club) setIsJoined(club.estMembre || false);
   }, [club]);
+
+  useSEO(club?.nom || "Club Culturel", club?.description || "Découvrez nos clubs culturels à la bibliothèque CAEB Natitingou.");
 
   if (isClubLoading || isEventsLoading) return (
     <div className="min-h-screen bg-library-bg flex items-center justify-center">
@@ -31,7 +34,7 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
   );
   if (!club) return null;
 
-  const clubEvents = events.filter(e => e.clubId === clubId);
+  const clubEvents = events.filter((e: any) => e.clubId === clubId);
 
   const handleJoinClub = () => setShowContactForm(true);
 
@@ -47,9 +50,14 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
     }
   };
 
-  const handleLeaveClub = () => {
-    setIsJoined(false);
-    toast.success('Vous avez quitté le club');
+  const handleLeaveClub = async () => {
+    try {
+      await quitterClub(clubId);
+      setIsJoined(false);
+      toast.success('Vous avez quitté le club');
+    } catch (err) {
+      toast.error('Erreur lors du départ du club');
+    }
   };
 
   const handleParticipate = () => {
@@ -87,29 +95,29 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
         <img src={club.image} alt={club.nom} className="w-full h-full object-cover" />
         <div className="absolute inset-0 image-overlay" />
 
-        {/* Back button */}
+        {/* Back button Premium */}
         <button
           onClick={onBack}
-          className="absolute top-6 left-6 w-11 h-11 bg-[var(--library-surface)]/80 backdrop-blur-lg rounded-full flex items-center justify-center text-[var(--library-accent)] hover:shadow-lg hover:bg-[var(--library-surface)] transition-all z-10 border border-[var(--border-color)] group"
+          className="absolute top-8 left-8 w-12 h-12 glass-effect rounded-2xl flex items-center justify-center text-accent hover:shadow-glow hover:scale-110 transition-all z-20 border border-white/10 group"
           title="Retour"
         >
-          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+          <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
         </button>
 
-        {/* Club info overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-6">
-          <div className="max-w-7xl mx-auto">
-            <Badge className="mb-3 font-bold text-sm overlay-label">
+        {/* Club info overlay Premium */}
+        <div className="absolute bottom-0 left-0 right-0 p-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+          <div className="max-w-7xl mx-auto animate-flow-in">
+            <Badge className="mb-4 font-black text-xs px-4 py-1.5 uppercase tracking-widest bg-accent text-white shadow-glow border-none">
               {getAudienceIcon(club.publicCible)}
-              <span className="ml-1">{getAudienceLabel(club.publicCible)}</span>
+              <span className="ml-2">{getAudienceLabel(club.publicCible)}</span>
             </Badge>
-            <h1 className="font-display text-4xl font-bold mb-2 overlay-text">
-              {club.nom}
+            <h1 className="font-display text-5xl md:text-6xl font-bold mb-4">
+              <span className="text-white drop-shadow-lg">{club.nom}</span>
             </h1>
-            <div className="flex items-center gap-6 overlay-text">
-              <span className="flex items-center gap-2 font-medium">
-                <Users className="w-5 h-5" />
-                {club.nbMembres} membres
+            <div className="flex items-center gap-8 text-white/90">
+              <span className="flex items-center gap-3 font-bold text-lg">
+                <Users className="w-6 h-6 text-accent shadow-glow" />
+                {club.nbMembres} membres actifs
               </span>
             </div>
           </div>
@@ -123,28 +131,28 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
             <Button
               variant="outline"
               onClick={handleLeaveClub}
-              className="border-[var(--border-color)] text-[var(--library-muted)] hover:border-[var(--library-accent)] hover:text-[var(--library-accent)] font-medium"
+              className="glass-effect border-white/10 text-muted hover:border-accent/30 hover:text-accent font-bold px-6 h-12 rounded-2xl"
             >
-              <Check className="w-4 h-4 mr-2" />
-              Je suis membre
+              <Check className="w-5 h-5 mr-2" />
+              Membre actif
             </Button>
           ) : (
             <Button
               onClick={handleJoinClub}
-              className="bg-[var(--library-accent)] text-[var(--library-on-accent)] hover:opacity-90 sheen font-medium gap-2"
+              className="bg-accent text-white hover:opacity-90 shadow-glow font-black px-8 h-12 rounded-2xl gap-3 animate-pulse-soft"
             >
-              <Plus className="w-4 h-4" />
-              Rejoindre ce club
+              <Plus className="w-5 h-5" />
+              Rejoindre le club
             </Button>
           )}
           {club.lienExterne && (
             <Button
               variant="outline"
               onClick={() => window.open(club.lienExterne, '_blank')}
-              className="border-[var(--border-color)] text-[var(--library-text)] hover:border-[var(--library-accent)]/40 gap-2"
+              className="glass-effect border-white/10 text-primary hover:border-accent/40 gap-3 px-6 h-12 rounded-2xl font-bold shadow-soft"
             >
-              <ExternalLink className="w-4 h-4" />
-              Visiter
+              <ExternalLink className="w-5 h-5" />
+              Consulter cours & ateliers
             </Button>
           )}
         </div>
@@ -153,12 +161,12 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main column */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Description */}
-            <div className="surface rounded-2xl p-6 border border-[var(--border-color)] shadow-soft">
-              <h2 className="font-display text-xl font-semibold text-[var(--library-text)] mb-3">
-                Le club en quelques mots
+            {/* Description Premium */}
+            <div className="glass-effect rounded-[2.5rem] p-8 border border-white/10 shadow-elevated animate-flow-in">
+              <h2 className="font-display text-2xl font-bold mb-4">
+                <span className="text-gradient">L'esprit du club</span>
               </h2>
-              <p className="text-[var(--library-muted)] leading-relaxed">
+              <p className="text-muted text-lg leading-relaxed font-medium">
                 {club.description}
               </p>
             </div>
@@ -219,7 +227,7 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
                   {club.activiteRecente.map((act) => (
                     <div key={act.id} className="flex items-start gap-3 p-3 bg-[var(--library-surface-alt)] rounded-xl border border-[var(--border-color)]">
                       <div className="w-10 h-10 rounded-full bg-[var(--library-accent)]/10 flex items-center justify-center text-[var(--library-accent)] font-semibold">
-                        {act.userName.charAt(0)}
+                        {act.userName?.charAt(0) || '?'}
                       </div>
                       <div className="flex-1">
                         <p className="text-sm text-[var(--library-text)]">
@@ -243,7 +251,7 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
                   Prochains événements du club
                 </h2>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  {clubEvents.map((event) => (
+                  {clubEvents.map((event: any) => (
                     <EventCard key={event.id} event={event} onParticipate={handleParticipate} />
                   ))}
                 </div>

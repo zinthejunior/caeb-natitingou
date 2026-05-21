@@ -3,8 +3,7 @@ import { Cpu, Calendar as CalendarIcon, Clock, ShieldCheck, Monitor } from 'luci
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
-import { useLabStations } from '@/hooks/useData';
+import { useLabStations, creerReservationLab } from '@/hooks/useData';
 import type { User, View } from '@/types';
 
 interface LabPageProps {
@@ -38,7 +37,7 @@ export function LabPage({ user }: LabPageProps) {
       const endHour = parseInt(time.split(':')[0]) + 2;
       const endTime = `${endHour.toString().padStart(2, '0')}:00:00`;
 
-      await api.createLabReservation({
+      await creerReservationLab({
         station: selectedStation,
         date: date,
         start_time: startTime,

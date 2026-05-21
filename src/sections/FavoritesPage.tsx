@@ -1,4 +1,3 @@
-// Page des favoris — CAEB Design System
 import { Heart, ChevronLeft, Star } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { ApiImage } from '@/components/ApiImage';
@@ -7,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import type { User } from '@/types';
 import { useBooks } from '@/hooks/useData';
 import { useState } from 'react';
+import { useSEO } from '@/lib/utils';
 
 interface FavoritesPageProps {
   user: User | null;
@@ -47,6 +47,8 @@ export function FavoritesPage({ user, onNavigate, onToggleFavorite }: FavoritesP
   const [sortBy, setSortBy] = useState<'recent' | 'rating' | 'title'>('recent');
   const { books } = useBooks();
 
+  useSEO("Mes Favoris", "Consultez et gérez votre liste de livres coups de cœur à la bibliothèque CAEB Natitingou.");
+
   if (!user) {
     return (
       <div className="min-h-screen bg-library-bg pb-24">
@@ -79,42 +81,40 @@ export function FavoritesPage({ user, onNavigate, onToggleFavorite }: FavoritesP
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
 
-        {/* En-tête */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-center">
-              <Heart className="w-5 h-5 text-red-500 fill-current" />
+        {/* En-tête Modernisé */}
+        <div className="mb-10">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="w-12 h-12 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center shadow-glow-red">
+              <Heart className="w-6 h-6 text-red-500 fill-current" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-primary">Mes Favoris</h1>
+            <h1 className="font-display text-4xl md:text-5xl font-bold">
+              <span className="text-gradient">Mes Favoris</span>
+            </h1>
           </div>
-          <p className="text-muted pl-1">
-            <span className="font-semibold text-accent">{sortedFavorites.length}</span>{' '}
-            livre{sortedFavorites.length !== 1 ? 's' : ''} dans votre liste de favoris
+          <p className="text-muted text-lg pl-1 font-medium">
+            <span className="text-accent font-black">{sortedFavorites.length}</span>{' '}
+            ouvrage{sortedFavorites.length !== 1 ? 's' : ''} dans votre collection privée
           </p>
         </div>
 
-        {/* Tri */}
-        {sortedFavorites.length > 0 && (
-          <div className="flex gap-2 mb-6 flex-wrap">
+          <div className="flex gap-3 mb-10 flex-wrap">
             {sortOptions.map(opt => (
               <button key={opt.key} onClick={() => setSortBy(opt.key)}
                 aria-pressed={sortBy === opt.key}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[var(--library-accent)] focus:ring-offset-0 tap-feedback ${sortBy === opt.key
-                  ? 'bg-[var(--library-accent)] text-[var(--library-on-accent)] shadow-soft'
-                  : 'surface border border-[var(--border-color)] text-primary hover:border-[var(--library-accent)]/30'
+                className={`px-6 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300 border focus:outline-none focus:ring-2 focus:ring-accent/20 tap-feedback ${sortBy === opt.key
+                  ? 'bg-accent text-white border-accent shadow-glow scale-105'
+                  : 'glass-effect border-white/10 text-primary hover:border-accent/30 hover:text-accent'
                   }`}>
                 {opt.label}
               </button>
             ))}
           </div>
-        )}
 
-        {/* Grille ou état vide illustré */}
-        {sortedFavorites.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {sortedFavorites.map((book) => (
+          {sortedFavorites.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {sortedFavorites.map((book) => (
               <div key={book.id}
-                className="surface rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover border border-[var(--border-color)] hover:border-[var(--library-accent)]/20 book-card-3d transition-all duration-300 flex flex-col group cursor-pointer"
+                className="glass-effect rounded-[2.5rem] overflow-hidden shadow-card hover:shadow-glow border border-white/10 hover:border-accent/30 transition-all duration-500 flex flex-col group cursor-pointer animate-flow-in"
                 onClick={() => onNavigate('book-detail', { bookId: book.id })}>
 
                 {/* Couverture */}
@@ -130,7 +130,7 @@ export function FavoritesPage({ user, onNavigate, onToggleFavorite }: FavoritesP
                   </button>
 
                   <div className="absolute top-2 left-2 flex flex-col gap-1">
-                    {!book.estDisponible && <Badge variant="destructive" className="text-[10px]">Indisponible</Badge>}
+                    {book.exemplaires <= 0 && <Badge variant="destructive" className="text-[10px]">Indisponible</Badge>}
                     {book.estNouveau && <Badge className="bg-[var(--library-accent)] text-[var(--library-on-accent)] text-[10px]">Nouveau</Badge>}
                   </div>
                 </div>

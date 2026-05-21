@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import type { User, Book } from '@/types';
 import { useLivres, creerSessionChat, ajouterMessageChat, useSessionsChat, recupererSessionChat } from '@/hooks/useData';
+import { useSEO } from '@/lib/utils';
 
 // Interface pour les messages de la discussion
 interface ChatMessage {
@@ -44,28 +45,6 @@ const SUGGESTIONS_RAPIDES = [
 ];
 
 /**
- * Construit le message système pour l'IA Anthropic.
- */
-function construirePromptSysteme(nomUtilisateur: string, extraitCatalogue: string): string {
-  return `Tu es Kossi, l'assistant bibliothécaire de la CAEB (Centre d'Apprentissage et de l'Éducation de Base) de Natitingou, au nord du Bénin. Tu es chaleureux, cultivé, proche des lecteurs — comme un bibliothécaire de confiance qui connaît ses habitués.
-
-RÈGLES IMPORTANTES :
-- Tu t'exprimes uniquement en français, avec un ton chaleureux et personnel.
-- Tu connais le prénom de l'utilisateur : ${nomUtilisateur}. Utilise-le naturellement, sans en abuser.
-- Quand tu recommandes des livres, cite des titres réels du catalogue CAEB si possible (voir ci-dessous). Formule la recommandation avec passion et sincérité, comme si tu venais de lire le livre toi-même.
-- Pour les questions sur la bibliothèque, voici les infos : ouverte lundi-samedi 8h-19h, 12 000 ouvrages, 3 clubs (lecture adultes, jeunesse, danse), labo IA unique au nord du Bénin, fondée il y a 25 ans avec le soutien de la Fondation Vallet.
-- Tes réponses sont concises (3-5 phrases max) sauf si on te demande plus de détail.
-- Si tu ne sais pas quelque chose, dis-le honnêtement et propose de contacter la bibliothèque directement.
-- Termine parfois par une question douce pour maintenir la conversation.
-- N'invente PAS de titres hors catalogue si tu n'en as pas besoin.
-
-CATALOGUE DISPONIBLE (extrait) :
-${extraitCatalogue}
-
-Tu peux aussi citer d'autres grands classiques ou romans connus si la question le justifie.`;
-}
-
-/**
  * Extrait les références de livres du contenu du message de l'IA.
  */
 function extraireRefsLivres(contenu: string, tousLesLivres: Book[]): RefLivre[] {
@@ -95,13 +74,10 @@ export function AIChatPage({ user, onNavigate }: AIChatPageProps) {
   const [menuOuvert, setMenuOuvert] = useState(true);
   const [sessionIdActif, setSessionIdActif] = useState<number | null>(null);
   
+  useSEO("Assistant Kossi", "Discutez avec Kossi, l'intelligence artificielle de la Bibliothèque CAEB, pour obtenir des recommandations personnalisées.");
+  
   const finMessagesRef = useRef<HTMLDivElement>(null);
   const saisieRef = useRef<HTMLTextAreaElement>(null);
-
-  // Préparation d'un échantillon du catalogue pour l'IA
-  const echantillonCatalogue = livres.slice(0, 15).map(l =>
-    `- "${l.titre}" de ${l.auteur} (${l.genre})`
-  ).join('\n');
 
   const nomUtilisateur = user?.prenom ?? 'lecteur';
 
@@ -168,50 +144,32 @@ export function AIChatPage({ user, onNavigate }: AIChatPageProps) {
         rechargerSessions();
       }
       
-      await ajouterMessageChat(idSession, 'user', texteNettoye);
+      // 2. Envoyer au backend et récupérer la réponse automatique
+      const data = await ajouterMessageChat(idSession, texteNettoye);
+      
+      const contenuIA = data.assistant_message.content;
+      const responseData = data.structured_data;
 
-      // 2. Préparation de l'appel à l'IA
-      const promptSysteme = construirePromptSysteme(nomUtilisateur, echantillonCatalogue);
-      const historique = messages.slice(-6).map(m => ({ role: m.role, content: m.content }));
-      historique.push({ role: 'user', content: texteNettoye });
-
-      const cleAPI = localStorage.getItem('caeb_anthropic_key');
-      if (!cleAPI) {
-        const nouvelleCle = window.prompt("Clé Anthropic requise :");
-        if (nouvelleCle) localStorage.setItem('caeb_anthropic_key', nouvelleCle);
-        else throw new Error("Clé API manquante");
+      // Extraire les références de livres soit du contenu, soit des données structurées
+      let referencesLivres: RefLivre[] = [];
+      if (responseData && responseData.livres) {
+        referencesLivres = responseData.livres.map((l: any) => ({
+          id: l.id_livre,
+          titre: l.titre,
+          auteur: l.auteur,
+          genre: l.genre,
+          couverture: livres.find(bl => bl.id === l.id_livre)?.couverture,
+          note: l.note_moyenne
+        }));
+      } else {
+        referencesLivres = extraireRefsLivres(contenuIA, livres);
       }
 
-      // Appel direct à l'API Anthropic (Claude)
-      const reponse = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-api-key': localStorage.getItem('caeb_anthropic_key') || '',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20240620',
-          max_tokens: 800,
-          system: promptSysteme,
-          messages: historique,
-        }),
-      });
-
-      const donneesIA = await reponse.json();
-      const contenuIA = donneesIA.content?.[0]?.text ?? "Désolé, je rencontre un petit souci technique.";
-      
-      // Sauvegarder la réponse de l'IA en base
-      await ajouterMessageChat(idSession, 'assistant', contenuIA);
-
-      const referencesLivres = extraireRefsLivres(contenuIA, livres);
-
       setMessages(listePrecedente => [...listePrecedente, {
-        id: `assistant-${Date.now()}`,
+        id: data.assistant_message.id.toString(),
         role: 'assistant',
         content: contenuIA,
-        timestamp: new Date(),
+        timestamp: new Date(data.assistant_message.created_at),
         bookRefs: referencesLivres.length > 0 ? referencesLivres : undefined,
       }]);
     } catch (erreur) {
@@ -302,25 +260,33 @@ export function AIChatPage({ user, onNavigate }: AIChatPageProps) {
       {/* ── CONTENU PRINCIPAL ── */}
       <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-library-bg">
         
-        {/* Barre d'en-tête */}
-        <header className="h-16 flex items-center justify-between px-4 border-b border-[var(--border-color)] bg-library-bg/80 backdrop-blur-md sticky top-0 z-10">
-          <div className="flex items-center gap-3">
+        {/* Barre d'en-tête Modernisée */}
+        <header className="h-20 flex items-center justify-between px-6 border-b border-[var(--border-color)] glass-effect sticky top-0 z-10">
+          <div className="flex items-center gap-4">
             <button 
               onClick={() => setMenuOuvert(!menuOuvert)}
-              className="p-2 hover:bg-[var(--library-surface-alt)] rounded-lg transition-colors"
+              className="p-2.5 hover:bg-[var(--library-accent)]/10 rounded-xl transition-all text-accent"
             >
               {menuOuvert ? <PanelLeftClose className="w-5 h-5" /> : <PanelLeftOpen className="w-5 h-5" />}
             </button>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-white shadow-soft">
-                <Bot className="w-5 h-5" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center text-white shadow-glow animate-float">
+                <Bot className="w-6 h-6" />
               </div>
-              <h2 className="font-display font-bold text-lg">Kossi <span className="text-accent text-sm ml-1 opacity-80">Assistant IA</span></h2>
+              <div>
+                <h2 className="font-display font-bold text-xl tracking-tight">
+                  <span className="text-gradient">Kossi</span>
+                </h2>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted">En ligne</span>
+                </div>
+              </div>
             </div>
           </div>
-          <Button variant="ghost" className="text-muted hover:text-accent gap-2" onClick={() => onNavigate('home')}>
+          <Button variant="ghost" className="text-muted hover:text-accent gap-2 font-semibold" onClick={() => onNavigate('home')}>
             <ChevronLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Quitter</span>
+            Quitter
           </Button>
         </header>
 
@@ -364,10 +330,10 @@ export function AIChatPage({ user, onNavigate }: AIChatPageProps) {
                     )}
                     <div className={`flex flex-col gap-3 ${msg.role === 'user' ? 'max-w-[85%] items-end' : 'max-w-[85%] md:max-w-[80%]'}`}>
                       <div className={`
-                        px-5 py-4 rounded-3xl text-[15px] leading-relaxed shadow-soft
+                        px-6 py-4 rounded-[2rem] text-[15px] leading-relaxed shadow-soft transition-all
                         ${msg.role === 'user' 
-                          ? 'bg-[var(--library-surface-alt)] text-primary border border-[var(--border-color)] rounded-tr-sm' 
-                          : 'bg-transparent text-primary'
+                          ? 'bg-accent text-white border border-accent/20 rounded-tr-sm shadow-glow' 
+                          : 'glass-effect text-primary border border-[var(--border-color)] rounded-tl-sm'
                         }
                       `}>
                         {msg.content.split('\n').map((ligne, i) => (

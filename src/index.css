@@ -11,9 +11,9 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 /* ============================================================
    A/ TOKENS — MODE CLAIR
@@ -70,6 +70,9 @@
     --shadow-halo:    0 0 0 4px rgba(26, 86, 219, 0.12),
                       inset 0 1px 2px rgba(255, 255, 255, 0.9);
 
+    /* Glow utilitaire utilisé pour sélections, accents légers */
+    --library-accent-glow: rgba(26, 86, 219, 0.18);
+
     /* ── Dégradés ── */
     --gradient-primary: linear-gradient(135deg, #FFFFFF 0%, #F0F5FF 60%, #E0ECFF 100%);
     --gradient-accent:  linear-gradient(135deg, #1A56DB 0%, #2563EB 50%, #3B82F6 100%);
@@ -107,80 +110,70 @@
    ============================================================ */
 @layer base {
   html.dark {
-    /* ── Fond & Surfaces ── */
-    --library-bg:            #120A04;   /* Brun très foncé — fond global (nuit chaude) */
-    --library-surface:       #1E1208;   /* Chocolat profond — cartes principales */
-    --library-surface-alt:   #2A1A0A;   /* Chocolat moyen — surfaces alt */
-    --library-surface-weak:  #3A2512;   /* Brun caramel — éléments secondaires */
-
-    /* ── Couleurs CAEB dark (bâtiment : bois, pierre, lumière dorée) ── */
-    --library-primary:       #F5C518;   /* Or vif CAEB — accent principal */
-    --library-primary-dark:  #D4A017;   /* Or brûlé — hover/pressed */
-    --library-primary-light: #FFD95A;   /* Or clair — highlights */
-    --library-primary-pale:  #3D2A00;   /* Or très sombre — bg badges */
+    /* ── Fond & Surfaces — Midnight Gold (Inspiration Chocolat CAEB) ── */
+    --library-bg:            #0D0A08;   /* Chocolat Onyx ultra-profond */
+    --library-surface:       #15110F;   /* Marron-noir très sombre */
+    --library-surface-alt:   #1C1613;   /* Terre d'ombre brûlée */
+    --library-surface-weak:  #251D1A;   /* Café noir */
+    
+    /* ── Couleurs CAEB Dark Premium (Ambre & Or) ── */
+    --library-primary:       #EAB308;   /* Ambre vibrant */
+    --library-primary-dark:  #CA8A04;   /* Or brûlé */
+    --library-primary-light: #FDE047;   /* Jaune solaire */
+    --library-primary-pale:  #422006;   /* Fond de badge ambre */
 
     /* ── Accent & Interactivité ── */
-    --library-accent:        #F5C518;   /* Or principal */
-    --library-accent-alt:    #E8B800;   /* Or chaud — variante */
-    --library-accent-light:  #FFD95A;   /* Or lumineux — hover */
-    --library-accent-sky:    #FFF0A0;   /* Or très pâle — subtil */
+    --library-accent:        #EAB308;
+    --library-accent-alt:    #D97706;
+    --library-accent-light:  #FACC15;
+    --library-accent-sky:    #FEF08A;
 
     /* ── Textes ── */
-    --library-text:          #FDF3E3;   /* Crème chaud — texte principal */
-    --library-text-muted:    #C9A87C;   /* Beige caramel — texte secondaire */
-    --library-muted:         #8B6A45;   /* Brun moyen — texte tertiaire */
+    --library-text:          #F8FAFC;   /* Blanc cassé (Slate 50) */
+    --library-text-muted:    #94A3B8;   /* Gris-bleu (Slate 400) */
+    --library-muted:         #64748B;   /* Gris tertiaire (Slate 500) */
 
     /* ── Bordures ── */
-    --border-color:          #3D2810;   /* Brun foncé — bordures standard */
-    --border-strong:         #5C3D1A;   /* Brun moyen — bordures visibles */
+    --border-color:          #1E293B;   /* Slate 800 */
+    --border-strong:         #334155;   /* Slate 700 */
 
-    /* ── Textes sur fonds colorés ── */
-    --library-on-accent:     #1A0A00;   /* Brun très foncé sur or */
-    --library-on-light-text: #1A0A00;
-    --library-on-image-text: #FFFFFF;
-    --library-accent-secondary: #1A0A00; /* Texte sur boutons d'accent */
+    /* ── Ombres (Lueur ambre subtile) ── */
+    --shadow-xs:      0 1px 3px rgba(0, 0, 0, 0.50);
+    --shadow-subtle:  0 2px 8px rgba(0, 0, 0, 0.60);
+    --shadow-soft:    0 4px 16px rgba(0, 0, 0, 0.70);
+    --shadow-medium:  0 8px 32px rgba(0, 0, 0, 0.80);
+    --shadow-elevated:0 16px 48px rgba(0, 0, 0, 0.90);
+    --shadow-glow:    0 0 15px rgba(234, 179, 8, 0.15), 0 0 30px rgba(234, 179, 8, 0.05);
 
-    /* ── Ombres (teintées or/brun pour atmosphère) ── */
-    --shadow-xs:      0 1px 3px rgba(0, 0, 0, 0.30);
-    --shadow-subtle:  0 2px 8px rgba(0, 0, 0, 0.35);
-    --shadow-soft:    0 4px 16px rgba(0, 0, 0, 0.40);
-    --shadow-medium:  0 8px 32px rgba(0, 0, 0, 0.45);
-    --shadow-elevated:0 16px 48px rgba(0, 0, 0, 0.55);
-    --shadow-glow:    0 0 0 3px rgba(245, 197, 24, 0.20),
-                      0 8px 32px rgba(245, 197, 24, 0.15);
-    --shadow-card:    0 2px 12px rgba(0, 0, 0, 0.35),
-                      0 1px 3px rgba(245, 197, 24, 0.05);
-    --shadow-card-hover: 0 8px 30px rgba(0, 0, 0, 0.50),
-                         0 3px 8px rgba(245, 197, 24, 0.12);
-    --shadow-halo:    0 0 0 4px rgba(245, 197, 24, 0.15),
-                      inset 0 1px 2px rgba(255, 245, 200, 0.1);
+    /* Glow utilitaire pour dark mode (doré) */
+    --library-accent-glow: rgba(234, 179, 8, 0.20);
 
-    /* ── Dégradés ── */
-    --gradient-primary: linear-gradient(135deg, #1E1208 0%, #2A1A0A 60%, #3A2512 100%);
-    --gradient-accent:  linear-gradient(135deg, #F5C518 0%, #D4A017 50%, #B8860B 100%);
-    --gradient-fashion: linear-gradient(135deg, #3A2512 0%, #2A1A0A 40%, #1E1208 100%);
-    --gradient-hero:    linear-gradient(160deg, #1E1208 0%, #2A1A0A 40%, #1A1006 100%);
+    /* ── Dégradés Premium ── */
+    --gradient-primary: linear-gradient(135deg, #0F0F12 0%, #16161D 100%);
+    --gradient-accent:  linear-gradient(135deg, #EAB308 0%, #D97706 100%);
+    --gradient-fashion: linear-gradient(135deg, #1C1C24 0%, #0F0F12 100%);
+    --gradient-hero:    radial-gradient(circle at top right, #1E1B4B 0%, #050505 100%);
 
     /* ── Variables shadcn/ui compatibles ── */
-    --background:             25 60% 5%;
-    --foreground:             35 70% 92%;
-    --card:                   25 55% 8%;
-    --card-foreground:        35 70% 92%;
-    --popover:                25 55% 8%;
-    --popover-foreground:     35 70% 92%;
-    --primary:                45 95% 54%;
-    --primary-foreground:     25 80% 8%;
-    --secondary:              25 35% 15%;
-    --secondary-foreground:   35 70% 92%;
-    --muted:                  25 30% 18%;
-    --muted-foreground:       35 35% 60%;
-    --accent:                 45 95% 54%;
-    --accent-foreground:      25 80% 8%;
-    --destructive:            0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --border:                 25 40% 18%;
-    --input:                  25 40% 15%;
-    --ring:                   45 95% 54%;
+    --background:             222 47% 2%;
+    --foreground:             210 40% 98%;
+    --card:                   222 47% 4%;
+    --card-foreground:        210 40% 98%;
+    --popover:                222 47% 4%;
+    --popover-foreground:     210 40% 98%;
+    --primary:                45 93% 47%;
+    --primary-foreground:     222 47% 4%;
+    --secondary:              222 47% 12%;
+    --secondary-foreground:   210 40% 98%;
+    --muted:                  222 47% 15%;
+    --muted-foreground:       215 20% 65%;
+    --accent:                 45 93% 47%;
+    --accent-foreground:      222 47% 4%;
+    --destructive:            0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+    --border:                 222 47% 12%;
+    --input:                  222 47% 12%;
+    --ring:                   45 93% 47%;
   }
 }
 
@@ -261,9 +254,9 @@
   }
 
   html.dark .glass-effect {
-    background: rgba(30, 18, 8, 0.80);
-    border: 1px solid rgba(245, 197, 24, 0.12);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.40);
+    background: rgba(21, 17, 15, 0.80);
+    border: 1px solid rgba(234, 179, 8, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.50);
   }
 
   /* ── Cards ── */
@@ -495,11 +488,11 @@
   html:not(.dark) b { color: #0A0F1E; font-weight: 700; }
 
   /* Typographie dark mode */
-  html.dark p      { color: #C9A87C; font-weight: 400; }
+  html.dark p      { color: #94A3B8; font-weight: 400; }
   html.dark small,
-  html.dark .text-sm { color: #B89060; font-weight: 400; }
+  html.dark .text-sm { color: #64748B; font-weight: 400; }
   html.dark strong,
-  html.dark b { color: #FDF3E3; font-weight: 700; }
+  html.dark b { color: #F8FAFC; font-weight: 600; }
 
   /* Titres */
   h1, h2, h3, h4, h5, h6 {
@@ -518,11 +511,11 @@
 
   html.dark h1,
   html.dark h2,
-  html.dark h3 { color: #FDF3E3; }
+  html.dark h3 { color: #F8FAFC; }
 
   html.dark h4,
   html.dark h5,
-  html.dark h6 { color: #F5C518; }
+  html.dark h6 { color: #EAB308; }
 
   h1 { font-size: 2.5rem; }
   h2 { font-size: 2rem; }
@@ -636,6 +629,17 @@
 @keyframes marquee-right {
   0%   { transform: translateX(-50%); }
   100% { transform: translateX(0); }
+}
+
+/* Typing animation */
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+@keyframes blink {
+  from, to { border-color: transparent }
+  50% { border-color: var(--library-accent) }
 }
 
 /* Scroll X */
@@ -784,6 +788,42 @@ html.dark [data-sonner-toast] {
   --error-bg: #1C0808;
   --error-border: #FC8181;
   --error-text: #FED7D7;
+}
+
+
+/* ── Mesh Gradients ── */
+.mesh-gradient-light {
+  background-color: #f0f5ff;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(26, 86, 219, 0.15) 0px, transparent 50%),
+    radial-gradient(at 50% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(26, 86, 219, 0.15) 0px, transparent 50%);
+}
+
+.mesh-gradient-dark {
+  background-color: #050505;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(234, 179, 8, 0.08) 0px, transparent 50%),
+    radial-gradient(at 50% 0%, rgba(30, 27, 75, 0.2) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(234, 179, 8, 0.08) 0px, transparent 50%);
+}
+
+/* ── Typography effects ── */
+.text-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-image: var(--gradient-accent);
+}
+
+.typing-effect {
+  overflow: hidden;
+  border-right: .15em solid var(--library-accent);
+  white-space: nowrap;
+  letter-spacing: .15em;
+  animation: 
+    typing 3.5s steps(40, end),
+    blink .75s step-end infinite;
 }
 
 /* ============================================================
@@ -1049,6 +1089,57 @@ html.dark .caeb-brand {
 
 /* Skeleton bouton */
 .skeleton-btn { height: 2.25rem; border-radius: 0.75rem; }
+
+/* --- Finitions Premium Selection --- */
+::selection {
+  background-color: var(--library-accent-glow);
+  color: white;
+}
+
+/* --- Scrollbar Styling --- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--library-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(181, 149, 107, 0.2);
+  border-radius: 10px;
+  border: 3px solid var(--library-bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(181, 149, 107, 0.4);
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#FFD700] via-[#FDB931] to-[#E2A62C];
+    text-shadow: 0 0 30px rgba(181, 149, 107, 0.2);
+  }
+
+  .glass-effect {
+    @apply backdrop-blur-xl bg-white/5 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)];
+  }
+
+  .shadow-glow {
+    box-shadow: 0 0 20px rgba(181, 149, 107, 0.3), 0 0 40px rgba(181, 149, 107, 0.1);
+  }
+
+  .shadow-glow-red {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3), 0 0 40px rgba(239, 68, 68, 0.1);
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.02); }
+  }
+}
 
 /* ============================================================
    N/ ÉTATS VIDES ILLUSTRÉS — SVG inline

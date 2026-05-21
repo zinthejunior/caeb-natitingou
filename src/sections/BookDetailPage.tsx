@@ -1,6 +1,7 @@
 // Page de détail d'un livre — CAEB Design System
 import { useState, useEffect } from 'react';
 import { Star, BookOpen, FileText, MessageCircle, ThumbsUp, Flag, Crown, Lock, ChevronLeft, Heart } from 'lucide-react';
+import { ApiImage } from '@/components/ApiImage';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +9,7 @@ import { toast } from 'sonner';
 import { Navbar } from '@/components/Navbar';
 import type { User, Review } from '@/types';
 import { reserverLivre, useReviews, useBook, postReview } from '@/hooks/useData';
+import { useSEO } from '@/lib/utils';
 
 interface BookDetailPageProps {
   bookId: string;
@@ -30,6 +32,8 @@ export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookD
   useEffect(() => {
     if (initialReviews) setReviews(initialReviews);
   }, [initialReviews]);
+
+  useSEO(book?.titre || "Détails du livre", book?.synopsis?.slice(0, 160));
 
   if (isBookLoading) return (
     <div className="min-h-screen bg-library-bg flex items-center justify-center">
@@ -88,22 +92,26 @@ export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookD
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
 
-        {/* Header du livre */}
-        <div className="grid lg:grid-cols-3 gap-8 mb-10">
-          {/* Couverture */}
+        {/* Header du livre avec Mesh Gradient Immersif */}
+        <div className="grid lg:grid-cols-3 gap-12 mb-12 animate-flow-in">
+          {/* Couverture avec effet de profondeur */}
           <div className="lg:col-span-1 flex justify-center">
-            <div className="relative w-full max-w-xs">
-              <div className="w-full max-w-sm mx-auto aspect-[2/3] surface-alt rounded-2xl overflow-hidden shadow-elevated relative group animate-scale-in">
+            <div className="relative w-full max-w-xs group">
+              <div className="absolute inset-0 bg-accent/20 rounded-[2.5rem] blur-3xl scale-95 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+              <div className="w-full aspect-[2/3] surface-alt rounded-[2rem] overflow-hidden shadow-elevated relative z-10 transition-transform duration-500 group-hover:scale-[1.02] border border-white/10">
                 <ApiImage src={book.couverture} alt={book.titre}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                
                 <button onClick={(e) => { e.stopPropagation(); onToggleFavorite?.(bookId); }}
-                  className="absolute top-4 right-4 w-12 h-12 bg-white/90 dark:bg-[var(--library-surface)]/90 backdrop-blur border border-[var(--border-color)] rounded-full flex items-center justify-center shadow-soft hover:scale-110 hover:shadow-medium transition-all tap-feedback z-10"
+                  className="absolute top-4 right-4 w-12 h-12 glass-effect border border-white/20 rounded-full flex items-center justify-center shadow-elevated hover:scale-110 hover:shadow-glow transition-all tap-feedback z-20"
                 >
-                  <Heart className={`w-6 h-6 ${user.favorites?.includes(bookId) ? 'text-red-500 fill-current' : 'text-muted'}`} />
+                  <Heart className={`w-6 h-6 transition-colors ${user.favoris?.includes(bookId) ? 'text-red-500 fill-current' : 'text-white/70'}`} />
                 </button>
-                {!book.estDisponible && (
-                  <div className="absolute inset-0 surface/80 backdrop-blur-sm flex items-center justify-center">
-                    <span className="text-primary text-sm font-bold px-4 py-2 surface rounded-xl shadow-medium">Indisponible</span>
+                
+                {book.exemplaires <= 0 && (
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+                    <Lock className="w-10 h-10 text-white/50 mb-3" />
+                    <span className="text-white text-lg font-bold tracking-tight">Actuellement emprunté</span>
                   </div>
                 )}
               </div>
@@ -127,7 +135,7 @@ export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookD
               <Badge className="surface-alt border border-[var(--border-color)] text-primary font-semibold">{book.genre}</Badge>
               <Badge variant="outline" className="border-[var(--border-color)] text-muted font-semibold">{book.annee}</Badge>
               {book.estNouveau && <Badge className="bg-[var(--library-accent)] text-[var(--library-on-accent)] font-bold">Nouveau</Badge>}
-              {book.estDisponible ? (
+              {book.exemplaires > 0 ? (
                 <Badge className="bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800 font-semibold">Disponible</Badge>
               ) : (
                 <Badge variant="destructive">Indisponible</Badge>
@@ -139,29 +147,30 @@ export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookD
               <p className="text-muted leading-relaxed max-w-prose">{book.synopsis.slice(0, 200)}…</p>
             )}
 
-            {/* Actions */}
-            <div className="flex flex-wrap gap-3 pt-2">
+            {/* Actions Modernisées */}
+            <div className="flex flex-wrap gap-4 pt-4">
               {user.estMembre ? (
-                book.estDisponible ? (
+                book.exemplaires > 0 ? (
                   <Button size="lg" onClick={handleReserve}
-                    className="btn-solid gap-2 shadow-medium hover:shadow-elevated hover:-translate-y-0.5 transition-all font-bold sheen relative overflow-hidden">
-                    <BookOpen className="w-5 h-5" />Réserver ce livre
+                    className="btn-solid h-14 px-10 rounded-2xl gap-3 shadow-glow hover:shadow-elevated hover:-translate-y-1 transition-all font-bold text-lg">
+                    <BookOpen className="w-6 h-6" />Réserver maintenant
                   </Button>
                 ) : (
                   <Button size="lg" variant="outline" disabled
-                    className="border-[var(--border-color)] text-muted gap-2 font-bold">
-                    <Lock className="w-5 h-5" />Actuellement indisponible
+                    className="h-14 px-10 rounded-2xl border-[var(--border-color)] text-muted gap-3 font-bold opacity-60">
+                    <Lock className="w-6 h-6" />Indisponible
                   </Button>
                 )
               ) : (
-                <Button size="lg" variant="outline" disabled
-                  className="border-[var(--border-color)] text-muted gap-2 font-bold">
-                  <Crown className="w-5 h-5" />Réservé aux membres
+                <Button size="lg" variant="outline" 
+                  onClick={() => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'profile' } }))}
+                  className="h-14 px-10 rounded-2xl border-accent/30 text-accent gap-3 font-bold hover:bg-accent/5 animate-pulse-soft">
+                  <Crown className="w-6 h-6" />Devenir Membre pour réserver
                 </Button>
               )}
-              <Button size="lg" variant="outline" onClick={() => toast.success('Livre ajouté à votre historique de lecture !')}
-                className="border-[var(--border-color)] text-primary hover:border-[var(--library-accent)]/30 hover:text-accent font-bold gap-2">
-                <BookOpen className="w-5 h-5" />Marquer comme lu
+              <Button size="lg" variant="ghost" onClick={() => toast.success('Livre ajouté à votre historique !')}
+                className="h-14 px-8 rounded-2xl text-muted hover:text-accent font-bold gap-3 hover:bg-accent/5">
+                <FileText className="w-6 h-6" />Marquer comme lu
               </Button>
             </div>
           </div>

@@ -3,7 +3,7 @@ import {
   LogOut, BookOpen, Star, Users, Calendar,
   ChevronRight, Edit3, Bell, Shield, HelpCircle,
   Crown, Lock, User as UserIcon,
-  GraduationCap, Heart, CheckCircle2, AlertCircle, X
+  GraduationCap, Heart, CheckCircle2, AlertCircle, X, Clock
 } from 'lucide-react';
 import { genreList, educationLevels, sousGenresParGenre, classesParNiveau, intentionsList } from '@/data/constants';
 import { Button } from '@/components/ui/button';
@@ -12,8 +12,9 @@ import { toast } from 'sonner';
 import { Navbar } from '@/components/Navbar';
 import { ApiImage } from '@/components/ApiImage';
 import type { User, View } from '@/types';
-import { useBorrows, useReservations } from '@/hooks/useData';
+import { useBorrows, useReservations, useParticipationsEvenements } from '@/hooks/useData';
 import { Badge } from '@/components/ui/badge';
+import { useSEO } from '@/lib/utils';
 
 interface ProfilePageProps {
   user: User | null;
@@ -29,9 +30,9 @@ type IconComponent = React.ComponentType<{ className?: string }>;
 
 function StatCard({ icon: Icon, value, label }: { icon: IconComponent; value: number; label: string }) {
   return (
-    <div className="surface rounded-xl p-4 shadow-card border border-[var(--border-color)] hover:shadow-card-hover transition-shadow flex flex-col items-center text-center gap-2">
-      <div className="w-10 h-10 bg-[var(--library-accent)]/10 border border-[var(--library-accent)]/20 rounded-full flex items-center justify-center">
-        <Icon className="w-5 h-5 text-accent" />
+    <div className="glass-effect rounded-2xl p-5 shadow-soft border border-[var(--border-color)] hover:shadow-card-hover hover:-translate-y-1 transition-all flex flex-col items-center text-center gap-2 group">
+      <div className="w-12 h-12 bg-accent/10 border border-accent/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+        <Icon className="w-6 h-6 text-accent" />
       </div>
       <div>
         <p className="text-2xl font-bold text-primary">{value || 0}</p>
@@ -58,8 +59,6 @@ function ActivityItem({ icon: Icon, title, description, color }: { icon: IconCom
   );
 }
 
-
-// Force IDE refresh
 function SettingItem({ icon: Icon, title, description, onClick }: { icon: IconComponent; title: string; description: string; onClick: () => void }) {
   return (
     <button
@@ -167,6 +166,8 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
   const [showHelp, setShowHelp] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   
+  useSEO("Mon Profil", "Gérez vos emprunts, vos réservations et vos préférences de lecture sur votre espace personnel CAEB.");
+  
   // State pour le formulaire
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
@@ -181,6 +182,7 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
   });
   const { borrows = [] } = useBorrows();
   const { reservations = [] } = useReservations();
+  const { participations = [] } = useParticipationsEvenements();
 
   if (!user) return null;
 
@@ -213,12 +215,12 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
 
   const handleUpgrade = async () => {
     if (!onUpdateUser) return;
-    const success = await onUpdateUser({ isMember: true, type_compte: 'membre' } as any);
+    const success = await onUpdateUser({ type_compte: 'en_attente' } as any);
     if (success) {
-      toast.success('Félicitations ! Vous êtes maintenant membre Premium.');
+      toast.success('Demande d\'adhésion envoyée !', { description: 'Un bibliothécaire confirmera votre adhésion très bientôt.' });
       setIsUpgrading(false);
     } else {
-      toast.error('Erreur lors du passage en mode Premium');
+      toast.error('Erreur lors de l\'envoi de la demande');
     }
   };
 
@@ -230,11 +232,12 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
 
           {/* ── BARRE LATÉRALE ── */}
-          <div className="lg:col-span-1">
-            <div className="surface rounded-2xl shadow-card border border-[var(--border-color)] overflow-hidden sticky top-24">
+          <div className="lg:col-span-1 animate-flow-in">
+            <div className={`surface rounded-[2rem] shadow-card border border-[var(--border-color)] overflow-hidden sticky top-24 transition-all duration-500 ${user.isMember ? 'shadow-glow border-accent/30' : ''}`}>
 
-              {/* Bannière */}
-              <div className="h-20 gradient-accent relative">
+              {/* Bannière Mesh */}
+              <div className="h-24 mesh-gradient-light dark:mesh-gradient-dark relative">
+                <div className="absolute inset-0 bg-accent/5 animate-pulse-soft" />
                 <div className="absolute left-4 -bottom-8">
                   <div className="relative">
                     <ApiImage
@@ -243,9 +246,14 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                       alt={user.firstName}
                       className="w-24 h-24 rounded-2xl object-cover border-4 border-[var(--library-surface)] shadow-medium"
                     />
-                    {user.isMember && (
+                    {user.estMembre && (
                       <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--library-accent)] text-[var(--library-on-accent)] border-2 border-[var(--library-surface)] shadow-soft">
                         <Crown className="w-4 h-4" />
+                      </div>
+                    )}
+                    {user.type_compte === 'en_attente' && (
+                      <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500 text-white border-2 border-[var(--library-surface)] shadow-soft animate-pulse">
+                        <Clock className="w-4 h-4" />
                       </div>
                     )}
                   </div>
@@ -294,7 +302,7 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
           </div>
 
           {/* ── CONTENU PRINCIPAL ── */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 animate-flow-in" style={{ animationDelay: '100ms' }}>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid grid-cols-3 w-full mb-6 surface border border-[var(--border-color)]">
                 <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
@@ -306,27 +314,34 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
               <TabsContent value="overview" className="space-y-6">
 
                 {/* Bannière devenir membre */}
-                {!user.isMember && (
-                  <div className="bg-[var(--library-accent)]/8 rounded-2xl p-5 border border-[var(--library-accent)]/20">
+                {!user.estMembre && (
+                  <div className={`${user.type_compte === 'en_attente' ? 'bg-amber-500/5 border-amber-500/20' : 'bg-[var(--library-accent)]/8 border-[var(--library-accent)]/20'} rounded-2xl p-5 border`}>
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-[var(--library-accent)]/15 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <Crown className="w-6 h-6 text-accent" />
+                      <div className={`w-12 h-12 ${user.type_compte === 'en_attente' ? 'bg-amber-500/10' : 'bg-[var(--library-accent)]/15'} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                        {user.type_compte === 'en_attente' ? <Clock className="w-6 h-6 text-amber-500" /> : <Crown className="w-6 h-6 text-accent" />}
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-display font-semibold text-primary mb-1">Passez à l'étape suivante</h3>
+                        <h3 className="font-display font-semibold text-primary mb-1">
+                          {user.type_compte === 'en_attente' ? 'Demande en cours' : 'Passez à l\'étape suivante'}
+                        </h3>
                         <p className="text-sm text-muted mb-3">
-                          Devenez membre CAEB : empruntez des livres, accédez à de nouveaux horizons littéraires.
+                          {user.type_compte === 'en_attente' 
+                            ? 'Votre demande d\'adhésion est en cours de traitement par nos bibliothécaires. Vous recevrez une notification dès qu\'elle sera confirmée.'
+                            : 'Devenez membre CAEB : empruntez des livres, accédez à de nouveaux horizons littéraires.'}
                         </p>
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {['✓ Emprunts physiques', '✓ Accès prioritaire', '✓ Tous les événements'].map(b => (
-                            <Badge key={b} variant="secondary" className="text-xs surface border-[var(--border-color)]">{b}</Badge>
-                          ))}
-                        </div>
+                        {user.type_compte !== 'en_attente' && (
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {['✓ Emprunts physiques', '✓ Accès prioritaire', '✓ Tous les événements'].map(b => (
+                              <Badge key={b} variant="secondary" className="text-xs surface border-[var(--border-color)]">{b}</Badge>
+                            ))}
+                          </div>
+                        )}
                         <Button 
-                          onClick={() => setIsUpgrading(true)}
-                          size="sm" className="btn-solid shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all tap-feedback"
+                          onClick={() => user.type_compte !== 'en_attente' && setIsUpgrading(true)}
+                          disabled={user.type_compte === 'en_attente'}
+                          size="sm" className={`${user.type_compte === 'en_attente' ? 'bg-amber-500/20 text-amber-600' : 'btn-solid'} shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all tap-feedback`}
                         >
-                          <Crown className="w-4 h-4 mr-2" />Devenir membre
+                          {user.type_compte === 'en_attente' ? <><Clock className="w-4 h-4 mr-2" />En attente de confirmation</> : <><Crown className="w-4 h-4 mr-2" />Devenir membre</>}
                         </Button>
                       </div>
                     </div>
@@ -468,19 +483,30 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                           color="amber"
                         />
                       )}
+                      {participations.length > 0 && (
+                        <div className="mt-6 space-y-4">
+                          <h4 className="text-sm font-bold uppercase tracking-widest text-muted mb-2">Événements à venir</h4>
+                          {participations.map(p => (
+                            <div key={p.id} className="surface border border-[var(--border-color)] p-4 rounded-2xl shadow-card flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
+                                  <Calendar className="w-5 h-5 text-accent" />
+                                </div>
+                                <div>
+                                  <p className="font-bold text-primary">{p.event_title}</p>
+                                  <p className="text-xs text-muted">Inscrit le {new Date(p.date_inscription).toLocaleDateString()}</p>
+                                </div>
+                              </div>
+                              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Confirmé</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       {(stats.clubsJoined || 0) > 0 && (
                         <ActivityItem
                           icon={Users}
                           title={`${stats.clubsJoined || 0} club${(stats.clubsJoined || 0) > 1 ? 's' : ''} rejoint`}
                           description="Clubs de lecture CAEB"
-                          color="accent"
-                        />
-                      )}
-                      {(stats.eventsAttended || 0) > 0 && (
-                        <ActivityItem
-                          icon={Calendar}
-                          title={`${stats.eventsAttended || 0} événement${(stats.eventsAttended || 0) > 1 ? 's' : ''} suivi`}
-                          description="Conférences, ateliers et clubs de lecture"
                           color="accent"
                         />
                       )}

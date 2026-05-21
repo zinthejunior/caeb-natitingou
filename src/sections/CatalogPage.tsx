@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Navbar } from '@/components/Navbar';
 import type { Book, User } from '@/types';
 import { useLivres } from '@/hooks/useData';
+import { useSEO } from '@/lib/utils';
 
 /**
  * Composant affiché quand aucun livre ne correspond à la recherche.
@@ -89,6 +90,8 @@ export function CatalogPage({ onBookClick, user }: { onBookClick: (idLivre: stri
     if (!chargement) setDonneesPretes(true);
   }, [chargement]);
 
+  useSEO("Catalogue", "Explorez notre catalogue de 12 000 ouvrages : romans, essais, jeunesse, et bien plus encore.");
+
   // Filtrage et tri des livres
   const livresFiltres = useMemo(() => {
     let resultat = [...livres];
@@ -102,7 +105,7 @@ export function CatalogPage({ onBookClick, user }: { onBookClick: (idLivre: stri
     }
     if (genresSelectionnes.length > 0) resultat = resultat.filter(l => genresSelectionnes.includes(l.genre));
     if (publicSelectionne.length > 0) resultat = resultat.filter(l => publicSelectionne.includes(l.publicCible || ''));
-    if (afficherDispoUniquement) resultat = resultat.filter(l => l.estDisponible);
+    if (afficherDispoUniquement) resultat = resultat.filter(l => l.exemplaires > 0);
     
     switch (triPar) {
       case 'newest': resultat.sort((a, b) => (b.annee || 0) - (a.annee || 0)); break;
@@ -132,27 +135,29 @@ export function CatalogPage({ onBookClick, user }: { onBookClick: (idLivre: stri
 
   return (
     <div className="min-h-screen bg-library-bg pb-24">
-      <Navbar utilisateur={user} />
+      <Navbar user={user} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
 
-        {/* Titre de la page */}
-        <div className="mb-8">
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-primary mb-1">Le catalogue</h1>
-          <p className="text-muted pl-1">Près de 7 000 ouvrages à explorer — romans, essais, jeunesse et bien plus.</p>
+        {/* Titre de la page Modernisé */}
+        <div className="mb-10">
+          <h1 className="font-display text-4xl md:text-5xl font-bold mb-3">
+            <span className="text-gradient">Le Catalogue</span>
+          </h1>
+          <p className="text-muted text-lg pl-1 font-medium">Explorez nos 7 000 trésors littéraires — romans, essais et découvertes.</p>
         </div>
 
         {/* Barre de recherche & filtres */}
         <div className="mb-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 mb-4">
             <div className="lg:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-accent pointer-events-none" />
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-accent pointer-events-none group-focus-within:scale-110 transition-transform duration-300" />
                 <Input
                   placeholder="Rechercher par titre, auteur, genre..."
                   value={recherche}
                   onChange={(e) => setRecherche(e.target.value)}
-                  className="pl-12 h-12 surface border-[var(--border-color)] focus:ring-2 focus:ring-[var(--library-accent)]/20 focus:border-[var(--library-accent)] rounded-xl text-primary placeholder:text-muted"
+                  className="pl-12 h-14 glass-effect border-white/10 focus:ring-4 focus:ring-accent/10 focus:border-accent/40 rounded-2xl text-primary placeholder:text-muted text-lg font-medium shadow-glow transition-all"
                 />
                 {recherche && (
                   <button onClick={() => setRecherche('')}
@@ -163,24 +168,24 @@ export function CatalogPage({ onBookClick, user }: { onBookClick: (idLivre: stri
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <select value={triPar} onChange={(e) => setTriPar(e.target.value as 'popular' | 'newest' | 'rating')}
-                className="flex-1 h-12 px-4 surface border border-[var(--border-color)] rounded-xl text-sm text-primary focus:outline-none focus:border-[var(--library-accent)] focus:ring-2 focus:ring-[var(--library-accent)]/20 cursor-pointer">
-                <option value="popular">Les plus populaires</option>
-                <option value="newest">Les plus récents</option>
-                <option value="rating">Les mieux notés</option>
+                className="flex-1 h-14 px-5 glass-effect border border-white/10 rounded-2xl text-sm font-bold text-primary focus:outline-none focus:border-accent/40 focus:ring-4 focus:ring-accent/10 cursor-pointer transition-all">
+                <option value="popular">Trier par Popularité</option>
+                <option value="newest">Trier par Nouveautés</option>
+                <option value="rating">Trier par Notes</option>
               </select>
 
-              <div className="flex surface border border-[var(--border-color)] rounded-xl p-1 gap-1">
+              <div className="flex glass-effect border border-white/10 rounded-2xl p-1.5 gap-1.5">
                 <button onClick={() => setModeAffichage('grid')}
-                  className={`p-2.5 rounded-lg transition-colors tap-feedback ${modeAffichage === 'grid' ? 'bg-[var(--library-accent)] text-[var(--library-on-accent)]' : 'text-muted hover:text-accent'}`}
-                  title="Affichage en grille">
-                  <Grid3X3 className="w-4 h-4" />
+                  className={`p-3 rounded-xl transition-all duration-300 tap-feedback ${modeAffichage === 'grid' ? 'bg-accent text-white shadow-glow' : 'text-muted hover:text-accent'}`}
+                  title="Grille">
+                  <Grid3X3 className="w-5 h-5" />
                 </button>
                 <button onClick={() => setModeAffichage('list')}
-                  className={`p-2.5 rounded-lg transition-colors tap-feedback ${modeAffichage === 'list' ? 'bg-[var(--library-accent)] text-[var(--library-on-accent)]' : 'text-muted hover:text-accent'}`}
-                  title="Affichage en liste">
-                  <List className="w-4 h-4" />
+                  className={`p-3 rounded-xl transition-all duration-300 tap-feedback ${modeAffichage === 'list' ? 'bg-accent text-white shadow-glow' : 'text-muted hover:text-accent'}`}
+                  title="Liste">
+                  <List className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -189,16 +194,20 @@ export function CatalogPage({ onBookClick, user }: { onBookClick: (idLivre: stri
           {/* Filtres par genre et public */}
           <div className="space-y-4 mb-4">
             <div className="flex flex-wrap gap-2 items-center">
-              <span className="text-sm font-semibold text-primary">Genres</span>
-              {tousLesGenres.slice(0, 15).map((genre) => { // Limité aux 15 premiers pour l'UI
-                const actif = genresSelectionnes.includes(genre);
-                return (
-                  <button key={genre} type="button" onClick={() => basculerGenre(genre)}
-                    className={`text-sm rounded-full px-3 py-1 transition-all ${actif ? 'bg-[var(--library-accent)] text-[var(--library-on-accent)]' : 'surface border border-[var(--border-color)] text-primary hover:border-[var(--library-accent)]/50'}`}>
-                    {genre}
-                  </button>
-                );
-              })}
+              <span className="text-xs font-black text-muted uppercase tracking-[0.2em] mr-4">Genres</span>
+              <div className="flex flex-wrap gap-2.5">
+                {tousLesGenres.slice(0, 15).map((genre) => {
+                  const actif = genresSelectionnes.includes(genre);
+                  return (
+                    <button key={genre} type="button" onClick={() => basculerGenre(genre)}
+                      className={`text-xs rounded-xl px-5 py-2.5 transition-all font-bold border ${actif 
+                        ? 'bg-accent text-white border-accent shadow-glow scale-105' 
+                        : 'glass-effect border-white/5 text-primary hover:border-accent/30 hover:text-accent'}`}>
+                      {genre}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-2 items-center">
@@ -260,15 +269,19 @@ export function CatalogPage({ onBookClick, user }: { onBookClick: (idLivre: stri
         ) : livresFiltres.length === 0 ? (
           <EtagereVide aDesFiltres={aDesFiltres} />
         ) : modeAffichage === 'grid' ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
             {livresFiltres.map((livre) => (
-              <CarteLivreGrille key={livre.id} livre={livre} onClick={() => onBookClick(livre.id)} />
+              <div key={livre.id} className="animate-flow-in">
+                <CarteLivreGrille livre={livre} onClick={() => onBookClick(livre.id)} />
+              </div>
             ))}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {livresFiltres.map((livre) => (
-              <CarteLivreListe key={livre.id} livre={livre} onClick={() => onBookClick(livre.id)} />
+              <div key={livre.id} className="animate-flow-in">
+                <CarteLivreListe livre={livre} onClick={() => onBookClick(livre.id)} />
+              </div>
             ))}
           </div>
         )}
@@ -281,28 +294,29 @@ export function CatalogPage({ onBookClick, user }: { onBookClick: (idLivre: stri
 
 function CarteLivreGrille({ livre, onClick }: { livre: Book; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="text-left group flex flex-col h-full book-card-3d tap-feedback">
-      <div className="relative aspect-[2/3] rounded-xl overflow-hidden shadow-card mb-3 surface-weak">
+    <button onClick={onClick} className="text-left group flex flex-col h-full tap-feedback animate-flow-in">
+      <div className="relative aspect-[2/3] rounded-[2rem] overflow-hidden shadow-card mb-4 glass-effect border border-white/5 group-hover:border-accent/30 transition-all duration-500">
         <img src={livre.couverture} alt={livre.titre}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-        {!livre.estDisponible && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <span className="text-white text-xs font-bold px-2 py-1 bg-black/50 rounded-lg backdrop-blur-sm">Indisponible</span>
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+        {livre.exemplaires <= 0 && (
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-4">
+            <span className="text-white text-[10px] font-black px-3 py-1.5 bg-red-500/80 rounded-full uppercase tracking-widest shadow-glow-red">Indisponible</span>
           </div>
         )}
         {livre.estNouveau && (
-          <Badge className="absolute top-2 left-2 bg-[var(--library-accent)] text-[var(--library-on-accent)] text-[10px] font-bold">Nouveau</Badge>
+          <Badge className="absolute top-4 left-4 bg-accent text-white text-[10px] font-black uppercase tracking-widest shadow-glow border-none px-3 py-1">Nouveau</Badge>
         )}
       </div>
-      <div className="flex-1 flex flex-col">
-        <h3 className="font-semibold text-primary line-clamp-1 group-hover:text-accent transition-colors text-sm">{livre.titre}</h3>
-        <p className="text-xs text-muted line-clamp-1 mb-auto">{livre.auteur}</p>
-        <div className="flex items-center gap-0.5 mt-2 star-cascade">
-          {[1, 2, 3, 4, 5].map(n => (
-            <Star key={n} className={`star w-3 h-3 ${n <= Math.round(livre.note) ? 'fill-[var(--library-accent)] text-[var(--library-accent)]' : 'text-[var(--border-color)]'}`} />
-          ))}
-          <span className="text-xs font-semibold text-accent ml-1">{livre.note}</span>
-          <span className="text-xs text-muted">({livre.nbAvis})</span>
+      <div className="flex-1 flex flex-col px-1">
+        <h3 className="font-bold text-primary line-clamp-1 group-hover:text-accent transition-colors text-base mb-1">{livre.titre}</h3>
+        <p className="text-sm text-muted font-medium line-clamp-1 mb-auto">{livre.auteur}</p>
+        <div className="flex items-center gap-1 mt-3">
+          <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map(n => (
+              <Star key={n} className={`w-3.5 h-3.5 ${n <= Math.round(livre.note) ? 'fill-accent text-accent' : 'text-white/10'}`} />
+            ))}
+          </div>
+          <span className="text-xs font-black text-accent ml-2">{livre.note}</span>
         </div>
       </div>
     </button>
@@ -316,7 +330,7 @@ function CarteLivreListe({ livre, onClick }: { livre: Book; onClick: () => void 
       <div className="relative w-20 h-28 rounded-lg overflow-hidden flex-shrink-0 surface-weak">
         <img src={livre.couverture} alt={livre.titre}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-        {!livre.estDisponible && (
+        {livre.exemplaires <= 0 && (
           <div className="absolute inset-0 surface-weak/90 flex items-center justify-center">
             <span className="text-[10px] font-bold text-muted px-1 py-0.5 surface rounded">Indisponible</span>
           </div>

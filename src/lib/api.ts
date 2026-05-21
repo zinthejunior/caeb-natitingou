@@ -1,58 +1,65 @@
-const BASE_URL = "http://localhost:8000/api";
+/**
+ * api.ts - Utilitaire central pour les appels API authentifiés avec rafraîchissement automatique du token.
+ */
 
-function getHeaders() {
-  const token = localStorage.getItem('caeb_token');
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { "Authorization": `Bearer ${token}` } : {})
-  };
-}
+const API_BASE_URL = 'http://localhost:8000/api';
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: getHeaders(),
-    ...options,
-  });
-  if (!res.ok) {
-    let err = `API error ${res.status}`;
-    try { const errObj = await res.json(); err = JSON.stringify(errObj); } catch { /* ignore */ }
-    throw new Error(err);
+/**
+ * Rafraîchit le token d'accès en utilisant le refresh token stocké.
+ */
+async function rafraichirToken(): Promise<string | null> {
+  const refreshToken = localStorage.getItem('caeb_refresh');
+  if (!refreshToken) return null;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/token/refresh/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh: refreshToken }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      localStorage.setItem('caeb_token', data.access);
+      return data.access;
+    }
+  } catch (err) {
+    console.error('Erreur rafraîchissement token:', err);
   }
-  return res.json();
+  
+  // Si le rafraîchissement échoue, on nettoie tout
+  localStorage.removeItem('caeb_token');
+  localStorage.removeItem('caeb_refresh');
+  window.dispatchEvent(new CustomEvent('app:logout'));
+  return null;
 }
 
-export const api = {
-  // Auth
-  login: (data: any) => request<any>('/auth/login/', { method: 'POST', body: JSON.stringify(data) }),
-  register: (data: any) => request<any>('/auth/register/', { method: 'POST', body: JSON.stringify(data) }),
-  me: () => request<any>('/auth/me/'),
-  logout: () => request<any>('/auth/logout/', { method: 'POST' }),
-
-  // Data
-  getBooks: (qs: string = "") => request<any[]>(`/books/${qs ? `?${qs}` : ''}`),
-  getBook: (id: string | number) => request<any>(`/books/${id}/`),
+/**
+ * Effectue une requête fetch avec authentification Bearer.
+ * Tente de rafraîchir le token automatiquement en cas d'erreur 401.
+ */
+export async function fetchWithAuth(endpoint: string, options: RequestInit = {}): Promise<Response> {
+  let token = localStorage.getItem('caeb_token');
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
   
-  getClubs: () => request<any[]>('/clubs/'),
-  getClub: (id: string | number) => request<any>(`/clubs/${id}/`),
-  
-  getEvents: () => request<any[]>('/events/'),
-  getEvent: (id: string | number) => request<any>(`/events/${id}/`),
-  
-  getNewsList: () => request<any[]>('/news/'),
-  getNews: (id: string | number) => request<any>(`/news/${id}/`),
+  const sendRequest = (tokenActuel: string | null) => {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+      ...(tokenActuel ? { 'Authorization': `Bearer ${tokenActuel}` } : {}),
+    };
+    return fetch(url, { ...options, headers });
+  };
 
-  getGenres: () => request<any[]>('/genres/'),
-  getEducationLevels: () => request<any[]>('/education-levels/'),
+  let response = await sendRequest(token);
   
-  getBorrows: () => request<any[]>('/borrows/'),
-  createBorrow: (bookId: number) => request<any>('/borrows/', { method: 'POST', body: JSON.stringify({ book: bookId }) }),
-
-  // AI & Recommendations
-  chat: (message: string) => request<any>('/chat/', { method: 'POST', body: JSON.stringify({ message }) }),
-  getRecommendations: () => request<any[]>('/recommendations/'),
-
-  // Lab
-  getLabStations: () => request<any[]>('/lab_stations/'),
-  getLabReservations: () => request<any[]>('/lab_reservations/'),
-  createLabReservation: (data: any) => request<any>('/lab_reservations/', { method: 'POST', body: JSON.stringify(data) }),
-};
+  if (response.status === 401) {
+    // Si on a un 401, on tente une seule fois de rafraîchir le token
+    const nouveauToken = await rafraichirToken();
+    if (nouveauToken) {
+      response = await sendRequest(nouveauToken);
+    }
+  }
+  
+  return response;
+}

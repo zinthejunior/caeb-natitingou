@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { BookOpen, Users, Calendar, Star, ArrowRight, Mail, Phone, MapPin, Cpu, Quote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useSEO } from '@/lib/utils';
+import { useGlobalStats } from '@/hooks/useData';
+import { toast } from 'sonner';
 
 interface LandingPageProps {
   onLoginClick: () => void;
@@ -12,6 +15,18 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
   const featuresRef = useRef<HTMLDivElement>(null);
   const booksRef = useRef<HTMLDivElement>(null);
   const [selectedImage, setSelectedImage] = useState<{ caption: string; src: string } | null>(null);
+  const { stats } = useGlobalStats();
+  
+  const displayStats = {
+    books: stats?.books_count?.toLocaleString() || '12 000',
+    members: stats?.members_count?.toLocaleString() || '5 000',
+    clubs: stats?.clubs_count || '3',
+    labs: stats?.lab_count || '1',
+    years: stats?.years || '25'
+  };
+
+  useSEO("CAEB Natitingou | Excellence & Culture", `Découvrez la plus grande bibliothèque du Nord-Bénin. ${displayStats.books} ouvrages, clubs culturels et laboratoire d'IA à Natitingou.`);
+  
   // ── Reveal on scroll ──
   useEffect(() => {
     const observer = new IntersectionObserver( 
@@ -158,22 +173,22 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
             <div className="space-y-8">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--library-accent)]/10 border border-[var(--library-accent)]/20 rounded-full text-accent text-sm font-semibold">
                 <Star className="w-4 h-4 fill-current" />
-                <span>25 ans au service de la lecture Natitingou, Bénin</span>
+                <span>{displayStats.years} ans au service de la lecture Natitingou, Bénin</span>
               </div>
 
-              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-primary leading-tight">
-                Ouvrez un livre, ouvrez votre monde.{' '}
-                <span className="text-accent">L'excellence au cœur de Natitingou</span>
+              <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold text-primary leading-[1.1] tracking-tight">
+                Ouvrez un livre, <br />
+                <span className="text-gradient">Ouvrez votre monde.</span>
               </h1>
 
               <div className="space-y-3">
                 <p className="text-lg text-muted max-w-lg leading-relaxed">
-                  Depuis plus de 25 ans, la <span className="font-semibold text-[var(--library-text)]">CAEB</span> s'engage avec la <span className="font-semibold text-accent">Fondation Vallet</span> pour faire rayonner la culture. 
-                  Plongez dans un catalogue de <span className="font-semibold text-[var(--library-text)]">12 000 ouvrages</span> adapté à tous.
+                  Depuis plus de {displayStats.years} ans, la <span className="font-semibold text-[var(--library-text)]">CAEB</span> s'engage avec la <span className="font-semibold text-accent">Fondation Vallet</span> pour faire rayonner la culture. 
+                  Plongez dans un catalogue de <span className="font-semibold text-[var(--library-text)]">{displayStats.books} ouvrages</span> adapté à tous.
                 </p>
                 <p className="text-base text-muted max-w-lg leading-relaxed">
-                  Et préparez l'avenir avec notre{' '}
-                  <span className="font-semibold text-accent">laboratoire d'intelligence artificielle</span>
+                  Et préparez l'avenir avec nos{' '}
+                  <span className="font-semibold text-accent">{displayStats.labs} laboratoire{parseInt(displayStats.labs) > 1 ? 's' : ''} d'intelligence artificielle</span>
                   , une initiative inédite au nord du Bénin.
                 </p>
               </div>
@@ -202,24 +217,28 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
               </div>
             </div>
 
-            <div className="relative">
-              <div className="absolute -inset-4 bg-[var(--library-accent)]/10 rounded-3xl blur-2xl opacity-60" />
-              <img src="/25ans.jpg" alt="25 ans de la Bibliothèque CAEB Natitingou"
-                className="relative rounded-2xl shadow-elevated w-full object-cover aspect-[4/3]" />
-              <div className="absolute -bottom-6 -left-6 surface rounded-xl shadow-card p-4 animate-float border border-[var(--border-color)]">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[var(--library-accent)]/10 rounded-lg flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-accent" />
+            <div className="relative animate-flow-in" style={{ animationDelay: '300ms' }}>
+              <div className="absolute -inset-10 bg-accent/20 rounded-[3rem] blur-[80px] opacity-40 animate-pulse-soft" />
+              <div className="relative rounded-[2rem] overflow-hidden shadow-elevated border border-white/10">
+                <img src="/25ans.jpg" alt={`${displayStats.years} ans de la Bibliothèque CAEB Natitingou`}
+                  className="w-full h-auto object-cover aspect-[4/3] hover:scale-105 transition-transform duration-700" />
+              </div>
+              
+              <div className="absolute -bottom-6 -left-6 glass-effect rounded-2xl shadow-glow p-5 animate-float border border-white/10 z-20">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center">
+                    <BookOpen className="w-6 h-6 text-accent" />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm text-primary">12 000+ livres</p>
-                    <p className="text-xs text-muted">Catalogue enrichi</p>
+                    <p className="font-bold text-base text-primary">12 000+ livres</p>
+                    <p className="text-xs text-muted font-medium">Catalogue premium</p>
                   </div>
                 </div>
               </div>
-              <div className="absolute -top-4 -right-4 surface rounded-xl shadow-card px-4 py-2 animate-float border border-[var(--border-color)]" style={{ animationDelay: '1s' }}>
-                <p className="text-xs font-bold text-accent">Labo IA</p>
-                <p className="text-xs text-muted">Unique au nord du Bénin</p>
+              
+              <div className="absolute -top-6 -right-6 glass-effect rounded-2xl shadow-glow px-5 py-3 animate-float border border-white/10 z-20" style={{ animationDelay: '1s' }}>
+                <p className="text-sm font-bold text-accent tracking-widest uppercase">Labo IA</p>
+                <p className="text-xs text-muted font-medium">Innovation exclusive</p>
               </div>
             </div>
           </div>
@@ -231,11 +250,11 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap justify-center items-center gap-8 sm:gap-16">
             {[
-              { value: '12 000+', label: 'Livres disponibles' },
-              { value: '5 000+', label: 'Lecteurs actifs' },
-              { value: '3 clubs', label: 'Thématiques' },
-              { value: '1 labo', label: 'Intelligence artificielle' },
-              { value: '25 ans', label: "D'existence" },
+              { value: `${displayStats.books}+`, label: 'Livres disponibles' },
+              { value: `${displayStats.members}+`, label: 'Lecteurs actifs' },
+              { value: `${displayStats.clubs} club${parseInt(displayStats.clubs) > 1 ? 's' : ''}`, label: 'Thématiques' },
+              { value: `${displayStats.labs} labo${parseInt(displayStats.labs) > 1 ? 's' : ''}`, label: 'Intelligence artificielle' },
+              { value: `${displayStats.years} ans`, label: "D'existence" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <p className="font-display text-2xl font-bold text-accent">{stat.value}</p>
@@ -553,7 +572,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                   className="w-full px-4 py-3 surface-alt border border-[var(--border-color)] rounded-xl text-primary placeholder:text-muted focus:border-[var(--library-accent)] focus:ring-2 focus:ring-[var(--library-accent)]/20 outline-none transition-all resize-none" />
               </div>
               <div className="sm:col-span-2">
-                <Button className="btn-solid w-full h-12 font-bold shadow-medium hover:shadow-elevated hover:-translate-y-0.5 transition-all sheen relative overflow-hidden">
+                <Button onClick={(e) => { e.preventDefault(); toast.success('Message envoyé !', { description: 'Nous vous répondrons dans les plus brefs délais.' }); }} className="btn-solid w-full h-12 font-bold shadow-medium hover:shadow-elevated hover:-translate-y-0.5 transition-all sheen relative overflow-hidden">
                   Envoyer le message
                 </Button>
               </div>

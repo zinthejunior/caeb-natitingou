@@ -1,26 +1,15 @@
 import { useState, useEffect } from 'react';
 import type { Livre, ClubLecture, Evenement, Actualite, Avis, Emprunt, Reservation } from '@/types';
-
-// URL de base de l'API Django
-const API_BASE_URL = 'http://localhost:8000/api';
+import { fetchWithAuth } from '@/lib/api';
 
 /**
  * Utilitaire central pour effectuer des appels HTTP vers le backend.
- * Gère automatiquement le jeton d'authentification (token).
+ * Gère automatiquement le rafraîchissement du jeton via fetchWithAuth.
  */
 export async function appelAPI(endpoint: string, options: RequestInit = {}) {
-  const token = localStorage.getItem('caeb_token');
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-    ...options.headers,
-  };
-  
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+  const response = await fetchWithAuth(endpoint, options);
   
   if (!response.ok) {
-    // Si le jeton est invalide ou expiré, on le supprime
-    if (response.status === 401) localStorage.removeItem('caeb_token');
     const texteErreur = await response.text();
     throw new Error(`Erreur API ${response.status}: ${texteErreur}`);
   }
@@ -94,7 +83,7 @@ export function useClubs() {
     (async () => {
       try {
         setChargement(true);
-        const donnees = await appelAPI('/clubs/').catch(() => []);
+        const donnees = await appelAPI('/clubs/');
         setClubs(donnees.results || donnees);
       } catch { 
         setErreur('Erreur lors du chargement des clubs'); 
@@ -145,7 +134,7 @@ export function useEvenements() {
     (async () => {
       try {
         setChargement(true);
-        const donnees = await appelAPI('/evenements/').catch(() => []);
+        const donnees = await appelAPI('/evenements/');
         setEvenements(donnees.results || donnees);
       } catch { 
         setErreur('Erreur lors du chargement des événements'); 
@@ -196,7 +185,7 @@ export function useActualites() {
     (async () => {
       try {
         setChargement(true);
-        const donnees = await appelAPI('/actualites/').catch(() => []);
+        const donnees = await appelAPI('/actualites/');
         setActualites(donnees.results || donnees);
       } catch { 
         setErreur('Erreur lors du chargement des actualités'); 
@@ -247,7 +236,7 @@ export function useAvis(livreId?: string) {
     try {
       setChargement(true);
       const pointEntree = livreId ? `/avis/?book=${livreId}` : '/avis/';
-      const donnees = await appelAPI(pointEntree).catch(() => []);
+      const donnees = await appelAPI(pointEntree);
       setAvis(donnees.results || donnees);
     } catch { 
       setErreur('Erreur lors du chargement des avis'); 
@@ -273,7 +262,7 @@ export function useEmprunts() {
     (async () => {
       try {
         setChargement(true);
-        const donnees = await appelAPI('/emprunts/').catch(() => []);
+        const donnees = await appelAPI('/emprunts/');
         setEmprunts(donnees.results || donnees);
       } catch { 
         setErreur('Erreur lors du chargement des emprunts'); 
@@ -298,7 +287,7 @@ export function useReservations() {
     (async () => {
       try {
         setChargement(true);
-        const donnees = await appelAPI('/reservations/').catch(() => []);
+        const donnees = await appelAPI('/reservations/');
         setReservations(donnees.results || donnees);
       } catch { 
         setErreur('Erreur lors du chargement des réservations'); 
@@ -309,6 +298,28 @@ export function useReservations() {
   }, []);
 
   return { reservations, chargement, erreur };
+}
+
+/**
+ * Récupère les recommandations personnalisées.
+ */
+export function useRecommandations(humeur = 'neutre') {
+  const [recommandations, setRecommandations] = useState<any>(null);
+  const [chargement, setChargement] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setChargement(true);
+        const donnees = await appelAPI(`/recommandations/?humeur=${humeur}`);
+        setRecommandations(donnees);
+      } finally {
+        setChargement(false);
+      }
+    })();
+  }, [humeur]);
+
+  return { recommandations, chargement };
 }
 
 // ── SESSIONS DE CHAT (IA Kossi) ──────────────────────────────────────────
@@ -330,7 +341,7 @@ export function useSessionsChat() {
   const recupererSessions = async () => {
     try {
       setChargement(true);
-      const donnees = await appelAPI('/chat/').catch(() => []);
+      const donnees = await appelAPI('/chat/');
       setSessions(donnees.results || donnees);
     } finally { 
       setChargement(false); 
@@ -346,12 +357,29 @@ export function useSessionsChat() {
 
 /**
  * Publie un nouvel avis sur un livre.
+ * Envoie les champs attendus par le backend Django (book, note, commentaire).
  */
 export async function publierAvis(livreId: string, note: number, commentaire: string) {
-  return appelAPI('/avis/', {
+  if (!livreId) throw new Error('ID du livre requis');
+  if (note < 1 || note > 5) throw new Error('La note doit être entre 1 et 5');
+
+  const res = await appelAPI('/avis/', {
     method: 'POST',
-    body: JSON.stringify({ bookId: livreId, rating: note, comment: commentaire }),
+    body: JSON.stringify({
+      book: livreId,       // champ principal
+      bookId: livreId,     // alias de compatibilité
+      note: note,          // champ principal
+      rating: note,        // alias de compatibilité
+      commentaire: commentaire,
+      comment: commentaire,
+    }),
   });
+
+  if (res?.error || res?.detail) {
+    const msg = res.error || res.detail || 'Erreur lors de la publication';
+    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+  }
+  return res;
 }
 
 /**
@@ -372,6 +400,13 @@ export async function rejoindreClub(clubId: string) {
 }
 
 /**
+ * Quitter un club de lecture.
+ */
+export async function quitterClub(clubId: string) {
+  return appelAPI(`/clubs/${clubId}/leave/`, { method: 'POST' });
+}
+
+/**
  * S'inscrire à un événement.
  */
 export async function sinscrireEvenement(evenementId: string) {
@@ -379,10 +414,99 @@ export async function sinscrireEvenement(evenementId: string) {
 }
 
 /**
- * Ajouter ou retirer un livre des favoris.
+ * Se désinscrire d'un événement.
  */
-export async function inverserFavori(livreId: string) {
+export async function desinscrireEvenement(evenementId: string) {
+  return appelAPI(`/evenements/${evenementId}/unregister/`, { method: 'POST' });
+}
+
+/**
+ * Inscrit l'utilisateur à un événement avec des détails supplémentaires.
+ */
+export async function sinscrireEvenementDetaillee(evenementId: string, donnees: { nom_complet: string, email: string, telephone: string, motivations: string }) {
+  return appelAPI('/participations-evenements/', {
+    method: 'POST',
+    body: JSON.stringify({
+      event: evenementId,
+      ...donnees
+    })
+  });
+}
+
+/**
+ * Récupère les participations de l'utilisateur aux événements.
+ */
+export function useParticipationsEvenements() {
+  const [participations, setParticipations] = useState<any[]>([]);
+  const [chargement, setChargement] = useState(true);
+
+  useEffect(() => {
+    appelAPI('/participations-evenements/')
+      .then(data => setParticipations(data))
+      .catch(err => console.error('Erreur participations:', err))
+      .finally(() => setChargement(false));
+  }, []);
+
+  return { participations, chargement };
+}
+
+/**
+ * Ajouter ou retirer un livre des favoris (persistance BDD via POST /livres/{id}/favorite/).
+ */
+export async function inverserFavori(livreId: string): Promise<{ isFavorite: boolean; favorites: string[] }> {
   return appelAPI(`/livres/${livreId}/favorite/`, { method: 'POST' });
+}
+
+/**
+ * Marque un livre comme lu (persisté dans Interaction.livre_lu en BDD).
+ */
+export async function marquerCommeLu(livreId: string, estLu = true) {
+  return appelAPI(`/livres/${livreId}/mark_read/`, {
+    method: 'POST',
+    body: JSON.stringify({ is_read: estLu }),
+  });
+}
+
+/**
+ * Récupère les livres marqués comme lus par l'utilisateur (depuis Interaction).
+ */
+export function useLivresLus() {
+  const [livresLus, setLivresLus] = useState<any[]>([]);
+  const [chargement, setChargement] = useState(true);
+
+  const recharger = async () => {
+    try {
+      setChargement(true);
+      const data = await appelAPI('/interactions/?type_action=marquage&livre_lu=true');
+      const liste = data.results || data;
+      setLivresLus(Array.isArray(liste) ? liste : []);
+    } finally {
+      setChargement(false);
+    }
+  };
+
+  useEffect(() => { void recharger(); }, []);
+  return { livresLus, chargement, recharger };
+}
+
+/**
+ * Récupère l'historique complet des interactions utilisateur.
+ */
+export function useHistorique() {
+  const [historique, setHistorique] = useState<any[]>([]);
+  const [chargement, setChargement] = useState(true);
+
+  useEffect(() => {
+    appelAPI('/interactions/')
+      .then(data => {
+        const liste = data.results || data;
+        setHistorique(Array.isArray(liste) ? liste : []);
+      })
+      .catch(() => setHistorique([]))
+      .finally(() => setChargement(false));
+  }, []);
+
+  return { historique, chargement };
 }
 
 /**
@@ -406,12 +530,12 @@ export async function creerSessionChat(titre = 'Nouvelle conversation'): Promise
 }
 
 /**
- * Ajouter un message à une session de chat.
+ * Ajoute un message à une session de chat et récupère la réponse de l'IA.
  */
-export async function ajouterMessageChat(sessionId: number, role: 'user' | 'assistant', contenu: string) {
+export async function ajouterMessageChat(sessionId: number, contenu: string) {
   return appelAPI(`/chat/${sessionId}/messages/`, {
     method: 'POST',
-    body: JSON.stringify({ role, content: contenu }),
+    body: JSON.stringify({ content: contenu }),
   });
 }
 
@@ -420,6 +544,16 @@ export async function ajouterMessageChat(sessionId: number, role: 'user' | 'assi
  */
 export async function recupererSessionChat(sessionId: number): Promise<DonneesSessionChat> {
   return appelAPI(`/chat/${sessionId}/`);
+}
+
+/**
+ * Crée une réservation pour le laboratoire.
+ */
+export async function creerReservationLab(donnees: { station: number, date: string, start_time: string, end_time: string, purpose?: string }) {
+  return appelAPI('/lab-reservations/', {
+    method: 'POST',
+    body: JSON.stringify(donnees)
+  });
 }
 
 // ── ALIASES ANGLAIS (compatibilité UI) ──────────────────────────────────
@@ -470,5 +604,36 @@ export function useLabStations() {
 
 export const postReview = publierAvis;
 export const registerEvent = sinscrireEvenement;
+export const unregisterEvent = desinscrireEvenement;
 export const sendClubContact = envoyerMessageClub;
+export const toggleFavorite = inverserFavori;
 
+/**
+ * Récupère les statistiques globales de la bibliothèque.
+ */
+export function useGlobalStats() {
+  const [stats, setStats] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setIsLoading(true);
+        const data = await appelAPI('/stats/').catch(() => ({
+          books_count: 12000,
+          members_count: 5000,
+          events_count: 50,
+          news_count: 20,
+          clubs_count: 3,
+          lab_count: 1,
+          years: 25
+        }));
+        setStats(data);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, []);
+
+  return { stats, isLoading };
+}

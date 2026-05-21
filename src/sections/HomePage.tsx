@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Calendar, Star, ChevronRight, Flame, Sparkles, TrendingUp, Crown, Lock, Newspaper, Heart } from 'lucide-react';
+import { Calendar, Star, ChevronRight, Flame, Sparkles, TrendingUp, Lock, Newspaper, Heart, BookOpen } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { ApiImage } from '@/components/ApiImage';
 import { Button } from '@/components/ui/button';
 import type { View, User, Book, Event, News } from '@/types';
-import { useLivres, useEvenements, useActualites } from '@/hooks/useData';
+import { useLivres, useEvenements, useActualites, useRecommandations, useGlobalStats } from '@/hooks/useData';
+import { useSEO } from '@/lib/utils';
 
 interface HomePageProps {
   user: User;
@@ -62,27 +63,44 @@ export function HomePage({ user, onNavigate }: HomePageProps) {
     if (hour < 18) return 'Bon après-midi';
     return 'Bonsoir';
   });
+
+  useSEO("Accueil", "Découvrez la collection de 12 000 ouvrages de la Bibliothèque CAEB de Natitingou, réservez vos livres et participez à nos événements.");
+
   const [dataReady, setDataReady] = useState(false);
   const { livres: books } = useLivres();
   const { evenements: events } = useEvenements();
   const { actualites: news } = useActualites();
+  const { recommandations } = useRecommandations();
+  const [iaBooks, setIaBooks] = useState<Book[]>([]);
 
   useEffect(() => {
     const t = setTimeout(() => setDataReady(true), 700);
     return () => clearTimeout(t);
   }, []);
 
-  const recommendedBooks = (user?.genresPreferes && user.genresPreferes.length > 0)
-    ? books.filter((b: any) => user.genresPreferes?.includes(b.genre || '')).slice(0, 4)
-    : books.slice(0, 4);
+  useEffect(() => {
+    if (recommandations?.recommendations) {
+      setIaBooks(recommandations.recommendations);
+    }
+  }, [recommandations]);
+
+  const recommendedBooks = iaBooks.length > 0
+    ? iaBooks.slice(0, 4)
+    : (user?.genresPreferes && user.genresPreferes.length > 0)
+      ? books.filter((b: any) => user.genresPreferes?.includes(b.genre || '')).slice(0, 4)
+      : books.slice(0, 4);
+
   const newBooks = books.filter((b: any) => (b as unknown as Record<string, unknown>).estNouveau).slice(0, 4);
   const popularBooks = books.filter((b: any) => (b as unknown as Record<string, unknown>).estPopulaire).slice(0, 4);
   const upcomingEvents = events.slice(0, 3);
   const latestNews = news.sort((a, b) => new Date(b.date || '').getTime() - new Date(a.date || '').getTime()).slice(0, 3);
 
+  const { stats } = useGlobalStats();
+  const bookCount = stats?.books_count?.toLocaleString() || '12 000';
+
   return (
     <div className="min-h-screen bg-library-bg pb-24 transition-colors duration-300">
-      <Navbar utilisateur={user} />
+      <Navbar user={user} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -90,34 +108,40 @@ export function HomePage({ user, onNavigate }: HomePageProps) {
           {/* ── COLONNE PRINCIPALE ── */}
           <div className="lg:col-span-8 space-y-10">
 
-            {/* Hero card */}
-            <header className="relative overflow-hidden rounded-3xl gradient-hero border border-[var(--border-color)] shadow-card transition-all duration-300">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--library-accent)]/8 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-48 h-48 bg-[var(--library-accent)]/5 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none" />
-              <div className="relative p-6 md:p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div>
-                  <p className="text-muted font-medium mb-1">{greeting},</p>
-                  <h1 className="font-display text-3xl md:text-4xl font-bold mb-3 text-primary">
-                    {user?.prenom || 'Utilisateur'} !
+            {/* Hero card avec Mesh Gradient */}
+            <header className="relative overflow-hidden rounded-[2rem] mesh-gradient-light dark:mesh-gradient-dark border border-[var(--border-color)] shadow-elevated transition-all duration-500 hover:shadow-glow animate-flow-in">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-[var(--library-accent)]/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none animate-float" />
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-[var(--library-accent)]/5 rounded-full blur-2xl -ml-16 -mb-16 pointer-events-none animate-float" style={{ animationDelay: '2s' }} />
+
+              <div className="relative p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+                <div className="flex-1">
+                  <p className="text-muted font-medium mb-1 opacity-80">{greeting},</p>
+                  <h1 className="font-display text-4xl md:text-5xl font-bold mb-4 text-primary tracking-tight">
+                    <span className="text-gradient">{user?.prenom || 'Utilisateur'}</span> !
                   </h1>
-                  <p className="text-muted max-w-md leading-relaxed">
+                  <p className="text-lg text-muted max-w-lg leading-relaxed font-medium">
                     {newBooks.length > 0 ? (
                       <>
-                        <span className="font-semibold text-accent">{newBooks.length} {newBooks.length > 1 ? 'nouveautés' : 'nouveauté'}</span> vous {newBooks.length > 1 ? 'attendent' : 'attend'} aujourd'hui.{' '}
-                        Prêt pour votre prochaine aventure littéraire avec la CAEB ?
+                        <span className="text-accent font-bold">{newBooks.length} nouveautés</span> captivantes vous attendent aujourd'hui. Prêt pour l'aventure ?
                       </>
                     ) : (
-                      <>Bienvenue dans votre espace lecteur. Découvrez notre sélection de 12 000 ouvrages pensés pour vous.</>
+                      <>Découvrez notre sélection exclusive de <span className="text-accent font-bold">{bookCount} ouvrages</span> à la Bibliothèque CAEB.</>
                     )}
                   </p>
+
                   {!user?.estMembre && (
-                    <div className="mt-6">
-                      <Button className="btn-solid shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all font-semibold">
-                        <Crown className="w-4 h-4 mr-2" />
-                        Devenir Premium
+                    <div className="mt-8 flex flex-wrap gap-4">
+                      <Button onClick={() => onNavigate('profile')} className="btn-solid px-8 py-6 rounded-2xl shadow-glow hover:shadow-elevated transition-all font-bold text-lg group">
+                        Devenir Membre
                       </Button>
                     </div>
                   )}
+                </div>
+
+                {/* Visual element for hero (optional image or graphic) */}
+                <div className="hidden md:block relative w-48 h-48 animate-float">
+                  <div className="absolute inset-0 bg-accent/20 rounded-full blur-2xl" />
+                  <BookOpen className="w-full h-full text-accent/20 relative z-10" />
                 </div>
               </div>
             </header>
@@ -132,7 +156,9 @@ export function HomePage({ user, onNavigate }: HomePageProps) {
               ) : latestNews.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {latestNews.map((newsItem) => (
-                    <NewsCard key={newsItem.id} news={newsItem} onClick={() => onNavigate('news-detail', { newsId: newsItem.id })} />
+                    <div key={newsItem.id} className="list-item-fade">
+                      <NewsCard news={newsItem} onClick={() => onNavigate('news-detail', { newsId: newsItem.id })} />
+                    </div>
                   ))}
                 </div>
               ) : null}
@@ -148,8 +174,10 @@ export function HomePage({ user, onNavigate }: HomePageProps) {
               ) : recommendedBooks.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
                   {recommendedBooks.map((book) => (
-                    <BookCard key={book.id} book={book} user={user} onClick={() => onNavigate('book-detail', { bookId: book.id })}
-                      onToggleFavorite={(id) => user.favoris?.includes(id) ? user.favoris = user.favoris.filter((f: any) => f !== id) : user.favoris = [...(user.favoris || []), id]} />
+                    <div key={book.id} className="list-item-fade">
+                      <BookCard book={book} user={user} onClick={() => onNavigate('book-detail', { bookId: book.id })}
+                        onToggleFavorite={(id) => user.favoris?.includes(id) ? user.favoris = user.favoris.filter((f: any) => f !== id) : user.favoris = [...(user.favoris || []), id]} />
+                    </div>
                   ))}
                 </div>
               ) : null}
@@ -165,8 +193,10 @@ export function HomePage({ user, onNavigate }: HomePageProps) {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
                   {newBooks.map((book) => (
-                    <BookCard key={book.id} book={book} user={user} onClick={() => onNavigate('book-detail', { bookId: book.id })}
-                      onToggleFavorite={(id) => user.favoris?.includes(id) ? user.favoris = user.favoris.filter((f: any) => f !== id) : user.favoris = [...(user.favoris || []), id]} />
+                    <div key={book.id} className="list-item-fade">
+                      <BookCard book={book} user={user} onClick={() => onNavigate('book-detail', { bookId: book.id })}
+                        onToggleFavorite={(id) => user.favoris?.includes(id) ? user.favoris = user.favoris.filter((f: any) => f !== id) : user.favoris = [...(user.favoris || []), id]} />
+                    </div>
                   ))}
                 </div>
               )}
@@ -182,8 +212,10 @@ export function HomePage({ user, onNavigate }: HomePageProps) {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
                   {popularBooks.map((book) => (
-                    <BookCard key={book.id} book={book} user={user} onClick={() => onNavigate('book-detail', { bookId: book.id })}
-                      onToggleFavorite={(id) => user.favoris?.includes(id) ? user.favoris = user.favoris.filter((f: any) => f !== id) : user.favoris = [...(user.favoris || []), id]} />
+                    <div key={book.id} className="list-item-fade">
+                      <BookCard book={book} user={user} onClick={() => onNavigate('book-detail', { bookId: book.id })}
+                        onToggleFavorite={(id) => user.favoris?.includes(id) ? user.favoris = user.favoris.filter((f: any) => f !== id) : user.favoris = [...(user.favoris || []), id]} />
+                    </div>
                   ))}
                 </div>
               )}
@@ -207,23 +239,7 @@ export function HomePage({ user, onNavigate }: HomePageProps) {
               )}
             </section>
 
-            {!user?.estMembre && (
-              <div className="gradient-accent rounded-2xl p-6 text-center space-y-4 shadow-medium border border-[var(--library-accent)]/20 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-10 pointer-events-none">
-                  <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full blur-2xl" />
-                </div>
-                <div className="relative">
-                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Crown className="w-6 h-6 text-[var(--library-on-accent)]" />
-                  </div>
-                  <h3 className="font-bold text-lg text-on-accent">Devenez membre CAEB</h3>
-                  <p className="text-on-accent/75 text-sm mt-1">Empruntez sans limite et participez à tous les événements.</p>
-                  <Button className="mt-4 w-full bg-[var(--library-surface)] text-[var(--library-accent)] font-bold shadow-medium hover:shadow-elevated hover:-translate-y-0.5 transition-all">
-                    Voir les offres
-                  </Button>
-                </div>
-              </div>
-            )}
+
           </div>
         </div>
       </main>
@@ -287,7 +303,7 @@ function BookCard({ book, user, onClick, onToggleFavorite }: { book: Book; user:
         </button>
 
         {/* Overlay de verrouillage */}
-        {!user?.estMembre && !book.estDisponible && (
+        {!user?.estMembre && book.exemplaires <= 0 && (
           <div className="absolute inset-0 surface/80 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <div className="surface p-2 rounded-full shadow-medium">
               <Lock className="w-4 h-4 text-accent" />
