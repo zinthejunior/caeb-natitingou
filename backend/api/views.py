@@ -1,71 +1,199 @@
+"""
+views.py — Vues (endpoints) de l'API REST de la bibliothèque CAEB Natitingou.
+
+Chaque ViewSet expose automatiquement les opérations CRUD (list, create, retrieve,
+update, destroy) via le routeur DRF configuré dans urls.py.
+Les actions personnalisées (@action) ajoutent des endpoints métier spécifiques.
+"""
+
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes as perm_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.db.models import Count
+import joblib
+import os
+import logging
+from . import recommandations as reco_engine
 from .models import (
     User, Book, Borrow, Interaction, Notification,
     ReadingClub, Event, News, Review, Reservation,
     ClubContactMessage, ChatSession, ChatMessage,
-    LabStation, LabReservation, ParticipationEvent
+    LabStation, LabReservation
 )
-from .kossi_ai import kossi_instance
 from .serializers import (
     UserSerializer, UserPasswordSerializer, BookSerializer, BorrowSerializer,
     InteractionSerializer, NotificationSerializer, ReadingClubSerializer,
     EventSerializer, NewsSerializer, ReviewSerializer, ReservationSerializer,
     ClubContactMessageSerializer, ChatSessionSerializer, ChatMessageSerializer,
-    LabStationSerializer, LabReservationSerializer, ParticipationEventSerializer
+    LabStationSerializer, LabReservationSerializer
 )
-from rest_framework.views import APIView
 
+
+# ── INITIALISATION DU MOTEUR DE RECOMMANDATIONS ──────────────
+
+logger = logging.getLogger(__name__)
+
+def _initialiser_modele_recommandations():
+    """Charge les composants du modèle de fusion au démarrage."""
+    try:
+        # Chemin vers le fichier du modèle sauvegardé
+        model_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            '..', 'ai_models', 'modele_fusion.pkl'
+        )
+        
+        if os.path.exists(model_path):
+            composants = joblib.load(model_path)
+            recommandations.charger(composants)
+            logger.info("Modèle de fusion chargé avec succès")
+        else:
+            logger.warning(f"Fichier du modèle non trouvé à {model_path}")
+    except Exception as e:
+        logger.error(f"Erreur lors du chargement du modèle: {e}")
+
+# Initialisation au démarrage du module
+_initialiser_modele_recommandations()
+
+
+# ── STATISTIQUES PUBLIQUES ───────────────────────────────────
+
+@api_view(['GET'])
+@perm_classes([AllowAny])
+def get_public_stats(request):
+    """
+    Renvoie les statistiques en temps réel pour la Landing Page.
+    """
+    from datetime import datetime
+    from .models import Book, User
+    
+    total_books = Book.objects.count()
+    total_users = User.objects.count()
+    # Expertise CAEB fondée en 1978
+    expertise_years = datetime.now().year - 1978
+    
+    return Response({
+        'total_books': total_books,
+        'total_users': total_users,
+        'expertise_years': expertise_years,
+        'active_readers': total_users + 500, # Inclus les lecteurs physiques
+    })
+
+
+@api_view(['GET'])
+@perm_classes([IsAuthenticated])
+def get_recommendations(request):
+    """
+    Endpoint de recommandations personnalisées pour l'utilisateur connecté.
+    Utilise le moteur de fusion (TF-IDF + NMF + item-item).
+    """
+    user = request.user
+    n = int(request.query_params.get('n', 10))
+    
+    try:
+        recommendations = reco_engine.recommander_par_user_id(
+            user_id=str(user.id),
+            n=n
+        )
+        return Response({
+            'user_id': str(user.id),
+            'recommendations': recommendations
+        })
+    except Exception as e:
+        logger.error(f"Erreur recommandations pour {user.id}: {e}")
+        return Response(
+            {'error': 'Erreur lors du calcul des recommandations'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+# ── UTILISATEURS ─────────────────────────────────────────────
 
 class UserViewSet(viewsets.ModelViewSet):
+    """
+    CRUD complet pour les utilisateurs.
+    - La création (inscription) est publique (AllowAny).
+    - Toutes les autres actions nécessitent d'être authentifié.
+    Actions personnalisées :
+      GET  /utilisateurs/me/              → profil de l'utilisateur connecté
+      PATCH /utilisateurs/me/update/      → mise à jour du profil
+      POST /utilisateurs/me/change-password/ → changement de mot de passe
+    """
     queryset         = User.objects.all()
     serializer_class = UserSerializer
 
     def get_permissions(self):
+        """Inscription ouverte à tous ; le reste nécessite un token JWT valide."""
         if self.action == 'create':
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
     @action(detail=False, methods=['get'], url_path='me')
     def me(self, request):
+        """Renvoie le profil complet de l'utilisateur actuellement connecté."""
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+
+
+# ── UTILISATEURS ─────────────────────────────────────────────
+
+class UserViewSet(viewsets.ModelViewSet):
+    """
+    CRUD complet pour les utilisateurs.
+    - La création (inscription) est publique (AllowAny).
+    - Toutes les autres actions nécessitent d'être authentifié.
+    Actions personnalisées :
+      GET  /utilisateurs/me/              → profil de l'utilisateur connecté
+      PATCH /utilisateurs/me/update/      → mise à jour du profil
+      POST /utilisateurs/me/change-password/ → changement de mot de passe
+    """
+    queryset         = User.objects.all()
+    serializer_class = UserSerializer
+
+    def get_permissions(self):
+        """Inscription ouverte à tous ; le reste nécessite un token JWT valide."""
+        if self.action == 'create':
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+
+    @action(detail=False, methods=['get'], url_path='me')
+    def me(self, request):
+        """Renvoie le profil complet de l'utilisateur actuellement connecté."""
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
     @action(detail=False, methods=['patch'], url_path='me/update')
     def update_me(self, request):
-        old_type = request.user.type_compte
+        """Mise à jour partielle du profil (PATCH → seuls les champs fournis sont modifiés)."""
         serializer = self.get_serializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        
-        # Notification si demande d'adhésion
-        if old_type != 'en_attente' and user.type_compte == 'en_attente':
-            import uuid
-            Notification.objects.create(
-                id=str(uuid.uuid4())[:20],
-                user=user,
-                type_notif='demande_adhesion',
-                message="Votre demande d'adhésion a été reçue et est en cours de traitement par nos bibliothécaires."
-            )
+        serializer.save()
         return Response(serializer.data)
 
-    def perform_update(self, serializer):
-        instance = self.get_object()
-        old_type = instance.type_compte
-        user = serializer.save()
-        
-        # Notification si adhésion confirmée par admin
-        if old_type == 'en_attente' and user.type_compte == 'membre':
-            import uuid
-            Notification.objects.create(
-                id=str(uuid.uuid4())[:20],
-                user=user,
-                type_notif='adhesion_confirmee',
-                message="Félicitations ! Votre adhésion a été confirmée. Vous êtes maintenant membre de la bibliothèque CAEB."
-            )
+    @action(detail=False, methods=['post'], url_path='verify-code')
+    def verify_code(self, request):
+        """
+        Vérifie le code reçu par l'utilisateur (Email, SMS ou WhatsApp).
+        """
+        code = request.data.get('code')
+        user_id = request.data.get('user_id')
+        try:
+            user = User.objects.get(id=user_id)
+            if user.confirmation_code == code:
+                user.is_verified = True
+                user.confirmation_code = None # Code à usage unique
+                user.save()
+                return Response({'detail': 'Compte vérifié avec succès !'})
+            return Response({'error': 'Code incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
+        except User.DoesNotExist:
+            return Response({'error': 'Utilisateur non trouvé.'}, status=status.HTTP_404_NOT_FOUND)
+
     @action(detail=False, methods=['post'], url_path='me/change-password')
     def change_password(self, request):
+        """
+        Changement de mot de passe.
+        Vérifie l'ancien mot de passe avant d'appliquer le nouveau.
+        """
         serializer = UserPasswordSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         request.user.set_password(serializer.validated_data['new_password'])
@@ -73,111 +201,239 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({'detail': 'Mot de passe mis à jour avec succès.'})
 
 
+# ── LIVRES ────────────────────────────────────────────────────
+
 class BookViewSet(viewsets.ModelViewSet):
-    queryset         = Book.objects.all()
-    serializer_class = BookSerializer
+    """
+    CRUD complet pour le catalogue de livres.
+    Accès public en lecture (AllowAny) pour permettre aux visiteurs
+    de parcourir le catalogue sans être connectés.
+    """
+    queryset           = Book.objects.all()
+    serializer_class   = BookSerializer
     permission_classes = [permissions.AllowAny]
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def favorite(self, request, pk=None):
-        """Toggle un livre dans les favoris de l'utilisateur (persisté en BDD)."""
-        user = request.user
-        book_id = str(pk)
-        favorites = list(user.favorites or [])
-        if book_id in favorites:
-            favorites.remove(book_id)
-            is_fav = False
-        else:
-            favorites.append(book_id)
-            is_fav = True
-        user.favorites = favorites
-        user.save(update_fields=['favorites'])
-        return Response({'isFavorite': is_fav, 'favorites': favorites})
-
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
-    def mark_read(self, request, pk=None):
-        """Marque un livre comme lu (ou non lu) — persisté via Interaction."""
-        import uuid
+        """Ajouter/retirer un livre des favoris de l'utilisateur connecté."""
         book = self.get_object()
-        is_read = request.data.get('is_read', True)
-        interaction, created = Interaction.objects.get_or_create(
-            user=request.user,
-            livre=book,
-            type_action='marquage',
-            defaults={
-                'id': str(uuid.uuid4())[:20],
-                'livre_lu': is_read,
-                'source': 'application',
-            }
-        )
-        if not created:
-            interaction.livre_lu = is_read
-            interaction.save(update_fields=['livre_lu'])
-        return Response({'isRead': interaction.livre_lu, 'bookId': str(pk)})
+        user = request.user
+        favorites = user.favorites or []
+        if book.id in favorites:
+            favorites.remove(book.id)
+            status_str = 'removed'
+        else:
+            favorites.append(book.id)
+            status_str = 'added'
+        user.favorites = favorites
+        user.save()
+        return Response({'status': status_str, 'favorites': favorites})
 
+
+# ── CHOIX DYNAMIQUES (pour les formulaires) ───────────────────
+
+@api_view(['GET'])
+@perm_classes([AllowAny])
+def choices_view(request):
+    """
+    Endpoint GET /api/choices/
+    Retourne les listes de choix dynamiques extraites de la base de données :
+      - genres         : extraits des livres existants
+      - sous_genres    : groupés par genre
+      - niveaux_etude  : extraits des profils utilisateurs
+      - classes        : groupées par niveau d'étude
+      - intentions     : liste statique (issues du cahier des charges)
+
+    Aucune table dédiée — tout est calculé depuis les données existantes.
+    Utilisé notamment par le formulaire d'inscription (RegisterPage).
+    """
+    # Genres distincts depuis la table des livres (triés alphabétiquement)
+    genres = list(
+        Book.objects.exclude(genre__isnull=True).exclude(genre='')
+        .values_list('genre', flat=True).distinct().order_by('genre')
+    )
+
+    # Sous-genres distincts, regroupés par genre principal
+    sous_genres_qs = (
+        Book.objects.exclude(sous_genre__isnull=True).exclude(sous_genre='')
+        .values('genre', 'sous_genre').distinct()
+    )
+    sous_genres_par_genre: dict = {}
+    for row in sous_genres_qs:
+        g, sg = row['genre'], row['sous_genre']
+        if g not in sous_genres_par_genre:
+            sous_genres_par_genre[g] = []
+        if sg not in sous_genres_par_genre[g]:
+            sous_genres_par_genre[g].append(sg)
+
+    # Niveaux d'étude distincts depuis les profils utilisateurs
+    niveaux = list(
+        User.objects.exclude(niveau_etude__isnull=True).exclude(niveau_etude='')
+        .values_list('niveau_etude', flat=True).distinct().order_by('niveau_etude')
+    )
+    niveaux = [n.capitalize() for n in niveaux]  # Normalisation de la casse
+
+    # Classes groupées par niveau d'étude
+    classes_qs = (
+        User.objects.exclude(niveau_etude__isnull=True).exclude(classe__isnull=True)
+        .exclude(classe='')
+        .values('niveau_etude', 'classe').distinct()
+    )
+    classes_par_niveau: dict = {}
+    for row in classes_qs:
+        n  = row['niveau_etude'].capitalize()
+        cl = row['classe']
+        if n not in classes_par_niveau:
+            classes_par_niveau[n] = []
+        if cl not in classes_par_niveau[n]:
+            classes_par_niveau[n].append(cl)
+    # Tri alphabétique des classes dans chaque niveau
+    for n in classes_par_niveau:
+        classes_par_niveau[n].sort()
+
+    # Intentions de lecture (base + dynamique depuis les profils existants)
+    intentions_base = [
+        "Emprunter des livres physiques",
+        "Consulter le catalogue en ligne",
+        "Participer aux clubs de lecture",
+        "Assister aux événements et conférences",
+        "Travailler/Étudier sur place",
+        "Découvrir de nouveaux auteurs",
+        "Autre",
+    ]
+    
+    import json
+    intentions_db = User.objects.exclude(intentions__isnull=True).values_list('intentions', flat=True)
+    all_intentions = set(intentions_base)
+    for i_json in intentions_db:
+        try:
+            i_list = json.loads(i_json) if isinstance(i_json, str) else i_json
+            if isinstance(i_list, list):
+                for item in i_list:
+                    all_intentions.add(item)
+        except:
+            continue
+    
+    intentions = sorted(list(all_intentions))
+
+    return Response({
+        'genres':               genres,
+        'sous_genres_par_genre': sous_genres_par_genre,
+        'niveaux_etude':        niveaux,
+        'classes_par_niveau':   classes_par_niveau,
+        'intentions':           intentions,
+    })
+
+
+# ── EMPRUNTS ──────────────────────────────────────────────────
 
 class BorrowViewSet(viewsets.ModelViewSet):
+    """
+    Gestion des emprunts de l'utilisateur connecté.
+    Chaque utilisateur ne voit QUE ses propres emprunts (filtrage par user).
+    Réservé aux utilisateurs authentifiés.
+    """
     serializer_class   = BorrowSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        """Filtre les emprunts pour ne retourner que ceux de l'utilisateur connecté."""
         return Borrow.objects.filter(user=self.request.user).select_related('livre')
 
 
+# ── INTERACTIONS ──────────────────────────────────────────────
+
 class InteractionViewSet(viewsets.ModelViewSet):
+    """
+    Enregistrement des interactions utilisateur ↔ livre.
+    Les interactions sont liées à l'utilisateur connecté et
+    utilisées par Kossi pour affiner les recommandations.
+    """
     serializer_class   = InteractionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        qs = Interaction.objects.filter(user=self.request.user).select_related('livre')
-        # Filtrage optionnel
-        type_action = self.request.query_params.get('type_action')
-        livre_lu    = self.request.query_params.get('livre_lu')
-        if type_action:
-            qs = qs.filter(type_action=type_action)
-        if livre_lu is not None:
-            qs = qs.filter(livre_lu=(livre_lu.lower() == 'true'))
-        return qs.order_by('-id')
+        """Ne renvoie que les interactions de l'utilisateur connecté."""
+        return Interaction.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
+        """Associe automatiquement l'interaction à l'utilisateur connecté."""
         serializer.save(user=self.request.user)
 
 
+# ── NOTIFICATIONS ────────────────────────────────────────────
+
 class NotificationViewSet(viewsets.ModelViewSet):
+    """
+    Notifications de l'utilisateur connecté.
+    Ex: rappel de retour de livre après 7 jours d'emprunt.
+    """
     serializer_class   = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        """Ne renvoie que les notifications de l'utilisateur connecté."""
         return Notification.objects.filter(user=self.request.user)
 
 
+# ── CLUBS DE LECTURE ──────────────────────────────────────────
+
 class ReadingClubViewSet(viewsets.ModelViewSet):
+    """
+    Gestion des clubs de lecture.
+    Lecture publique (AllowAny) ; les actions d'adhésion nécessitent un compte.
+    """
     queryset           = ReadingClub.objects.all()
     serializer_class   = ReadingClubSerializer
     permission_classes = [permissions.AllowAny]
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def join(self, request, pk=None):
+        """
+        POST /clubs/{id}/join/
+        Inscrit l'utilisateur au club et incrémente le compteur de membres.
+        """
         club = self.get_object()
-        if not club.members.filter(pk=request.user.pk).exists():
-            club.members.add(request.user)
+        user = request.user
+        followed = user.followed_clubs or []
+        if club.id not in followed:
+            followed.append(club.id)
+            user.followed_clubs = followed
+            user.save()
             club.member_count += 1
             club.save()
-            return Response({'status': 'inscrit au club', 'memberCount': club.member_count, 'isJoined': True})
-        return Response({'status': 'déjà membre', 'memberCount': club.member_count, 'isJoined': True})
+            msg = 'inscrit au club'
+        else:
+            msg = 'déjà membre'
+        return Response({'status': msg, 'memberCount': club.member_count})
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def leave(self, request, pk=None):
+        """
+        POST /clubs/{id}/leave/
+        Désinscrit l'utilisateur du club et décrémente le compteur de membres.
+        """
         club = self.get_object()
-        if club.members.filter(pk=request.user.pk).exists():
-            club.members.remove(request.user)
+        user = request.user
+        followed = user.followed_clubs or []
+        if club.id in followed:
+            followed.remove(club.id)
+            user.followed_clubs = followed
+            user.save()
             club.member_count = max(0, club.member_count - 1)
             club.save()
-            return Response({'status': 'quitté le club', 'memberCount': club.member_count, 'isJoined': False})
-        return Response({'status': 'pas membre', 'memberCount': club.member_count, 'isJoined': False})
+            msg = 'désinscrit du club'
+        else:
+            msg = 'pas membre'
+        return Response({'status': msg, 'memberCount': club.member_count})
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny])
     def contact(self, request, pk=None):
+        """
+        POST /clubs/{id}/contact/
+        Envoie un message de contact au responsable du club.
+        Accessible sans compte (AllowAny).
+        """
         club = self.get_object()
         serializer = ClubContactMessageSerializer(data={**request.data, 'clubId': pk})
         serializer.is_valid(raise_exception=True)
@@ -192,62 +448,55 @@ class ReadingClubViewSet(viewsets.ModelViewSet):
         return Response({'status': 'Message envoyé avec succès.'}, status=status.HTTP_201_CREATED)
 
 
+# ── ÉVÉNEMENTS ────────────────────────────────────────────────
+
 class EventViewSet(viewsets.ModelViewSet):
+    """
+    Gestion de l'agenda des événements.
+    Lecture publique ; l'inscription à un événement nécessite un compte.
+    """
     queryset           = Event.objects.all()
     serializer_class   = EventSerializer
     permission_classes = [permissions.AllowAny]
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def register(self, request, pk=None):
+        """
+        POST /evenements/{id}/register/
+        Inscrit l'utilisateur à l'événement et incrémente le compteur de participants.
+        """
         event = self.get_object()
-        participation, created = ParticipationEvent.objects.get_or_create(
-            user=request.user, 
-            event=event,
-            defaults={
-                'nom_complet': f"{request.user.first_name} {request.user.last_name}",
-                'email': request.user.email,
-                'telephone': getattr(request.user, 'telephone', '')
-            }
-        )
-        if created:
-            event.participant_count += 1
-            event.save()
-            
-            # Notification auto
-            import uuid
-            Notification.objects.create(
-                id=str(uuid.uuid4())[:20],
-                user=request.user,
-                type_notif='inscription_evenement',
-                message=f"Votre inscription à l'événement '{event.title}' le {event.date} a été confirmée."
-            )
-            
-            return Response({'status': "inscrit à l'événement", 'participantCount': event.participant_count, 'isRegistered': True})
-        return Response({'status': "déjà inscrit", 'participantCount': event.participant_count, 'isRegistered': True})
+        event.participant_count += 1
+        event.save()
+        return Response({'status': "inscrit à l'événement", 'participantCount': event.participant_count})
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
-    def unregister(self, request, pk=None):
-        event = self.get_object()
-        participation = ParticipationEvent.objects.filter(user=request.user, event=event)
-        if participation.exists():
-            participation.delete()
-            event.participant_count = max(0, event.participant_count - 1)
-            event.save()
-            return Response({'status': "désinscrit de l'événement", 'participantCount': event.participant_count, 'isRegistered': False})
-        return Response({'status': "pas inscrit", 'participantCount': event.participant_count, 'isRegistered': False})
 
+# ── ACTUALITÉS ───────────────────────────────────────────────
 
 class NewsViewSet(viewsets.ModelViewSet):
+    """
+    Articles d'actualité de la bibliothèque.
+    Triés du plus récent au plus ancien. Lecture publique.
+    """
     queryset           = News.objects.all().order_by('-date')
     serializer_class   = NewsSerializer
     permission_classes = [permissions.AllowAny]
 
 
+# ── AVIS / NOTATION ───────────────────────────────────────────
+
 class ReviewViewSet(viewsets.ModelViewSet):
+    """
+    Avis et notes laissés par les utilisateurs sur les livres.
+    - La lecture est publique (tout le monde peut voir les avis).
+    - L'écriture nécessite d'être connecté (IsAuthenticatedOrReadOnly).
+    Filtrage : GET /avis/?book={id} → avis d'un livre spécifique.
+    """
     serializer_class   = ReviewSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
+        """Filtre optionnellement par livre via le paramètre `book` dans l'URL."""
         qs = Review.objects.select_related('user', 'livre')
         book_id = self.request.query_params.get('book')
         if book_id:
@@ -255,190 +504,169 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        data = self.request.data
-        # Accepte les alias frontend: bookId, book, livre_id
-        livre_id = data.get('bookId') or data.get('book') or data.get('livre_id')
-        # Accepte les alias: rating, note
-        note = data.get('rating') or data.get('note')
-        # Accepte les alias: comment, commentaire
-        commentaire = data.get('comment') or data.get('commentaire', '')
+        """
+        Crée un avis en récupérant les données du corps de la requête.
+        Accepte `bookId` ou `book` pour l'ID du livre,
+        et `rating` ou `note` pour la note.
+        """
+        livre_id = self.request.data.get('bookId') or self.request.data.get('book')
+        note     = self.request.data.get('rating') or self.request.data.get('note')
+        comment  = self.request.data.get('comment') or self.request.data.get('commentaire', '')
+        livre    = Book.objects.get(pk=livre_id)
+        Review.objects.create(user=self.request.user, livre=livre, note=note, commentaire=comment)
 
-        if not livre_id:
-            from rest_framework.exceptions import ValidationError
-            raise ValidationError({'book': 'Ce champ est requis. Envoyez book, bookId ou livre_id.'})
-        if not note:
-            from rest_framework.exceptions import ValidationError
-            raise ValidationError({'note': 'Ce champ est requis. Envoyez note ou rating (1-5).'})
 
-        try:
-            note = int(note)
-            if not (1 <= note <= 5):
-                raise ValueError()
-        except (ValueError, TypeError):
-            from rest_framework.exceptions import ValidationError
-            raise ValidationError({'note': 'La note doit être un entier entre 1 et 5.'})
-
-        from .models import Book as BookModel
-        try:
-            livre = BookModel.objects.get(pk=livre_id)
-        except BookModel.DoesNotExist:
-            from rest_framework.exceptions import ValidationError
-            raise ValidationError({'book': f'Livre avec id={livre_id} introuvable.'})
-
-        existing = Review.objects.filter(user=self.request.user, livre=livre).first()
-        if existing:
-            existing.note = note
-            existing.commentaire = commentaire
-            existing.save(update_fields=['note', 'commentaire'])
-            serializer.instance = existing
-            return
-
-        instance = Review.objects.create(
-            user=self.request.user,
-            livre=livre,
-            note=note,
-            commentaire=commentaire
-        )
-        serializer.instance = instance
-
+# ── RÉSERVATIONS ─────────────────────────────────────────────
 
 class ReservationViewSet(viewsets.ModelViewSet):
+    """
+    Réservations de livres par les membres.
+    Règles métier :
+      - Seuls les utilisateurs avec type_compte='membre' peuvent réserver.
+      - Un livre avec exemplaires <= 0 ne peut pas être réservé.
+    """
     serializer_class   = ReservationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        """Ne retourne que les réservations de l'utilisateur connecté."""
         return Reservation.objects.filter(user=self.request.user).select_related('livre')
 
     def perform_create(self, serializer):
-        from rest_framework.exceptions import PermissionDenied
+        """
+        Crée une réservation après vérification des règles métier :
+        1. L'utilisateur doit être membre.
+        2. Le livre doit avoir au moins 1 exemplaire disponible.
+        """
+        from rest_framework.exceptions import PermissionDenied, ValidationError
+
+        # Vérification du statut membre
         if self.request.user.type_compte != 'membre':
             raise PermissionDenied("Seuls les membres peuvent faire une demande d'emprunt (réservation).")
-            
-        livre_id = self.request.data.get('book') or self.request.data.get('livre') or self.request.data.get('bookId')
-        from .models import Book as BookModel
-        livre = BookModel.objects.get(pk=livre_id)
-        instance = Reservation.objects.create(user=self.request.user, livre=livre)
-        serializer.instance = instance
 
+        livre_id = (self.request.data.get('book')
+                    or self.request.data.get('livre')
+                    or self.request.data.get('bookId'))
+        livre = Book.objects.get(pk=livre_id)
+
+        # Vérification du stock d'exemplaires
+        if livre.exemplaires <= 0:
+            raise ValidationError("Ce livre n'a plus d'exemplaires disponibles.")
+
+        Reservation.objects.create(user=self.request.user, livre=livre)
+
+
+# ── MESSAGES DE CONTACT (admin uniquement) ────────────────────
 
 class ClubContactMessageViewSet(viewsets.ModelViewSet):
+    """
+    Messages de contact reçus via les formulaires des clubs.
+    Accessible uniquement aux administrateurs (IsAdminUser).
+    """
     serializer_class   = ClubContactMessageSerializer
     permission_classes = [permissions.IsAdminUser]
     queryset           = ClubContactMessage.objects.all().order_by('-created_at')
 
 
+# ── SESSIONS DE CHAT (Kossi) ──────────────────────────────────
+
 class ChatSessionViewSet(viewsets.ModelViewSet):
+    """
+    Gestion des sessions de chat avec Kossi.
+    Chaque utilisateur ne voit que ses propres conversations.
+    Action personnalisée : POST /chat/{id}/messages/ → ajouter un message.
+    """
     serializer_class   = ChatSessionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        """Charge les sessions avec leurs messages (prefetch pour éviter les requêtes N+1)."""
         return ChatSession.objects.filter(user=self.request.user).prefetch_related('messages')
 
     def perform_create(self, serializer):
+        """Associe automatiquement la nouvelle session à l'utilisateur connecté."""
         serializer.save(user=self.request.user)
 
     @action(detail=True, methods=['post'], url_path='messages')
     def add_message(self, request, pk=None):
+        """
+        POST /chat/{id}/messages/
+        Ajoute un message (utilisateur ou Kossi) à une session de chat existante.
+        Corps attendu : { "role": "user"|"assistant", "content": "..." }
+        """
         session = self.get_object()
+        role    = request.data.get('role', 'user')
         content = request.data.get('content', '')
+
         if not content:
             return Response({'error': 'Contenu requis'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # 1. Sauvegarder le message de l'utilisateur
-        user_msg = ChatMessage.objects.create(session=session, role='user', content=content)
-        
-        # 2. Obtenir la réponse de Kossi
-        # On récupère l'historique récent pour le contexte
-        recent_msgs = session.messages.order_by('-created_at')[:6]
-        history = [m.content for m in reversed(recent_msgs)]
-        
-        response_data = kossi_instance.get_structured_response(
-            content, 
-            user_id=request.user.id, 
-            history=history
-        )
-        
-        ai_content = response_data.get('message', 'Je ne sais pas quoi répondre.')
-        
-        # 3. Sauvegarder le message de l'IA
-        ai_msg = ChatMessage.objects.create(session=session, role='assistant', content=ai_content)
-        
-        return Response({
-            'user_message': ChatMessageSerializer(user_msg).data,
-            'assistant_message': ChatMessageSerializer(ai_msg).data,
-            'structured_data': response_data
-        }, status=status.HTTP_201_CREATED)
 
-class RecommendationViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+        msg = ChatMessage.objects.create(session=session, role=role, content=content)
+        return Response(ChatMessageSerializer(msg).data, status=status.HTTP_201_CREATED)
 
-    def list(self, request):
-        user_id = request.user.id if request.user.is_authenticated else None
-        # On peut passer des paramètres optionnels via query_params
-        humeur = request.query_params.get('humeur', 'neutre')
-        contrainte = request.query_params.get('contrainte')
-        
-        # On essaie d'entraîner si ce n'est pas fait (en prod ça devrait être fait périodiquement)
-        if not kossi_instance.is_trained:
-            kossi_instance.train_recommendation_model()
-            
-        data = kossi_instance.generate_recommendation(user_id, humeur, contrainte)
-        return Response(data)
-        
+
+# ── LABORATOIRE IA ──────────────────────────────────────────────
+
 class LabStationViewSet(viewsets.ModelViewSet):
+    """
+    Postes informatiques du Laboratoire IA.
+    - Lecture publique : tous peuvent voir les postes et leur statut.
+    - Écriture réservée aux administrateurs.
+    """
     queryset           = LabStation.objects.all()
     serializer_class   = LabStationSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [permissions.IsAdminUser()]
+        return [permissions.AllowAny()]
+
 
 class LabReservationViewSet(viewsets.ModelViewSet):
+    """
+    Réservations de postes du Laboratoire IA.
+    Règles métier :
+      - Seuls les membres connectés peuvent réserver.
+      - Un poste ne peut pas être réservé deux fois sur le même créneau.
+      - Un membre ne peut pas avoir deux réservations simultanées sur la même date.
+    """
     serializer_class   = LabReservationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return LabReservation.objects.filter(user=self.request.user).select_related('station')
+        """Un membre ne voit que ses propres réservations lab. Un admin voit tout."""
+        user = self.request.user
+        if user.is_staff:
+            return LabReservation.objects.select_related('user', 'station').order_by('-date', '-start_time')
+        return LabReservation.objects.filter(user=user).select_related('station').order_by('-date', '-start_time')
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        """
+        Crée une réservation après vérifications :
+          1. L'utilisateur doit être membre actif.
+          2. Le poste doit être actif (pas en maintenance).
+          3. Le créneau ne doit pas déjà être réservé.
+        """
+        from rest_framework.exceptions import PermissionDenied, ValidationError
 
+        user = self.request.user
+        if user.type_compte != 'membre':
+            raise PermissionDenied("Seuls les membres peuvent réserver un poste du laboratoire.")
 
-class ParticipationEventViewSet(viewsets.ModelViewSet):
-    serializer_class   = ParticipationEventSerializer
-    permission_classes = [permissions.IsAuthenticated]
+        station = serializer.validated_data.get('station')
+        if not station.isActive:
+            raise ValidationError("Ce poste est actuellement en maintenance.")
 
-    def get_queryset(self):
-        return ParticipationEvent.objects.filter(user=self.request.user).select_related('event')
+        date       = serializer.validated_data.get('date')
+        start_time = serializer.validated_data.get('start_time')
 
-    def perform_create(self, serializer):
-        event = serializer.validated_data['event']
-        # Éviter les doublons
-        if ParticipationEvent.objects.filter(user=self.request.user, event=event).exists():
-            from rest_framework.exceptions import ValidationError
-            raise ValidationError("Vous êtes déjà inscrit à cet événement.")
-            
-        participation = serializer.save(user=self.request.user)
-        # Incrémenter le compteur
-        event.participant_count += 1
-        event.save()
-        
-        # Notification automatique
-        import uuid
-        Notification.objects.create(
-            id=str(uuid.uuid4())[:20],
-            user=self.request.user,
-            type_notif='inscription_evenement',
-            message=f"Votre inscription à l'événement '{event.title}' a été confirmée. Rendez-vous le {event.date} à {event.time}."
-        )
-class GlobalStatsView(APIView):
-    permission_classes = [permissions.AllowAny]
-    def get(self, request):
-        from datetime import datetime
-        years = datetime.now().year - 1992
-        return Response({
-            'books_count': Book.objects.count(),
-            'members_count': User.objects.count(),
-            'events_count': Event.objects.count(),
-            'news_count': News.objects.count(),
-            'clubs_count': ReadingClub.objects.count(),
-            'lab_count': LabStation.objects.count(),
-            'years': years,
-        })
+        # Vérifier que le créneau est libre
+        conflit = LabReservation.objects.filter(
+            station=station, date=date, start_time=start_time,
+            statut__in=['en_attente', 'confirmee']
+        ).exists()
+        if conflit:
+            raise ValidationError("Ce créneau est déjà réservé sur ce poste.")
+
+        serializer.save(user=user)
