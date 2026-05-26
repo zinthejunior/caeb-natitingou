@@ -99,7 +99,7 @@ export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookD
             <div className="relative w-full max-w-xs group">
               <div className="absolute inset-0 bg-accent/20 rounded-[2.5rem] blur-3xl scale-95 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
               <div className="w-full aspect-[2/3] surface-alt rounded-[2rem] overflow-hidden shadow-elevated relative z-10 transition-transform duration-500 group-hover:scale-[1.02] border border-white/10">
-                <ApiImage src={book.couverture} alt={book.titre}
+                <ApiImage src={book.couverture} alt={book.titre} fallback="/default_cover.png"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                 
                 <button onClick={(e) => { e.stopPropagation(); onToggleFavorite?.(bookId); }}
@@ -200,15 +200,31 @@ export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookD
                 {[
                   { label: 'Auteur', value: book.auteur },
                   { label: 'Genre', value: book.genre },
+                  { label: 'Sous-genre', value: book.sous_genre },
                   { label: 'Année', value: book.annee },
                   { label: 'Pages', value: book.nbPages },
-                ].map(item => (
+                  { label: 'Section', value: book.section },
+                  { label: 'Localisation (Cote)', value: book.localisation },
+                ].filter(i => i.value && i.value.trim() !== '').map(item => (
                   <div key={item.label} className="p-4 surface-alt rounded-xl border border-[var(--border-color)]">
                     <p className="text-xs text-muted font-semibold uppercase tracking-wider mb-1">{item.label}</p>
                     <p className="text-lg text-primary font-semibold">{item.value}</p>
                   </div>
                 ))}
               </div>
+              
+              {book.motsCles && book.motsCles.trim() !== '' && (
+                <div className="border-t border-[var(--border-color)] pt-6">
+                  <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-3">Mots-clés</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {book.motsCles.split(',').map((mot, idx) => (
+                      <Badge key={idx} variant="outline" className="border-[var(--border-color)] text-primary">
+                        {mot.trim()}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
               {book.synopsis && (
                 <div className="border-t border-[var(--border-color)] pt-6">
                   <h3 className="font-semibold text-primary mb-3 flex items-center gap-2">

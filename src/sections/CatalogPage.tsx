@@ -1,8 +1,9 @@
 // CatalogPage.tsx — Page du catalogue de la bibliothèque
 import { useState, useMemo, useEffect } from 'react';
-import { Search, Star, X, Grid3X3, List } from 'lucide-react';
+import { Search, Star, X, Grid3X3, List, Lock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { ApiImage } from '@/components/ApiImage';
 import { Navbar } from '@/components/Navbar';
 import type { Book, User } from '@/types';
 import { useLivres } from '@/hooks/useData';
@@ -296,7 +297,7 @@ function CarteLivreGrille({ livre, onClick }: { livre: Book; onClick: () => void
   return (
     <button onClick={onClick} className="text-left group flex flex-col h-full tap-feedback animate-flow-in">
       <div className="relative aspect-[2/3] rounded-[2rem] overflow-hidden shadow-card mb-4 glass-effect border border-white/5 group-hover:border-accent/30 transition-all duration-500">
-        <img src={livre.couverture} alt={livre.titre}
+        <ApiImage src={livre.couverture} alt={livre.titre} fallback="/default_cover.png"
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
         {livre.exemplaires <= 0 && (
           <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-4">
@@ -328,7 +329,7 @@ function CarteLivreListe({ livre, onClick }: { livre: Book; onClick: () => void 
     <button onClick={onClick}
       className="w-full surface rounded-xl p-4 shadow-card hover:shadow-card-hover border border-[var(--border-color)] hover:border-[var(--library-accent)]/20 transition-all duration-300 text-left flex gap-4 group tap-feedback">
       <div className="relative w-20 h-28 rounded-lg overflow-hidden flex-shrink-0 surface-weak">
-        <img src={livre.couverture} alt={livre.titre}
+        <ApiImage src={livre.couverture} alt={livre.titre} fallback="/default_cover.png"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
         {livre.exemplaires <= 0 && (
           <div className="absolute inset-0 surface-weak/90 flex items-center justify-center">

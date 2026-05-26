@@ -39,7 +39,7 @@ class Book(models.Model):
         ('adulte', 'Adulte'),
     ]
     
-    id = models.CharField(max_length=20, primary_key=True)
+    id = models.CharField(max_length=50, primary_key=True)
     ol_id = models.CharField(max_length=30, unique=True, null=True, blank=True)
     titre = models.CharField(max_length=300)
     auteur = models.CharField(max_length=200, null=True, blank=True)
@@ -58,6 +58,7 @@ class Book(models.Model):
     mots_cles = models.TextField(null=True, blank=True)        # mots-clés libres
     localisation = models.CharField(max_length=100, null=True, blank=True)  # cote / localisation physique
     section = models.CharField(max_length=200, null=True, blank=True)       # section de la bibliothèque
+    codes_barres = models.TextField(null=True, blank=True)     # liste des codes barres séparés par des virgules
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

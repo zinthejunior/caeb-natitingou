@@ -83,25 +83,25 @@ export type PublicCible = 'enfant' | 'ado' | 'adulte' | 'all';
 export type TargetAudience = PublicCible;
 
 export interface Livre {
-  id:          string;
-  titre:       string;
-  auteur:      string;
-  couverture?: string;
-
-  genre:        string;
-  annee?:       number;
-  nbPages?:     number;
-  langue?:      string;
-  synopsis?:    string;
-
-  note:        number;
-  nbAvis:      number;
-
-  exemplaires:   number;
-  estNouveau?:   boolean;
-  estPopulaire?: boolean;
-
-  publicCible?: PublicCible;
+  id: string;
+  titre: string;
+  auteur: string;
+  genre: string;
+  sous_genre?: string;
+  annee: number;
+  nbPages: number;
+  categorieAge?: string;
+  note: number;
+  nbAvis: number;
+  synopsis?: string;
+  couverture: string;
+  estNouveau?: boolean;
+  langue?: string;
+  exemplaires: number;
+  // Nouveaux champs
+  motsCles?: string;
+  localisation?: string;
+  section?: string;
 }
 
 // Alias pour compatibilité
