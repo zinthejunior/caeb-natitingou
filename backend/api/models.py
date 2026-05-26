@@ -36,7 +36,7 @@ class User(AbstractUser):
     adresse          = models.TextField(null=True, blank=True)
     demande_adhesion = models.BooleanField(default=False, help_text="Vrai si l'utilisateur a soumis une demande d'adhésion")
     is_verified   = models.BooleanField(default=False)                            # Compte confirmé ?
-    confirmation_code = models.CharField(max_length=6, null=T rue, blank=True)    # Code de vérification
+    confirmation_code = models.CharField(max_length=6, null=True, blank=True)    # Code de vérification
     confirmation_method = models.CharField(max_length=20, default="email")        # email, sms, whatsapp
 
     # Surcharge pour éviter les conflits avec AbstractUser
@@ -268,6 +268,31 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+
+
+# ── PARTICIPATION AUX ÉVÉNEMENTS ─────────────────────────────
+class ParticipationEvent(models.Model):
+    """
+    Inscription d'un utilisateur à un événement.
+    """
+    user              = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='event_participations'
+    )
+    event             = models.ForeignKey(
+        Event,
+        on_delete=models.CASCADE,
+        related_name='participants'
+    )
+    date_inscription  = models.DateTimeField(auto_now_add=True)
+    nom_complet       = models.CharField(max_length=200)
+    email             = models.EmailField()
+    telephone         = models.CharField(max_length=20)
+    motivations       = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Participation de {self.user.username} à {self.event.title}"
 
 
 # ── ACTUALITÉS ───────────────────────────────────────────────

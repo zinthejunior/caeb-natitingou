@@ -37,13 +37,26 @@ Utilisation
 """
 
 import re
+import warnings
 import numpy as np
 import pandas as pd
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem.snowball import FrenchStemmer
 
-nltk.download("stopwords", quiet=True)
+try:
+    import nltk
+    from nltk.corpus import stopwords
+    from nltk.stem.snowball import FrenchStemmer
+
+    nltk.download("stopwords", quiet=True)
+    _stemmer = FrenchStemmer()
+    _stop_words = set(stopwords.words("french"))
+except (ImportError, LookupError, OSError) as exc:
+    warnings.warn(
+        f"nltk unavailable or stopwords unavailable: {exc}. "
+        "Le nettoyage de texte utilisera une version de secours.",
+        UserWarning,
+    )
+    _stemmer = type("NoOpStemmer", (), {"stem": lambda self, mot: mot})()
+    _stop_words = set()
 
 # ---------------------------------------------------------------------------
 # Variables globales — remplies par charger()
@@ -58,9 +71,6 @@ _features_livres = None   # pd.DataFrame — catalogue livres
 _co_emprunts     = None   # pd.DataFrame — co-emprunts avec score Jaccard
 
 STANDARD_COLS = ["Code_barres", "Titre", "Section", "Cote", "Score"]
-
-_stemmer      = FrenchStemmer()
-_stop_words   = set(stopwords.words("french"))
 
 
 # ---------------------------------------------------------------------------

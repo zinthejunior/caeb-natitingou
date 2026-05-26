@@ -51,11 +51,10 @@ def read_root():
 @app.post("/chat", response_model=ChatResponse)
 async def chat_with_kossi(request: ChatRequest):
     """
-    Endpoint principal pour le chat avec Kossi via DeepSeek API.
+    Endpoint principal pour le chat avec Kossi.
+    Kossi est un bibliothécaire expert autonome et n'utilise pas le moteur de recommandation backend.
     """
     api_key = os.getenv("DEEPSEEK_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="DEEPSEEK_API_KEY non configurée.")
 
     # Préparer le contexte système
     system_prompt = {
@@ -67,6 +66,16 @@ async def chat_with_kossi(request: ChatRequest):
     messages = [system_prompt]
     for msg in request.messages:
         messages.append({"role": msg.role, "content": msg.content})
+
+    if not api_key:
+        # Si la clé DeepSeek n'est pas configurée, Kossi reste disponible avec une réponse de secours.
+        return ChatResponse(
+            response=(
+                "Je suis Kossi, votre bibliothécaire. Je ne peux pas joindre le service IA externe en ce moment, "
+                "mais je peux vous aider avec des recommandations générales et des conseils de bibliothèque."
+            ),
+            suggested_books=[]
+        )
 
     try:
         async with httpx.AsyncClient() as client:

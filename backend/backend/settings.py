@@ -76,9 +76,11 @@ TEMPLATES = [
     },
 ]
 
+DEFAULT_DATABASE_URL = 'postgres://postgres:root@localhost:5432/caeb_db'
+
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
+        default=os.environ.get('DATABASE_URL', DEFAULT_DATABASE_URL),
         conn_max_age=600,
         conn_health_checks=True,
     )

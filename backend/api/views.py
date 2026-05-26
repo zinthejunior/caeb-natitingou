@@ -7,6 +7,7 @@ Les actions personnalisées (@action) ajoutent des endpoints métier spécifique
 """
 
 from rest_framework import viewsets, permissions, status
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes as perm_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -19,14 +20,14 @@ from .models import (
     User, Book, Borrow, Interaction, Notification,
     ReadingClub, Event, News, Review, Reservation,
     ClubContactMessage, ChatSession, ChatMessage,
-    LabStation, LabReservation
+    LabStation, LabReservation, ParticipationEvent
 )
 from .serializers import (
     UserSerializer, UserPasswordSerializer, BookSerializer, BorrowSerializer,
     InteractionSerializer, NotificationSerializer, ReadingClubSerializer,
     EventSerializer, NewsSerializer, ReviewSerializer, ReservationSerializer,
     ClubContactMessageSerializer, ChatSessionSerializer, ChatMessageSerializer,
-    LabStationSerializer, LabReservationSerializer
+    LabStationSerializer, LabReservationSerializer, ParticipationEventSerializer
 )
 
 
@@ -45,7 +46,7 @@ def _initialiser_modele_recommandations():
         
         if os.path.exists(model_path):
             composants = joblib.load(model_path)
-            recommandations.charger(composants)
+            reco_engine.charger(composants)
             logger.info("Modèle de fusion chargé avec succès")
         else:
             logger.warning(f"Fichier du modèle non trouvé à {model_path}")
@@ -80,59 +81,42 @@ def get_public_stats(request):
     })
 
 
-@api_view(['GET'])
-@perm_classes([IsAuthenticated])
-def get_recommendations(request):
-    """
-    Endpoint de recommandations personnalisées pour l'utilisateur connecté.
-    Utilise le moteur de fusion (TF-IDF + NMF + item-item).
-    """
-    user = request.user
-    n = int(request.query_params.get('n', 10))
-    
-    try:
-        recommendations = reco_engine.recommander_par_user_id(
-            user_id=str(user.id),
-            n=n
-        )
-        return Response({
-            'user_id': str(user.id),
-            'recommendations': recommendations
-        })
-    except Exception as e:
-        logger.error(f"Erreur recommandations pour {user.id}: {e}")
-        return Response(
-            {'error': 'Erreur lors du calcul des recommandations'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+class GlobalStatsView(APIView):
+    """View API pour les statistiques publiques de la landing page."""
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return get_public_stats(request)
 
 
 # ── UTILISATEURS ─────────────────────────────────────────────
 
-class UserViewSet(viewsets.ModelViewSet):
+class RecommendationViewSet(viewsets.ViewSet):
     """
-    CRUD complet pour les utilisateurs.
-    - La création (inscription) est publique (AllowAny).
-    - Toutes les autres actions nécessitent d'être authentifié.
-    Actions personnalisées :
-      GET  /utilisateurs/me/              → profil de l'utilisateur connecté
-      PATCH /utilisateurs/me/update/      → mise à jour du profil
-      POST /utilisateurs/me/change-password/ → changement de mot de passe
+    Endpoint de recommandations personnalisées pour l'utilisateur connecté.
+    Utilise le moteur de fusion défini dans backend/api/recommandations.py.
     """
-    queryset         = User.objects.all()
-    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-    def get_permissions(self):
-        """Inscription ouverte à tous ; le reste nécessite un token JWT valide."""
-        if self.action == 'create':
-            return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
+    def list(self, request):
+        user = request.user
+        n = int(request.query_params.get('n', 10))
 
-    @action(detail=False, methods=['get'], url_path='me')
-    def me(self, request):
-        """Renvoie le profil complet de l'utilisateur actuellement connecté."""
-        serializer = self.get_serializer(request.user)
-        return Response(serializer.data)
+        try:
+            recommendations = reco_engine.recommander_par_user_id(
+                user_id=str(user.id),
+                n=n,
+            )
+            return Response({
+                'user_id': str(user.id),
+                'recommendations': recommendations,
+            })
+        except Exception as e:
+            logger.error(f"Erreur recommandations pour {user.id}: {e}")
+            return Response(
+                {'error': 'Erreur lors du calcul des recommandations'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 # ── UTILISATEURS ─────────────────────────────────────────────
@@ -554,6 +538,23 @@ class ReservationViewSet(viewsets.ModelViewSet):
             raise ValidationError("Ce livre n'a plus d'exemplaires disponibles.")
 
         Reservation.objects.create(user=self.request.user, livre=livre)
+
+
+class ParticipationEventViewSet(viewsets.ModelViewSet):
+    """
+    Gestion des inscriptions aux événements.
+    """
+    serializer_class   = ParticipationEventSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return ParticipationEvent.objects.select_related('user', 'event').all().order_by('-date_inscription')
+        return ParticipationEvent.objects.filter(user=user).select_related('event').order_by('-date_inscription')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 
 # ── MESSAGES DE CONTACT (admin uniquement) ────────────────────
