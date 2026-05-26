@@ -11,24 +11,24 @@ export function cn(...inputs: ClassValue[]) {
  * Ensures WCAG AA compliance (4.5:1 minimum contrast ratio)
  */
 
-// Color definitions for text on different backgrounds
+// Définitions de couleurs pour le texte sur différents fonds
 const COLOR_TEXT = {
-  // Light mode text colors
-  lightPrimary: '#0052CC',      // Blue text
-  lightSecondary: '#1A2332',    // Dark blue-gray
-  lightInverse: '#FFFFFF',      // White text
+  // Couleurs texte mode clair
+  lightPrimary: '#0052CC',      // Texte bleu
+  lightSecondary: '#1A2332',    // Bleu-gris foncé
+  lightInverse: '#FFFFFF',      // Texte blanc
   
-  // Dark mode text colors
-  darkPrimary: '#3D2817',       // Brown text
-  darkSecondary: '#1A1410',     // Darker brown
-  darkInverse: '#FFFFFF',       // White text
+  // Couleurs texte mode sombre
+  darkPrimary: '#3D2817',       // Texte marron
+  darkSecondary: '#1A1410',     // Marron plus foncé
+  darkInverse: '#FFFFFF',       // Texte blanc
   
-  // Muted states
-  lightMuted: '#4A5A6B',        // Blue-gray
-  darkMuted: '#5A4535',         // Brown-gray
+  // États atténués
+  lightMuted: '#4A5A6B',        // Bleu-gris
+  darkMuted: '#5A4535',         // Marron-gris
 } as const
 
-// Map of background colors to perceived brightness (0 = dark, 1 = light)
+// Carte des couleurs de fond vers la luminosité perçue (0 = sombre, 1 = clair)
 
 
 /**
@@ -43,7 +43,7 @@ export function getColorBrightness(hex: string): number {
   const g = (rgb >> 8) & 255
   const b = rgb & 255
   
-  // Relative luminance formula (WCAG)
+  // Formule de luminance relative (WCAG)
   const [rs, gs, bs] = [r, g, b].map(val => {
     val = val / 255
     return val <= 0.03928 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4)
@@ -106,9 +106,9 @@ export function getOptimalTextColor(
   const isLightBg = brightness > 0.5
   
   if (isDarkMode) {
-    // Dark mode logic
+    // Logique mode sombre
     if (isLightBg) {
-      // Light background in dark mode → brown text
+      // Fond clair en mode sombre → texte marron
       const contrast = getContrastRatio(bgColor, COLOR_TEXT.darkPrimary)
       if (contrast >= 4.5) {
         return COLOR_TEXT.darkPrimary
@@ -116,13 +116,13 @@ export function getOptimalTextColor(
       // Fallback to darker brown if needed
       return COLOR_TEXT.darkSecondary
     } else {
-      // Dark background in dark mode → white text
+      // Fond sombre en mode sombre → texte blanc
       return COLOR_TEXT.darkInverse
     }
   } else {
-    // Light mode logic
+    // Logique mode clair
     if (isLightBg) {
-      // Light background in light mode → blue text
+      // Fond clair en mode clair → texte bleu
       const contrast = getContrastRatio(bgColor, COLOR_TEXT.lightPrimary)
       if (contrast >= 4.5) {
         return COLOR_TEXT.lightPrimary
@@ -130,7 +130,7 @@ export function getOptimalTextColor(
       // Fallback to darker variant
       return COLOR_TEXT.lightSecondary
     } else {
-      // Dark background in light mode → white text
+      // Fond sombre en mode clair → texte blanc
       return COLOR_TEXT.lightInverse
     }
   }
@@ -172,20 +172,20 @@ export function getTextColorClass(
   ].some(cls => bgClass.includes(cls))
   
   if (isDarkMode) {
-    // Dark mode
+    // Mode sombre
     if (isLightBg && !isDarkBg) {
-      // Light background in dark mode → brown text
+      // Fond clair en mode sombre → texte marron
       return 'text-[#3D2817] dark:text-[#3D2817]'
     }
-    // Dark background → white text
+    // Fond sombre → texte blanc
     return 'text-white'
   } else {
-    // Light mode
+    // Mode clair
     if (isLightBg && !isDarkBg) {
-      // Light background → blue text
+      // Fond clair → texte bleu
       return 'text-library-primary dark:text-[#3D2817]'
     }
-    // Dark background → white text
+    // Fond sombre → texte blanc
     return 'text-white'
   }
 }

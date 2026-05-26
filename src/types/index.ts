@@ -12,7 +12,7 @@ export type Vue =
 
 // Alias pour compatibilité
 export type View = Vue;
-
+ 
 
 // ── Utilisateur ───────────────────────────────────────────────────────────────
 

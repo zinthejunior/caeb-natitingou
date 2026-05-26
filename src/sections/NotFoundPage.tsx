@@ -2,6 +2,7 @@
 import { Home, AlertTriangle, BookOpen, Users, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/Navbar';
+import { useGlobalStats } from '@/hooks/useData';
 import type { User } from '@/types';
 
 interface NotFoundPageProps {
@@ -10,6 +11,9 @@ interface NotFoundPageProps {
 }
 
 export function NotFoundPage({ user, onNavigate }: NotFoundPageProps) {
+  const { stats } = useGlobalStats();
+  const bookCount = stats?.books_count?.toLocaleString();
+
   return (
     <div className="min-h-screen bg-library-bg pb-24">
       <Navbar user={user} />
@@ -51,7 +55,7 @@ export function NotFoundPage({ user, onNavigate }: NotFoundPageProps) {
             <h3 className="font-semibold text-primary mb-6">Besoin d'aide ?</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {[
-                { icon: BookOpen, label: 'Catalogue', desc: '12 000 ouvrages à explorer — romans, essais, jeunesse et plus.', view: 'catalog' },
+                { icon: BookOpen, label: 'Catalogue', desc: bookCount ? `${bookCount} ouvrages à explorer — romans, essais, jeunesse et plus.` : 'Un vaste catalogue à explorer — romans, essais, jeunesse et plus.', view: 'catalog' },
                 { icon: Users, label: 'Clubs', desc: 'Rejoignez un club de lecture et partagez vos coups de cœur.', view: 'clubs' },
                 { icon: Calendar, label: 'Événements', desc: 'Conférences, ateliers, rencontres — le programme de la CAEB.', view: 'events' },
               ].map((item) => (

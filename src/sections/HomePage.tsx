@@ -1,5 +1,13 @@
+/**
+ * HomePage.tsx
+ *
+ * Cette page sert de tableau de bord principal pour l'utilisateur connecté.
+ * Elle affiche un message personnalisé, des sections de recommandations,
+ * des nouveautés, des livres populaires et un aperçu des événements.
+ * Les données sont rafraîchies depuis les hooks partagés et le SEO est mis à jour.
+ */
 import { useEffect, useState } from 'react';
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, MouseEvent } from 'react';
 import { Calendar, Star, ChevronRight, Flame, Sparkles, TrendingUp, Lock, Newspaper, Heart, BookOpen } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { ApiImage } from '@/components/ApiImage';
@@ -57,6 +65,7 @@ function SkeletonNewsCard() {
 // ── PAGE ──────────────────────────────────────────────────────────────
 
 export function HomePage({ user, onNavigate }: HomePageProps) {
+  // Définit un message de salutation selon l'heure actuelle.
   const [greeting] = useState(() => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Bonjour';
@@ -64,7 +73,14 @@ export function HomePage({ user, onNavigate }: HomePageProps) {
     return 'Bonsoir';
   });
 
-  useSEO("Accueil", "Découvrez la collection de 12 000 ouvrages de la Bibliothèque CAEB de Natitingou, réservez vos livres et participez à nos événements.");
+  // Statistiques globales utilisées pour personnaliser le titre et le méta-description.
+  const { stats } = useGlobalStats();
+  const bookCount = stats?.books_count?.toLocaleString() ?? '...';
+
+  useSEO(
+    "Accueil",
+    `Découvrez la collection de ${bookCount} ouvrages de la Bibliothèque CAEB de Natitingou, réservez vos livres et participez à nos événements.`
+  );
 
   const [dataReady, setDataReady] = useState(false);
   const { livres: books } = useLivres();
@@ -84,19 +100,20 @@ export function HomePage({ user, onNavigate }: HomePageProps) {
     }
   }, [recommandations]);
 
+  // Choix de livres recommandés : priorité aux recommandations IA, sinon aux genres préférés, sinon sélection globale.
   const recommendedBooks = iaBooks.length > 0
     ? iaBooks.slice(0, 4)
     : (user?.genresPreferes && user.genresPreferes.length > 0)
       ? books.filter((b: any) => user.genresPreferes?.includes(b.genre || '')).slice(0, 4)
       : books.slice(0, 4);
 
-  const newBooks = books.filter((b: any) => (b as unknown as Record<string, unknown>).estNouveau).slice(0, 4);
-  const popularBooks = books.filter((b: any) => (b as unknown as Record<string, unknown>).estPopulaire).slice(0, 4);
-  const upcomingEvents = events.slice(0, 3);
-  const latestNews = news.sort((a, b) => new Date(b.date || '').getTime() - new Date(a.date || '').getTime()).slice(0, 3);
-
-  const { stats } = useGlobalStats();
-  const bookCount = stats?.books_count?.toLocaleString() || '12 000';
+  // Nouvelles parution détectées par l'attribut estNouveau dans les données du livre.
+  const newBooks = books.filter((b: any) => Boolean((b as unknown as Record<string, unknown>).estNouveau)).slice(0, 4);
+  const latestNews = news.slice(0, 3);
+  const popularBooks = books.filter((b: any) => Boolean((b as unknown as Record<string, unknown>).estPopulaire)).slice(0, 4);
+  const upcomingEvents = events
+    .filter((event: any) => new Date(event.date) >= new Date())
+    .slice(0, 3);
 
   return (
     <div className="min-h-screen bg-library-bg pb-24 transition-colors duration-300">
@@ -280,7 +297,7 @@ function BookCard({ book, user, onClick, onToggleFavorite }: { book: Book; user:
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); }
   };
 
-  const handleFavorite = (e: React.MouseEvent) => {
+  const handleFavorite = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     setHeartPop(true);
     setTimeout(() => setHeartPop(false), 400);

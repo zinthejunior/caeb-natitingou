@@ -37,7 +37,7 @@ export function ClubDetailPage({ clubId, onBack, user }: ClubDetailPageProps) {
   const clubEvents = events.filter((e: any) => e.clubId === clubId);
 
   const handleJoinClub = () => setShowContactForm(true);
-
+ 
   const handleContactFormSubmit = async () => {
     try {
       await rejoindreClub(clubId);

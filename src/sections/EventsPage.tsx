@@ -21,7 +21,7 @@ function EmptyCalendar() {
       <svg className="empty-state-illustration" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
         {/* Calendrier */}
         <rect x="15" y="25" width="90" height="80" rx="10" stroke="currentColor" strokeWidth="1.5" fill="none" className="text-[var(--library-accent)] opacity-20" />
-        <rect x="15" y="25" width="90" height="25" rx="10" fill="currentColor" className="text-[var(--library-accent)] opacity-10" />
+       <rect x="15" y="25" width="90" height="25" rx="10" fill="currentColor" className="text-[var(--library-accent)] opacity-10" />
         <rect x="15" y="38" width="90" height="12" fill="currentColor" className="text-[var(--library-accent)] opacity-10" />
         {/* Crochets */}
         <rect x="38" y="16" width="7" height="18" rx="3.5" fill="currentColor" className="text-[var(--library-accent)] opacity-30" />

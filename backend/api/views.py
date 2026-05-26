@@ -70,14 +70,23 @@ def get_public_stats(request):
     
     total_books = Book.objects.count()
     total_users = User.objects.count()
+    clubs_count = ReadingClub.objects.count()
+    news_count = News.objects.count()
+    lab_count = LabStation.objects.count() if LabStation.objects.exists() else 1
     # Expertise CAEB fondée en 1978
     expertise_years = datetime.now().year - 1978
     
     return Response({
         'total_books': total_books,
+        'books_count': total_books,
         'total_users': total_users,
+        'members_count': total_users,
         'expertise_years': expertise_years,
+        'years': expertise_years,
         'active_readers': total_users + 500, # Inclus les lecteurs physiques
+        'clubs_count': clubs_count,
+        'news_count': news_count,
+        'lab_count': lab_count,
     })
 
 

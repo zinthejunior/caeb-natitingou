@@ -1,3 +1,12 @@
+/**
+ * LandingPage.tsx
+ *
+ * Cette page présente l'entrée de l'application avec un message d'accueil,
+ * des statistiques dynamiques issues de l'API, et des sections de mise en valeur.
+ * Elle met en avant la mission de la bibliothèque et invite l'utilisateur à
+ * se connecter ou s'inscrire. Les animations de scroll et la galerie
+ * renforcent l'expérience visuelle.
+ */
 import { useEffect, useRef, useState } from 'react';
 import { BookOpen, Users, Calendar, Star, ArrowRight, Mail, Phone, MapPin, Cpu, Quote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,19 +24,22 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
   const featuresRef = useRef<HTMLDivElement>(null);
   const booksRef = useRef<HTMLDivElement>(null);
   const [selectedImage, setSelectedImage] = useState<{ caption: string; src: string } | null>(null);
+
+  // Récupère les statistiques globales depuis l'API et les expose au landing page.
   const { stats } = useGlobalStats();
   
   const displayStats = {
-    books: stats?.books_count?.toLocaleString() || '12 000',
-    members: stats?.members_count?.toLocaleString() || '5 000',
-    clubs: stats?.clubs_count || '3',
-    labs: stats?.lab_count || '1',
-    years: stats?.years || '25'
+    books: stats?.books_count != null ? stats.books_count.toLocaleString() : '...',
+    members: stats?.members_count != null ? stats.members_count.toLocaleString() : '...',
+    clubs: stats?.clubs_count != null ? stats.clubs_count.toString() : '...',
+    labs: stats?.lab_count != null ? stats.lab_count.toString() : '...',
+    years: stats?.years ?? new Date().getFullYear() - 1978
   };
 
   useSEO("CAEB Natitingou | Excellence & Culture", `Découvrez la plus grande bibliothèque du Nord-Bénin. ${displayStats.books} ouvrages, clubs culturels et laboratoire d'IA à Natitingou.`);
   
-  // ── Reveal on scroll ──
+  // ── Apparition au défilement ──
+  // Observer pour déclencher les animations au moment où les éléments entrent dans la fenêtre.
   useEffect(() => {
     const observer = new IntersectionObserver( 
       (entries) => {
@@ -45,8 +57,10 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
     return () => observer.disconnect();
   }, []);
 
-  // ── Infinite auto-scroll gallery ──
+  // ── Galerie à défilement automatique infini ──
   const galleryTrackRef = useRef<HTMLDivElement>(null);
+
+  // Animation de la galerie de photos pour un défilement automatique et fluide.
   useEffect(() => {
     const track = galleryTrackRef.current;
     if (!track) return;
@@ -75,7 +89,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
   const features = [
     {
       icon: BookOpen,
-      title: 'Plus de 12 000 ouvrages à portée de main',
+      title: `Plus de ${displayStats.books} ouvrages à portée de main`,
       description: 'Romans, manuels, BD, essais parcourez un catalogue enrichi avec des suggestions adaptées à vos goûts et à votre niveau.',
     },
     {
@@ -90,7 +104,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
     },
     {
       icon: Cpu,
-      title: 'Un labo IA, unique dans la région',
+      title: `${displayStats.labs} labo IA, unique dans la région`,
       description: "Initiez-vous à l'intelligence artificielle dans notre laboratoire numérique ouvert à tous, gratuit, encadré.",
     },
   ];
@@ -125,7 +139,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
   ];
 
   const libraryPhotos = [
-    { src: '/25ans.jpg', caption: '25 ans avec la Fondation Vallet' },
+    { src: '/25ans.jpg', caption: `${displayStats.years} ans avec la Fondation Vallet` },
     { src: '/1.jpg', caption: 'Salle de lecture' },
     { src: '/club-1.jpg', caption: 'Club de lecture' },
     { src: '/club-2.jpg', caption: 'Ateliers en groupe' },
@@ -212,7 +226,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                   ))}
                 </div>
                 <p className="text-sm text-muted">
-                  <span className="font-bold text-accent">+5 000</span> lecteurs nous font confiance
+                  <span className="font-bold text-accent">+{displayStats.members}</span> lecteurs nous font confiance
                 </p>
               </div>
             </div>
@@ -230,7 +244,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                     <BookOpen className="w-6 h-6 text-accent" />
                   </div>
                   <div>
-                    <p className="font-bold text-base text-primary">12 000+ livres</p>
+                    <p className="font-bold text-base text-primary">{displayStats.books}+ livres</p>
                     <p className="text-xs text-muted font-medium">Catalogue premium</p>
                   </div>
                 </div>
@@ -458,9 +472,9 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
               </div>
               <div className="mt-8 grid grid-cols-3 gap-4">
                 {[
-                  { value: '12 000+', label: 'Livres disponibles' },
-                  { value: '5 000+', label: 'Lecteurs actifs' },
-                  { value: '3 clubs', label: '+ Labo IA' },
+                  { value: `${displayStats.books}+`, label: 'Livres disponibles' },
+                  { value: `${displayStats.members}+`, label: 'Lecteurs actifs' },
+                  { value: `${displayStats.labs} labo${parseInt(displayStats.labs) > 1 ? 's' : ''}`, label: '+ Labo IA' },
                 ].map((stat) => (
                   <div key={stat.label} className="text-center p-3 surface-alt rounded-xl border border-[var(--border-color)]">
                     <p className="font-display text-xl font-bold text-accent">{stat.value}</p>

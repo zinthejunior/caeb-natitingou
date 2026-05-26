@@ -1,4 +1,10 @@
-// Page de détail d'un livre — CAEB Design System
+/**
+ * BookDetailPage.tsx
+ *
+ * Affiche les détails d'un livre sélectionné, y compris sa couverture,
+ * ses informations principales, et les avis des lecteurs.
+ * Le composant permet aussi de réserver le livre et de poster un avis.
+ */
 import { useState, useEffect } from 'react';
 import { Star, BookOpen, FileText, MessageCircle, ThumbsUp, Flag, Crown, Lock, ChevronLeft, Heart } from 'lucide-react';
 import { ApiImage } from '@/components/ApiImage';
@@ -19,6 +25,7 @@ interface BookDetailPageProps {
 }
 
 export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookDetailPageProps) {
+  // Charge les détails du livre et les avis associés depuis l'API.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { book, isLoading: isBookLoading } = useBook(bookId);
   const { data: initialReviews, reload: reloadReviews } = useReviews(bookId);
@@ -42,6 +49,7 @@ export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookD
   );
   if (!book) return null;
 
+  // Envoie une demande de réservation pour le livre sélectionné.
   const handleReserve = async () => {
     if (!user.estMembre) {
       toast.error('Réservation réservée aux membres', { description: 'Devenez membre pour réserver des livres' });
@@ -53,8 +61,9 @@ export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookD
     } catch (err) {
       toast.error('Erreur lors de la réservation');
     }
-  };
+  }; 
 
+  // Publie un avis utilisateur et recharge la liste des avis.
   const handleSubmitReview = async () => {
     if (userRating === 0) { toast.error('Veuillez donner une note'); return; }
     try {
@@ -205,7 +214,7 @@ export function BookDetailPage({ bookId, user, onBack, onToggleFavorite }: BookD
                   { label: 'Pages', value: book.nbPages },
                   { label: 'Section', value: book.section },
                   { label: 'Localisation (Cote)', value: book.localisation },
-                ].filter(i => i.value && i.value.trim() !== '').map(item => (
+                ].filter(i => i.value && String(i.value).trim() !== '').map(item => (
                   <div key={item.label} className="p-4 surface-alt rounded-xl border border-[var(--border-color)]">
                     <p className="text-xs text-muted font-semibold uppercase tracking-wider mb-1">{item.label}</p>
                     <p className="text-lg text-primary font-semibold">{item.value}</p>

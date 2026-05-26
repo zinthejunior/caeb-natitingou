@@ -32,7 +32,7 @@ export function LabPage({ user }: LabPageProps) {
 
     setIsSubmitting(true);
     try {
-      // Calculate start and end time (assuming 2 hour slots)
+      // Calcul des heures de début et de fin (créneaux de 2 heures)
       const startTime = `${time}:00`;
       const endHour = parseInt(time.split(':')[0]) + 2;
       const endTime = `${endHour.toString().padStart(2, '0')}:00:00`;

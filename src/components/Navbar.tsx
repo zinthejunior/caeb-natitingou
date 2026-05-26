@@ -1,4 +1,10 @@
-// Composant Navbar - Barre de navigation supérieure
+/**
+ * Navbar.tsx
+ *
+ * Barre de navigation supérieure partagée sur toutes les pages.
+ * Elle gère l'accès rapide au profil utilisateur, aux notifications,
+ * au changement de thème et à la navigation principale.
+ */
 import { Bell, ChevronRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { User } from '@/types';

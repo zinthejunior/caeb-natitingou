@@ -1,4 +1,9 @@
-// ReviewsSection - Affiche les avis et commentaires sur un livre
+/**
+ * ReviewsSection.tsx
+ *
+ * Section d'avis pour un livre : affichage des notes, distribution
+ * des étoiles et formulaire de création d'avis si l'utilisateur est connecté.
+ */
 import { MessageSquare, ThumbsUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

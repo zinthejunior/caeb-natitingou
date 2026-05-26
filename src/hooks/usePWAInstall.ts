@@ -15,11 +15,11 @@ export function usePWAInstall() {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent the mini-infobar from appearing on mobile
+      // Empêche l'infobulle d'installation automatique sur mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later.
+      // On conserve l'événement pour le déclencher plus tard.
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      // Update UI notify the user they can install the PWA
+      // Mettre à jour l'interface pour indiquer que l'application est installable
       setIsInstallable(true);
     };
 
@@ -34,12 +34,12 @@ export function usePWAInstall() {
     if (!deferredPrompt) {
       return;
     }
-    // Show the install prompt
+    // Affiche la fenêtre d'installation
     await deferredPrompt.prompt();
-    // Wait for the user to respond to the prompt
+    // Attend la réponse de l'utilisateur
     const { outcome } = await deferredPrompt.userChoice;
-    console.log(`User response to the install prompt: ${outcome}`);
-    // We've used the prompt, and can't use it again, throw it away
+    console.log(`Réponse utilisateur à la demande d'installation : ${outcome}`);
+    // L'événement a été utilisé une fois, on le réinitialise
     setDeferredPrompt(null);
     setIsInstallable(false);
   };

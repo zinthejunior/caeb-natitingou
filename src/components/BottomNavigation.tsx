@@ -1,4 +1,10 @@
-// Composant de navigation inférieure - Barre de navigation fixe en bas de l'écran
+/**
+ * BottomNavigation.tsx
+ *
+ * Barre de navigation mobile fixe en bas de l'écran.
+ * Elle offre un accès rapide aux vues principales de l'application
+ * lorsque l'utilisateur navigue sur mobile ou tablette.
+ */
 import { Home, BookOpen, Users, Newspaper, Bot } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import type { View } from '@/types';

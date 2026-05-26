@@ -1,4 +1,10 @@
-// Composant Centre de Notifications — Affiche les notifications de l'utilisateur
+/**
+ * NotificationCenter.tsx
+ *
+ * Affiche le panneau de notifications utilisateur.
+ * Il propose de marquer les notifications comme lues,
+ * de les supprimer ou de fermer le panneau.
+ */
 import { X, Clock } from 'lucide-react';
 import useNotifications from '@/hooks/useNotifications';
 

@@ -1,3 +1,10 @@
+/**
+ * AIChatPage.tsx
+ *
+ * Ce composant gère l'interface de chat avec l'assistant IA local.
+ * Il envoie les messages de l'utilisateur au backend FastAPI et
+ * affiche les réponses ainsi que des recommandations de livres éventuelles.
+ */
 import { useState, useRef, useEffect } from 'react';
 import { Bot, ChevronLeft, Send, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,8 +21,10 @@ interface Message {
   content: string;
   recommendations?: Record<string, unknown>[];
 }
-
+ 
+// Composant de chat IA local. Il envoie les messages à l'API FastAPI et affiche la réponse conversationnelle.
 export function AIChatPage({ user, onNavigate }: AIChatPageProps) {
+  // Historique des messages échangés avec l'assistant.
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -63,6 +72,7 @@ export function AIChatPage({ user, onNavigate }: AIChatPageProps) {
         content: m.content
       }));
 
+      // Envoie la requête au backend FastAPI et attend la réponse du modèle.
       const response = await fetch('http://localhost:8001/chat', {
         method: 'POST',
         headers,
@@ -78,9 +88,9 @@ export function AIChatPage({ user, onNavigate }: AIChatPageProps) {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
           content: data.response || "Voici ce que j'ai trouvé pour vous :",
-          // FastAPI retourne currently une liste vide pour les recommandations, 
-          // à mapper le jour où on ajoutera des vrais objets
-          recommendations: [] 
+          // FastAPI retourne actuellement une liste vide pour les recommandations,
+          // à mapper le jour où l'API renverra de vrais objets
+          recommendations: []
         };
         setMessages((prev) => [...prev, botMessage]);
       } else {
@@ -102,7 +112,7 @@ export function AIChatPage({ user, onNavigate }: AIChatPageProps) {
   return (
     <div className="flex h-screen bg-[var(--library-bg)] overflow-hidden">
       <main className="flex-1 flex flex-col h-full relative overflow-hidden">
-        {/* Header */}
+        {/* En-tête de la page chat */}
         <header className="h-14 flex items-center justify-between px-4 border-b border-[var(--border-color)] bg-[var(--library-surface)] z-10 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-white shadow-soft">
@@ -142,7 +152,11 @@ export function AIChatPage({ user, onNavigate }: AIChatPageProps) {
                       <div className="flex-1 overflow-hidden">
                         <p className="font-bold text-sm truncate">{String(book.titre)}</p>
                         <p className="text-xs text-muted truncate">{String(book.auteur)}</p>
-                        {book.score && <p className="text-[10px] text-accent mt-1">Pertinence: {Math.round(Number(book.score) * 100)}%</p>}
+                        {book.score != null && !Number.isNaN(Number(book.score as any)) && (
+                          <p className="text-[10px] text-accent mt-1">
+                            Pertinence: {Math.round(Number(book.score as any) * 100)}%
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))}

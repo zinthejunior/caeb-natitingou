@@ -1,3 +1,9 @@
+/**
+ * ProfileMenu.tsx
+ *
+ * Menu contextuel de profil utilisateur.
+ * Il donne accès au profil, aux paramètres et à la déconnexion.
+ */
 import { User, Settings, LogOut, ChevronRight } from 'lucide-react';
 import type { Utilisateur } from '@/types';
 
@@ -16,7 +22,7 @@ export function ProfileMenu({ utilisateur: user, onClose }: ProfileMenuProps) {
           <div className="text-xs text-muted">{user?.email}</div>
         </div>
       </div>
-
+ 
       <div className="flex flex-col divide-y border-t border-muted">
         <button
           className="flex items-center justify-between py-2 px-1 hover:bg-surface-weak dark:hover:bg-library-dark-secondary focus:outline-none focus:ring-2 focus:ring-library-primary dark:focus:ring-library-dark-accent focus:ring-inset rounded transition-colors"

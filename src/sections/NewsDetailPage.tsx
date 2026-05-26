@@ -35,7 +35,7 @@ export function NewsDetailPage({ newsId, user, onBack }: NewsDetailPageProps) {
     general: 'Actualité',
   };
 
-  // Category badge styles using design tokens
+  // Styles du badge de catégorie via les design tokens
   const categoryColors: Record<string, string> = {
     announcement: 'bg-[var(--library-accent)]/10 text-[var(--library-accent)] border-[var(--library-accent)]/20',
     event: 'bg-purple-500/10 text-purple-500 border-purple-500/20',

@@ -18,7 +18,7 @@ function Progress({
       aria-valuemax={100}
       aria-valuenow={clamped}
       className={cn(
-        // track: slightly darker in light mode for contrast, subtle accent tint in dark
+        // piste : légèrement plus sombre en mode clair pour le contraste, teinte discrète en mode sombre
         "relative h-2 w-full overflow-hidden rounded-full bg-blue-200 dark:bg-library-accent/12",
         className
       )}
@@ -27,7 +27,7 @@ function Progress({
       <ProgressPrimitive.Indicator
         data-slot="progress-indicator"
         className={cn(
-          // indicator: use theme accent (blue light / yellow dark) and add subtle inner shadow for visibility
+          // indicateur : utiliser l'accent du thème (bleu en clair / jaune en sombre) et ajouter une ombre interne discrète
           "h-full transition-all bg-library-accent shadow-inner",
         )}
         style={{ transform: `translateX(-${100 - clamped}%)` }}

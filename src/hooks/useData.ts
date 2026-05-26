@@ -619,16 +619,18 @@ export function useGlobalStats() {
     (async () => {
       try {
         setIsLoading(true);
-        const data = await appelAPI('/stats/').catch(() => ({
-          books_count: 12000,
-          members_count: 5000,
-          events_count: 50,
-          news_count: 20,
-          clubs_count: 3,
-          lab_count: 1,
-          years: 25
-        }));
-        setStats(data);
+        const rawData = await appelAPI('/stats/').catch(() => ({}));
+
+        setStats({
+          books_count: rawData.books_count ?? rawData.total_books ?? 0,
+          members_count: rawData.members_count ?? rawData.total_users ?? 0,
+          events_count: rawData.events_count ?? rawData.total_events ?? 0,
+          news_count: rawData.news_count ?? rawData.total_news ?? 0,
+          clubs_count: rawData.clubs_count ?? rawData.total_clubs ?? 0,
+          lab_count: rawData.lab_count ?? rawData.total_labs ?? rawData.total_lab_stations ?? 0,
+          years: rawData.years ?? rawData.expertise_years ?? null,
+          active_readers: rawData.active_readers ?? rawData.members_count ?? rawData.total_users ?? 0,
+        });
       } finally {
         setIsLoading(false);
       }

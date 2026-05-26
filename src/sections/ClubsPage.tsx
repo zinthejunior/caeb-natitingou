@@ -29,7 +29,7 @@ export function ClubsPage({ onClubClick, user }: ClubsPageProps) {
   useEffect(() => {
     if (clubs.length > 0) {
       setJoinedClubs(clubs.filter(c => c.isJoined || c.estMembre).map(c => c.id));
-    }
+    } 
   }, [clubs]);
   const selectedClub = selectedClubId ? clubs.find(c => c.id === selectedClubId) : null;
 

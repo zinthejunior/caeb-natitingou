@@ -117,15 +117,15 @@ export function parseColor(color: string): [number, number, number] | null {
  *   - White/light background → Primary Blue (#0052CC)
  *   - Dark/blue background → White (#FFFFFF)
  * 
- * - Dark Theme (Second Light Mode):
- *   - Light background (white/cream) → Brown (#3D2817)
- *   - Dark/blue background → Warm White/Cream (#FFFAF5)
+ * - Thème sombre (Second mode clair) :
+ *   - Fond clair (blanc/crème) → Marron (#3D2817)
+ *   - Fond sombre/bleu → Blanc chaud/crème (#FFFAF5)
  * 
- * All colors meet WCAG AA minimum (4.5:1)
+ * Toutes les couleurs respectent le minimum WCAG AA (4.5:1)
  * 
- * @param backgroundColor CSS color of the background
- * @param isDarkMode Whether dark theme is active
- * @returns Adaptive text color in hex format
+ * @param backgroundColor Couleur CSS du fond
+ * @param isDarkMode Indique si le thème sombre est actif
+ * @returns Couleur de texte adaptée au format hex
  */
 export function getAdaptiveTextColor(
   backgroundColor: string,
@@ -137,22 +137,22 @@ export function getAdaptiveTextColor(
   const luminance = getRelativeLuminance(bgRgb[0], bgRgb[1], bgRgb[2]);
 
   if (isDarkMode) {
-    // Dark Theme (Second Light Mode): Yellow/Brown/Warm White dominant
+    // Thème sombre (mode clair secondaire) : jaune/marron/blanc chaud dominants
     if (luminance > 0.5) {
-      // Light background → Brown for elegance
-      return '#3D2817'; // Brand brown
+      // Fond clair → marron pour l'élégance
+      return '#3D2817'; // Marron de marque
     } else {
-      // Dark background → Warm white/cream
-      return '#FFFAF5'; // Pure light cream
+      // Fond sombre → blanc chaud/crème
+      return '#FFFAF5'; // Crème claire
     }
   } else {
-    // Light Theme: Professional Blue & White
+    // Thème clair : bleu professionnel et blanc
     if (luminance > 0.5) {
-      // Light background → Primary blue
-      return '#0052CC'; // Primary blue
+      // Fond clair → bleu principal
+      return '#0052CC'; // Bleu principal
     } else {
-      // Dark background → White for contrast
-      return '#FFFFFF'; // White
+      // Fond sombre → blanc pour le contraste
+      return '#FFFFFF'; // Blanc
     }
   }
 }

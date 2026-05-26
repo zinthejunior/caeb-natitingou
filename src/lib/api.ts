@@ -10,7 +10,7 @@ const API_BASE_URL = 'http://localhost:8000/api';
 async function rafraichirToken(): Promise<string | null> {
   const refreshToken = localStorage.getItem('caeb_refresh');
   if (!refreshToken) return null;
-
+ 
   try {
     const response = await fetch(`${API_BASE_URL}/token/refresh/`, {
       method: 'POST',

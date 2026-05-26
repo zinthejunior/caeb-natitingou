@@ -1,3 +1,10 @@
+/**
+ * ClubContactForm.tsx
+ *
+ * Formulaire de contact pour un club à partir de sa page.
+ * Il envoie un message au responsable du club et fournit un feedback
+ * à l'utilisateur sur l'état de l'envoi.
+ */
 import { useState } from 'react';
 import { X, Mail, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';

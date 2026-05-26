@@ -7,15 +7,15 @@ import {
 } from '@/lib/contrast';
 
 /**
- * Hook for adaptive text color based on background color and theme
+ * Hook pour couleur de texte adaptative selon la couleur de fond et le thème
  * 
- * @param backgroundColor CSS color of the container background
- * @param isLargeText Whether text is large (18pt+ or 14pt+ bold)
- * @returns Adaptive text color and contrast information
+ * @param backgroundColor Couleur CSS du fond du conteneur
+ * @param isLargeText Indique si le texte est grand (18pt+ ou 14pt+ en gras)
+ * @returns Couleur de texte adaptative et informations de contraste
  * 
  * @example
  * const { textColor, contrastRatio } = useAdaptiveTextColor('#0052CC');
- * <div style={{ color: textColor }}>Text with adaptive color</div>
+ * <div style={{ color: textColor }}>Texte avec couleur adaptative</div>
  */
 export function useAdaptiveTextColor(
   backgroundColor: string,
@@ -74,10 +74,10 @@ export function useAdaptiveTextColorAdvanced(
 
   useEffect(() => {
     if (!mounted) return;
-    const newInfo = getColorInfo(backgroundColor, isDark); // TODO: use isLargeText if needed by getColorInfo
-    // getColorInfo only takes (bg, isDark), but getAdaptiveTextColorWithContrast takes isLargeText
-    // Let's update getColorInfo to take isLargeText or just accept the warning.
-    // For now, let's just make sure isLargeText is "used" to avoid the error.
+    const newInfo = getColorInfo(backgroundColor, isDark); // À FAIRE : utiliser isLargeText si getColorInfo en a besoin
+    // getColorInfo ne prend que (bg, isDark), alors que getAdaptiveTextColorWithContrast prend isLargeText
+    // Mettre à jour getColorInfo pour accepter isLargeText ou ignorer ce warning.
+    // Pour l'instant, on utilise isLargeText pour éviter l'erreur.
     console.log('useAdaptiveTextColorAdvanced isLargeText:', isLargeText);
     setInfo(newInfo);
     setColor(newInfo.color);
@@ -87,8 +87,8 @@ export function useAdaptiveTextColorAdvanced(
    * Get color for hover state (slightly adjusted alpha for interactive feedback)
    */
   const getHoverColor = useCallback(() => {
-    // For hover, apply slight opacity change or brightness adjustment
-    // Current implementation: same color (hover affects background shadow/border instead)
+    // Au survol, appliquer une légère modification d'opacité ou de luminosité
+    // Implémentation actuelle : même couleur (le hover agit sur l'ombre ou la bordure)
     return color;
   }, [color]);
 

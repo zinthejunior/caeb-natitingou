@@ -1,3 +1,10 @@
+/**
+ * ErrorBoundary.tsx
+ *
+ * Composant de niveau supérieur pour capturer les erreurs JavaScript
+ * dans l'arborescence React et afficher un message utilisateur
+ * plutôt qu'un écran blanc.
+ */
 import React from 'react';
 
 interface State {
@@ -13,10 +20,10 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, 
 
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
-  }
+  } 
 
   componentDidCatch(_error: Error, _info: any) {
-    // TODO: send to monitoring service
+    // À implémenter : envoyer l'erreur vers un service de monitoring
     // console.error('Unhandled error captured by ErrorBoundary', error, info);
   }
 

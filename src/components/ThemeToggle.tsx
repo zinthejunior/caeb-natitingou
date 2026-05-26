@@ -1,3 +1,10 @@
+/**
+ * ThemeToggle.tsx
+ *
+ * Petit composant interactif qui bascule le thème clair/sombre.
+ * Il lit l'état du thème et applique la classe CSS correspondante
+ * sur le document HTML pour modifier l'apparence globale.
+ */
 import { useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';

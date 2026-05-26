@@ -1,3 +1,10 @@
+/**
+ * ApiImage.tsx
+ *
+ * Ce composant encapsule l'affichage des images provenant du backend.
+ * Il convertit les chemins `/media/` ou `/static/` en URL complètes vers le serveur
+ * et fournit une image de secours si le chargement échoue.
+ */
 import React, { useState, useEffect } from 'react';
 
 interface ApiImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -16,7 +23,7 @@ export function ApiImage({ imageKey, src, fallback = '/avatar-1.jpg', alt, ...re
       return src;
     }
     return undefined;
-  });
+  }); 
 
   useEffect(() => {
     if (src) {

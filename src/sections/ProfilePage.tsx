@@ -1,3 +1,10 @@
+/**
+ * ProfilePage.tsx
+ *
+ * Ce fichier affiche la page de profil utilisateur avec ses informations,
+ * ses statistiques personnelles, son historique d'emprunts et ses paramètres.
+ * Il permet aussi de visualiser l'état de membre et de gérer les actions de profil.
+ */
 import { useState } from 'react';
 import {
   LogOut, BookOpen, Star, Users, Calendar,
@@ -12,9 +19,11 @@ import { toast } from 'sonner';
 import { Navbar } from '@/components/Navbar';
 import { ApiImage } from '@/components/ApiImage';
 import type { User, View } from '@/types';
-import { useBorrows, useReservations, useParticipationsEvenements } from '@/hooks/useData';
+import { useBorrows, useReservations, useParticipationsEvenements, useGlobalStats } from '@/hooks/useData';
 import { Badge } from '@/components/ui/badge';
 import { useSEO } from '@/lib/utils';
+
+// Ce composant affiche le profil utilisateur, les statistiques, les emprunts et les actions liées à l'adhésion.
 
 interface ProfilePageProps {
   user: User | null;
@@ -165,6 +174,9 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  // Récupération des statistiques globales pour compléter l'affichage du profil.
+  const { stats: backendStats } = useGlobalStats();
+  const bookCount = backendStats?.books_count?.toLocaleString();
   
   useSEO("Mon Profil", "Gérez vos emprunts, vos réservations et vos préférences de lecture sur votre espace personnel CAEB.");
   
@@ -192,6 +204,7 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
     if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) onLogout();
   };
 
+  // Enregistre les modifications du profil auprès du backend.
   const handleSaveProfile = async () => {
     if (!onUpdateUser) return;
     const success = await onUpdateUser({
@@ -690,7 +703,7 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
               <div>
                 <h2 className="text-2xl font-bold text-primary mb-2">Devenir membre Premium</h2>
                 <p className="text-muted leading-relaxed">
-                  Accédez à l'emprunt illimité de nos 12 000 ouvrages, profitez d'échanges avec notre IA et participez à tous nos événements exclusifs.
+                  {bookCount ? `Accédez à l'emprunt illimité de nos ${bookCount} ouvrages, profitez d'échanges avec notre IA et participez à tous nos événements exclusifs.` : "Accédez à l'emprunt illimité de nos ouvrages, profitez d'échanges avec notre IA et participez à tous nos événements exclusifs."}
                 </p>
               </div>
               <div className="space-y-3 pt-2">

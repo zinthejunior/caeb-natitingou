@@ -1,12 +1,18 @@
-// CatalogPage.tsx — Page du catalogue de la bibliothèque
+/**
+ * CatalogPage.tsx
+ *
+ * Ce fichier présente le catalogue de livres avec recherche, filtres et tris.
+ * Il récupère la liste des livres depuis l'API et permet à l'utilisateur
+ * de trouver rapidement des ouvrages selon ses préférences.
+ */
 import { useState, useMemo, useEffect } from 'react';
-import { Search, Star, X, Grid3X3, List, Lock } from 'lucide-react';
+import { Search, Star, X, Grid3X3, List } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ApiImage } from '@/components/ApiImage';
 import { Navbar } from '@/components/Navbar';
 import type { Book, User } from '@/types';
-import { useLivres } from '@/hooks/useData';
+import { useLivres, useGlobalStats } from '@/hooks/useData';
 import { useSEO } from '@/lib/utils';
 
 /**
@@ -58,7 +64,7 @@ function SkeletonGrille() {
         </div>
       </div>
     </div>
-  );
+  ); 
 }
 
 function SkeletonListe() {
@@ -78,6 +84,7 @@ function SkeletonListe() {
 // ── PAGE PRINCIPALE DU CATALOGUE ──────────────────────────────────────────
 
 export function CatalogPage({ onBookClick, user }: { onBookClick: (idLivre: string) => void; user: User | null }) {
+  // Chargement des livres depuis l'API et état local pour les filtres / affichages.
   const { livres, chargement } = useLivres();
   const [recherche, setRecherche] = useState('');
   const [modeAffichage, setModeAffichage] = useState<'grid' | 'list'>('grid');
@@ -91,7 +98,11 @@ export function CatalogPage({ onBookClick, user }: { onBookClick: (idLivre: stri
     if (!chargement) setDonneesPretes(true);
   }, [chargement]);
 
-  useSEO("Catalogue", "Explorez notre catalogue de 12 000 ouvrages : romans, essais, jeunesse, et bien plus encore.");
+  // Statistiques globales utilisées pour enrichir le catalogue avec un nombre total de livres.
+  const { stats } = useGlobalStats();
+  const bookCount = stats?.books_count?.toLocaleString() ?? '...';
+
+  useSEO("Catalogue", `Explorez notre catalogue de ${bookCount} ouvrages : romans, essais, jeunesse, et bien plus encore.`);
 
   // Filtrage et tri des livres
   const livresFiltres = useMemo(() => {
@@ -105,20 +116,20 @@ export function CatalogPage({ onBookClick, user }: { onBookClick: (idLivre: stri
       );
     }
     if (genresSelectionnes.length > 0) resultat = resultat.filter(l => genresSelectionnes.includes(l.genre));
-    if (publicSelectionne.length > 0) resultat = resultat.filter(l => publicSelectionne.includes(l.publicCible || ''));
+    if (publicSelectionne.length > 0) resultat = resultat.filter(l => publicSelectionne.includes((l as any).publicCible || ''));
     if (afficherDispoUniquement) resultat = resultat.filter(l => l.exemplaires > 0);
     
     switch (triPar) {
       case 'newest': resultat.sort((a, b) => (b.annee || 0) - (a.annee || 0)); break;
       case 'rating': resultat.sort((a, b) => b.note - a.note); break;
-      default: resultat.sort((a, b) => (b.estPopulaire ? 1 : 0) - (a.estPopulaire ? 1 : 0));
+      default: resultat.sort((a, b) => ((b as any).estPopulaire ? 1 : 0) - ((a as any).estPopulaire ? 1 : 0));
     }
     return resultat;
   }, [recherche, genresSelectionnes, publicSelectionne, afficherDispoUniquement, triPar, livres]);
 
   // Extraction des genres et publics pour les filtres
   const tousLesGenres = useMemo(() => Array.from(new Set(livres.map((l) => l.genre))).sort(), [livres]);
-  const tousLesPublics = useMemo(() => Array.from(new Set(livres.map((l) => l.publicCible || ''))).sort(), [livres]);
+  const tousLesPublics = useMemo(() => Array.from(new Set(livres.map((l) => (l as any).publicCible || ''))).sort(), [livres]);
 
   const basculerGenre = (genre: string) => {
     setGenresSelectionnes((precedents) => precedents.includes(genre) ? precedents.filter((g) => g !== genre) : [...precedents, genre]);
