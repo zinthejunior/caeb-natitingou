@@ -1,26 +1,23 @@
 dist
+frontend/dist
+frontend/node_modules
 
 # Python
 __pycache__/
 *.pyc
+.env/
 
 # Base de données
 *.sqlite3
 *.db
 *.json
 
-chat/
-
-# Dataset lourd
-backend/dataset/
-backend/ia/
-
-
 # Node
 node_modules/
 
 # Env
-.env
-.env.local
+frontend/.env.local
+backend/.env
+fastapi_kossi/.env
 
 *.md

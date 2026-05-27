@@ -2,14 +2,13 @@
 
 Application web de la Bibliothéque CAEB de Natitingou, composée de :
 - un backend Django REST (`backend/`),
-- un frontend React + TypeScript + Vite (`src/`),
+- un frontend React + TypeScript + Vite (`frontend/`),
 - un service d'IA conversationnelle FastAPI (`fastapi_kossi/`).
 
 ## Architecture
 
 - `backend/` : API Django + Django REST Framework.
-- `src/` : interface utilisateur React avec hooks, composants et pages.
-- `public/` : ressources statiques et images.
+- `frontend/` : interface utilisateur React (contenant `src/`, `public/`, `package.json`...).
 - `fastapi_kossi/` : service IA local pour l'assistant Kossi.
 
 ## Objectif
@@ -33,7 +32,7 @@ Ce projet vise à gérer un catalogue de livres, des réservations, des clubs de
 
 ### 2. Frontend
 
-1. Ouvrez une console dans le dossier racine du projet.
+1. Ouvrez une console dans le dossier `frontend/`.
 2. Installez les dépendances :
    - `npm install`
 3. Lancez le serveur de développement :
@@ -77,13 +76,20 @@ Le champ `years` est calculé automatiquement comme `année actuelle - 1978`, ce
 ### Alignement frontend/backend
 
 - Le backend expose des alias français/anglais pour les champs des livres et des statistiques.
-- Le frontend `src/hooks/useData.ts` consomme `/stats/` et normalise les clés reçues, ce qui évite les incohérences entre anciens et nouveaux noms de champs.
+- Le frontend `frontend/src/hooks/useData.ts` consomme `/stats/` et normalise les clés reçues, ce qui évite les incohérences entre anciens et nouveaux noms de champs.
 
 ## Lancer le projet
 
-- Backend : `python backend/manage.py runserver 8000`
-- Frontend : `npm run dev`
-- IA : `uvicorn fastapi_kossi.main:app --reload --port 8001`
+### Option 1 : Lancement global (Recommandé)
+Depuis la racine du projet, lancez tous les services d'un coup (Frontend, Backend et IA) avec :
+```bash
+npm run dev
+```
+
+### Option 2 : Lancement individuel
+- **Backend (Django)** : `python backend/manage.py runserver 8000`
+- **Frontend (Vite/React)** : `cd frontend && npm run dev`
+- **Service IA (FastAPI)** : `uvicorn fastapi_kossi.main:app --reload --port 8001`
 
 > Note : en local, le frontend attend le backend sur `http://localhost:8000/api` et le service IA sur `http://localhost:8001`.
 
@@ -91,4 +97,4 @@ Le champ `years` est calculé automatiquement comme `année actuelle - 1978`, ce
 
 - Utilisez les routes Django DRF définies dans `backend/api/urls.py`.
 - Les champs de données des livres sont définis dans `backend/api/models.py` et sérialisés dans `backend/api/serializers.py`.
-- Pour ajouter un nouveau champ de statistiques, mettez à jour `backend/api/views.py` et `src/hooks/useData.ts` en parallèle.
+- Pour ajouter un nouveau champ de statistiques, mettez à jour `backend/api/views.py` et `frontend/src/hooks/useData.ts` en parallèle.
