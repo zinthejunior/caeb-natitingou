@@ -29,6 +29,7 @@ export function RegisterPage() {
     sous_genre_prefere: [],
     intentions: []
   });
+
   const SOUS_GENRES_PAR_GENRE = {
     "Roman": ["Contemporain", "Classique", "Historique", "Science-fiction", "Fantastique", "Policier", "famille"],
     "Policier": ["Enquête", "Thriller", "Noir", "Espionnage", "Legal"],
@@ -138,6 +139,8 @@ export function RegisterPage() {
       }
     } else {
       console.log("[RegisterPage] Inscription réussie, redirection vers l'accueil...");
+      toast.success("Inscription réussie ! Bienvenue sur CAEB");
+      setTimeout(() => navigate("/home"), 1500);
     }
   };
   const inputClass = "w-full h-12 px-4 surface-alt border border-[var(--border-color)] rounded-xl text-primary placeholder:text-muted focus:border-[var(--library-accent)] focus:ring-2 focus:ring-[var(--library-accent)]/20 transition-all";

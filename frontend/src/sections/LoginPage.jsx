@@ -22,7 +22,12 @@ export function LoginPage() {
       return;
     }
     const success = await onLogin(email, password);
-    if (!success) toast.error("Email ou mot de passe incorrect");
+    if (success) {
+      toast.success("Connexion réussie ! Bienvenue");
+      setTimeout(() => navigate("/home"), 1500);
+    } else {
+      toast.error("Email ou mot de passe incorrect");
+    }
   };
   const inputClass = "w-full h-12 px-4 surface-alt border border-[var(--border-color)] rounded-xl text-primary placeholder:text-muted focus:border-[var(--library-accent)] focus:ring-2 focus:ring-[var(--library-accent)]/20 transition-all";
   return <div className="min-h-screen bg-library-bg mesh-gradient-light dark:mesh-gradient-dark flex items-center justify-center p-4 relative overflow-hidden">
