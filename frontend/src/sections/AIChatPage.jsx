@@ -20,22 +20,22 @@ export function AIChatPage({ user }) {
 
   const suggestionCards = [
     {
-      title: "🔍 Rechercher un roman",
+      title: " Rechercher un roman",
       description: "Je cherche un roman d'aventure palpitant...",
       prompt: "Je cherche un roman d'aventure palpitant dans le catalogue"
     },
     {
-      title: "📚 Recommander des nouveautés",
+      title: " Recommander des nouveautés",
       description: "Quelles sont les dernières nouveautés de la bibliothèque ?",
       prompt: "Quelles sont les dernières nouveautés de la bibliothèque ?"
     },
     {
-      title: "👥 Clubs de lecture",
+      title: " Clubs de lecture",
       description: "Parle-moi des clubs de lecture de Natitingou...",
       prompt: "Parle-moi des clubs de lecture et de leurs activités"
     },
     {
-      title: "💡 Conseils d'abonnement",
+      title: " Conseils d'abonnement",
       description: "Quelles sont les conditions pour s'abonner ?",
       prompt: "Quelles sont les conditions pour s'abonner et emprunter des livres ?"
     }
