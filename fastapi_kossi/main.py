@@ -209,7 +209,9 @@ async def chat_with_kossi(request: ChatRequest, authorization: Optional[str] = H
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers={
                     "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "http://localhost:8001",
+                    "X-Title": "Kossi AI"
                 },
                 json={
                     "model": "openrouter/free",
