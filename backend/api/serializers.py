@@ -8,14 +8,15 @@ from .models import (
 
 
 class UserSerializer(serializers.ModelSerializer):
-    prenom         = serializers.CharField(source='first_name', required=False)
-    nom            = serializers.CharField(source='last_name', required=False)
-    firstName      = serializers.CharField(source='first_name', required=False)
-    lastName       = serializers.CharField(source='last_name', required=False)
+    prenom         = serializers.CharField(source='first_name', required=False, allow_blank=True)
+    nom            = serializers.CharField(source='last_name', required=False, allow_blank=True)
+    # firstName / lastName : alias en lecture seule pour éviter le conflit de source DRF
+    firstName      = serializers.CharField(source='first_name', read_only=True)
+    lastName       = serializers.CharField(source='last_name', read_only=True)
     isMember       = serializers.SerializerMethodField()
     estMembre      = serializers.SerializerMethodField()
     createdAt      = serializers.DateTimeField(source='date_joined', read_only=True)
-    educationLevel = serializers.CharField(source='niveau_etude', required=False)
+    educationLevel = serializers.CharField(source='niveau_etude', required=False, allow_blank=True, allow_null=True)
     preferredGenres = serializers.JSONField(source='genres_preferes', required=False)
     password       = serializers.CharField(write_only=True, required=False)
 
@@ -29,13 +30,29 @@ class UserSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'date_inscription', 'createdAt']
 
+    def validate_username(self, value):
+        """
+        Vérifie l'unicité du nom d'utilisateur (insensible à la casse).
+        Lors d'une inscription, l'email est utilisé comme username.
+        """
+        instance = self.instance  # None lors d'une création
+        qs = User.objects.filter(username__iexact=value)
+        if instance:
+            qs = qs.exclude(pk=instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Cette adresse email est déjà associée à un compte existant.")
+        return value
+
     def validate_email(self, value):
         """
         Vérifie l'unicité de l'adresse email lors de l'inscription pour éviter les doublons.
         """
         if value:
-            # Recherche insensible à la casse d'une autre adresse email identique
-            if User.objects.filter(email__iexact=value).exists():
+            instance = self.instance
+            qs = User.objects.filter(email__iexact=value)
+            if instance:
+                qs = qs.exclude(pk=instance.pk)
+            if qs.exists():
                 raise serializers.ValidationError("Cette adresse email est déjà utilisée par un autre compte.")
         return value
 

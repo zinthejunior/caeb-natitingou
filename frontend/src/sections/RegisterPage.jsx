@@ -14,34 +14,21 @@ export function RegisterPage() {
   const onRegister = inscription;
   const onBack = () => navigate("/");
   const onLoginClick = () => navigate("/login");
-  const [step, setStep] = useState(() => {
-    const saved = sessionStorage.getItem("register_step");
-    return saved ? parseInt(saved, 10) : 1;
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+    firstName: "",
+    lastName: "",
+    birthDate: "",
+    educationLevel: "",
+    preferredGenres: [],
+    classe: "",
+    classeCustom: "",
+    sous_genre_prefere: [],
+    intentions: []
   });
-  const [formData, setFormData] = useState(() => {
-    const saved = sessionStorage.getItem("register_formData");
-    if (saved) return JSON.parse(saved);
-    return {
-      email: "",
-      password: "",
-      confirmPassword: "",
-      firstName: "",
-      lastName: "",
-      birthDate: "",
-      educationLevel: "",
-      preferredGenres: [],
-      classe: "",
-      classeCustom: "",
-      sous_genre_prefere: [],
-      intentions: []
-    };
-  });
-  useEffect(() => {
-    sessionStorage.setItem("register_step", step.toString());
-  }, [step]);
-  useEffect(() => {
-    sessionStorage.setItem("register_formData", JSON.stringify(formData));
-  }, [formData]);
   const SOUS_GENRES_PAR_GENRE = {
     "Roman": ["Contemporain", "Classique", "Historique", "Science-fiction", "Fantastique", "Policier", "famille"],
     "Policier": ["Enquête", "Thriller", "Noir", "Espionnage", "Legal"],
@@ -76,14 +63,14 @@ export function RegisterPage() {
         toast.error("Les mots de passe ne correspondent pas");
         return;
       }
-      if (formData.password.length < 4) {
-        toast.error("Le mot de passe doit contenir au moins 4 caractères");
+      if (formData.password.length < 6) {
+        toast.error("Le mot de passe doit contenir au moins 6 caractères");
         return;
       }
       
       const emailExiste = await verifierEmail(formData.email);
       if (emailExiste) {
-        toast.error("Ce compte existe, connectez-vous.", {
+        toast.error("Ce compte existe déjà, connectez-vous.", {
           action: { label: "Se connecter", onClick: () => navigate("/login") }
         });
         setTimeout(() => navigate("/login"), 3000);
@@ -115,16 +102,14 @@ export function RegisterPage() {
       password: formData.password,
       firstName: formData.firstName,
       lastName: formData.lastName,
-      birthDate: formData.birthDate || void 0,
-      educationLevel: formData.educationLevel || void 0,
+      birthDate: formData.birthDate || undefined,
+      educationLevel: formData.educationLevel || undefined,
       preferredGenres: formData.preferredGenres,
-      classe: formData.classe === "Autre" ? formData.classeCustom : formData.classe || void 0,
+      classe: formData.classe === "Autre" ? formData.classeCustom : formData.classe || undefined,
       sous_genre_prefere: formData.sous_genre_prefere,
-      intentions: formData.intentions,
-      profil_complet: !!(formData.educationLevel && (classesParNiveau[formData.educationLevel]?.length === 0 || formData.classe) && formData.preferredGenres[0] && formData.sous_genre_prefere)
+      intentions: formData.intentions
     });
     
-    // Ancien comportement (boolean) ou nouveau (objet avec success)
     const isSuccess = typeof result === "boolean" ? result : result?.success;
     
     console.log(`[RegisterPage] Retour de l'API d'inscription. Succès ? ${isSuccess}`);
@@ -132,17 +117,27 @@ export function RegisterPage() {
     if (!isSuccess) {
       const errors = result?.errors || {};
       console.log("[RegisterPage] Traitement des erreurs d'inscription à afficher :", errors);
-      if (errors.email) {
-        toast.error(`Email : ${errors.email[0]}`);
-      } else if (errors.username) {
-        toast.error(`Utilisateur : ${errors.username[0]}`);
+
+      // Compte déjà existant (email ou username dupliqué)
+      const isDuplicate = errors.email || errors.username;
+      if (isDuplicate) {
+        const msg = Array.isArray(errors.email) ? errors.email[0] : "Cette adresse email est déjà utilisée.";
+        toast.error(msg, {
+          description: "Voulez-vous vous connecter ?",
+          action: { label: "Se connecter", onClick: () => navigate("/login") }
+        });
+        setTimeout(() => navigate("/login"), 4000);
+      } else if (errors.password) {
+        const msg = Array.isArray(errors.password) ? errors.password[0] : "Mot de passe invalide.";
+        toast.error(`Mot de passe : ${msg}`);
+        setStep(1);
+      } else if (errors.detail) {
+        toast.error(errors.detail);
       } else {
-        toast.error("Une erreur est survenue lors de l'inscription");
+        toast.error("Une erreur est survenue lors de l'inscription. Veuillez réessayer.");
       }
     } else {
-      console.log("[RegisterPage] Inscription réussie, nettoyage du formulaire et redirection vers l'accueil...");
-      sessionStorage.removeItem("register_step");
-      sessionStorage.removeItem("register_formData");
+      console.log("[RegisterPage] Inscription réussie, redirection vers l'accueil...");
     }
   };
   const inputClass = "w-full h-12 px-4 surface-alt border border-[var(--border-color)] rounded-xl text-primary placeholder:text-muted focus:border-[var(--library-accent)] focus:ring-2 focus:ring-[var(--library-accent)]/20 transition-all";

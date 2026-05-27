@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { fetchWithAuth } from "@/lib/api";
+import { fetchWithAuth, setAuthTokens, clearAuthTokens, getAuthToken } from "@/lib/api";
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 function normaliserUtilisateur(raw) {
   return {
@@ -49,8 +49,7 @@ export function useAuthentification() {
     chargement: true
   });
   const deconnexion = useCallback(() => {
-    localStorage.removeItem("caeb_token");
-    localStorage.removeItem("caeb_refresh");
+    clearAuthTokens();
     setEtat({ utilisateur: null, estAuthentifie: false, chargement: false });
   }, []);
   const recupererUtilisateur = useCallback(async () => {
@@ -68,7 +67,7 @@ export function useAuthentification() {
     return false;
   }, []);
   useEffect(() => {
-    const token = localStorage.getItem("caeb_token");
+    const token = getAuthToken();
     if (token) {
       void recupererUtilisateur();
     } else {
@@ -94,8 +93,7 @@ export function useAuthentification() {
       if (response.ok) {
         console.log("[useAuth] API /token/ a répondu avec succès (200 OK). Jetons reçus.");
         const data = await response.json();
-        localStorage.setItem("caeb_token", data.access);
-        localStorage.setItem("caeb_refresh", data.refresh);
+        setAuthTokens(data.access, data.refresh);
         return await recupererUtilisateur();
       } else {
         console.log(`[useAuth] Échec de la connexion. Statut HTTP: ${response.status}`);
@@ -110,19 +108,24 @@ export function useAuthentification() {
     console.log("[useAuth] Lancement du processus d'inscription...");
     setEtat((prev) => ({ ...prev, chargement: true }));
     try {
+      // Payload aligné sur les champs acceptés par le sérialiseur Django UserSerializer.
+      // - username généré à partir de l'email (unique par construction si l'email est unique)
+      // - preferredGenres = tableau JSON (JSONField genres_preferes)
+      // - sous_genre_prefere = tableau JSON
+      // - genre_prefere et profil_complet sont absents du modèle et doivent être omis
       const payload = {
         username: donnees.email,
         email: donnees.email,
         password: donnees.password,
-        prenom: donnees.firstName,
-        nom: donnees.lastName,
+        prenom: donnees.firstName || "",
+        nom: donnees.lastName || "",
         type_compte: "non_membre",
         date_naissance: donnees.birthDate || null,
         niveau_etude: donnees.educationLevel || null,
         classe: donnees.classe || null,
-        genre_prefere: Array.isArray(donnees.preferredGenres) ? donnees.preferredGenres.join(",") : "",
-        intentions: donnees.intentions || [],
-        profil_complet: true
+        preferredGenres: Array.isArray(donnees.preferredGenres) ? donnees.preferredGenres : [],
+        sous_genre_prefere: Array.isArray(donnees.sous_genre_prefere) ? donnees.sous_genre_prefere : [],
+        intentions: Array.isArray(donnees.intentions) ? donnees.intentions : []
       };
       const response = await fetch(`${API_BASE_URL}/utilisateurs/`, {
         method: "POST",
@@ -135,7 +138,11 @@ export function useAuthentification() {
         return { success: true };
       } else {
         const errData = await response.json();
-        console.warn("[useAuth] Le backend a refusé l'inscription (Ex: email/username déjà pris). Erreurs:", errData);
+        console.warn("[useAuth] Le backend a refusé l'inscription. Erreurs reçues:", errData);
+        // Normalise les erreurs : si username === email déjà pris, on le remonte comme email
+        if (errData.username && !errData.email) {
+          errData.email = errData.username;
+        }
         setEtat((prev) => ({ ...prev, chargement: false }));
         return { success: false, errors: errData };
       }

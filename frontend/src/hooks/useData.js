@@ -366,10 +366,10 @@ export async function creerSessionChat(titre = "Nouvelle conversation") {
     body: JSON.stringify({ titre })
   });
 }
-export async function ajouterMessageChat(sessionId, contenu) {
+export async function ajouterMessageChat(sessionId, contenu, role = "user") {
   return appelAPI(`/chat/${sessionId}/messages/`, {
     method: "POST",
-    body: JSON.stringify({ content: contenu })
+    body: JSON.stringify({ content: contenu, role })
   });
 }
 export async function recupererSessionChat(sessionId) {
