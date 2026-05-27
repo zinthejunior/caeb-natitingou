@@ -113,7 +113,7 @@ function SectionHeader({ title, icon: Icon, onSeeAll, accent = false }) {
  */
 function BookCard({ book, user, onClick, onToggleFavorite, size = "md" }) {
   // Vérifie si le livre est dans les favoris de l'utilisateur
-  const isFavorited = user.favoris?.includes(book.id) || false;
+  const isFavorited = user?.favoris?.includes(book.id) || false;
   const [heartPop, setHeartPop] = useState(false); // Animation du cœur
 
   // Gère la navigation au clavier (accessibilité)
@@ -196,7 +196,7 @@ function BookCard({ book, user, onClick, onToggleFavorite, size = "md" }) {
  * Affichage horizontal avec plus d'informations
  */
 function FeaturedBookCard({ book, user, onClick, onToggleFavorite }) {
-  const isFavorited = user.favoris?.includes(book.id) || false;
+  const isFavorited = user?.favoris?.includes(book.id) || false;
   const [heartPop, setHeartPop] = useState(false);
 
   const handleFavorite = (e) => {
@@ -277,7 +277,7 @@ function EventCard({ event, user, onClick }) {
         <div className="flex items-center gap-2 mb-0.5">
           <h3 className="font-semibold text-primary truncate group-hover:text-accent transition-colors text-sm">{event.titre}</h3>
           {/* Affiche un cadenas pour les conférences réservées aux membres */}
-          {!user.estMembre && event.type === "conference" && <Lock className="w-3 h-3 text-muted flex-shrink-0" />}
+          {!user?.estMembre && event.type === "conference" && <Lock className="w-3 h-3 text-muted flex-shrink-0" />}
         </div>
         <div className="flex items-center text-xs text-muted gap-1.5">
           <span>{event.heure}</span>
@@ -372,6 +372,7 @@ function NewsCard({ news, onClick, featured = false }) {
  * @param {string} id - L'ID du livre à ajouter/retirer
  */
 function toggleFav(user, id) {
+  if (!user) return; // Sécurité : vérifier que user existe
   if (user.favoris?.includes(id)) {
     user.favoris = user.favoris.filter((f) => f !== id); // Retire des favoris
   } else {
