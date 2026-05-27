@@ -196,6 +196,40 @@
     transition: none !important;
   }
 
+  /* ── Rendu des images — anti-flou global ── */
+  img {
+    /* Force le rendu via GPU pour éviter le flou sous-pixel */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    /* Lissage haute qualité */
+    image-rendering: auto;
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+
+  /* Images dans les galeries animées : rendu net même en mouvement */
+  .page-landing img {
+    will-change: auto;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  /* Overlay galerie */
+  .image-overlay {
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.72) 0%,
+      rgba(0, 0, 0, 0.20) 60%,
+      transparent 100%
+    );
+  }
+
+  .overlay-text {
+    color: #FFFFFF;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  }
+
   /* ── Textes sémantiques ── */
   .text-primary   { color: var(--library-text) !important; }
   .text-secondary { color: var(--library-text-muted) !important; }

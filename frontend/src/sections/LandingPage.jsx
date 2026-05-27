@@ -49,7 +49,8 @@ export function LandingPage() {
       pos += speed;
       const half = track.scrollWidth / 2;
       if (pos >= half) pos = 0;
-      track.style.transform = `translateX(-${pos}px)`;
+      // Arrondir au pixel entier pour éviter le rendu sous-pixel (flou)
+      track.style.transform = `translateX(-${Math.round(pos)}px)`;
       animId = requestAnimationFrame(step);
     };
     animId = requestAnimationFrame(step);
@@ -225,7 +226,8 @@ export function LandingPage() {
                 <img
     src="/25ans.jpg"
     alt={`${displayStats.years} ans de la Bibliothèque CAEB Natitingou`}
-    className="w-full h-auto object-cover aspect-[4/3] hover:scale-105 transition-transform duration-700"
+    className="w-full h-auto object-cover aspect-[4/3] transition-transform duration-700"
+    style={{ imageRendering: "auto", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
   />
               </div>
               
@@ -279,7 +281,7 @@ export function LandingPage() {
           <p className="text-sm text-muted mt-1">Survolez pour mettre en pause, cliquez pour agrandir</p>
         </div>
         <div className="overflow-hidden">
-          <div ref={galleryTrackRef} className="flex gap-4 px-4 w-max will-change-transform">
+          <div ref={galleryTrackRef} className="flex gap-4 px-4 w-max will-change-transform" style={{ backfaceVisibility: "hidden" }}>
             {[...libraryPhotos, ...libraryPhotos].map((photo, i) => <div
     key={i}
     className="group relative overflow-hidden rounded-2xl flex-shrink-0 w-64 h-44 border border-[var(--border-color)] shadow-card hover:shadow-card-hover transition-all duration-300 cursor-pointer"
@@ -288,7 +290,8 @@ export function LandingPage() {
                 <img
     src={photo.src}
     alt={photo.caption}
-    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+    className="w-full h-full object-cover transition-transform duration-500"
+    style={{ imageRendering: "auto", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
   />
                 <div className="image-overlay absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
                   <p className="overlay-text text-sm font-semibold leading-tight">{photo.caption}</p>
@@ -309,6 +312,7 @@ export function LandingPage() {
     src={selectedImage.src}
     alt={selectedImage.caption}
     className="w-full rounded-2xl shadow-2xl object-contain max-h-[75vh]"
+    style={{ imageRendering: "auto", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
   />
               <p className="text-white font-semibold text-center mt-4">{selectedImage.caption}</p>
               <button
@@ -378,8 +382,8 @@ export function LandingPage() {
     style={{ animationDelay: `${index * 100}ms` }}
   >
                 <div className="flex items-start gap-4">
-                  <div className="w-20 h-28 rounded-xl overflow-hidden shadow-medium group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
-                    <img src={book.cover} alt={book.title} className="w-full h-full object-cover" />
+                  <div className="w-20 h-28 rounded-xl overflow-hidden shadow-medium transition-transform duration-300 flex-shrink-0">
+                    <img src={book.cover} alt={book.title} className="w-full h-full object-cover" style={{ imageRendering: "auto", backfaceVisibility: "hidden" }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-display font-semibold text-primary truncate mb-1">{book.title}</h3>
@@ -483,7 +487,7 @@ export function LandingPage() {
 
             <div className="reveal-on-scroll opacity-0 translate-y-8 grid grid-cols-1 gap-4">
               <div className="rounded-2xl overflow-hidden shadow-elevated border border-[var(--border-color)] h-48">
-                <img src="/elève.jpg" alt="Activité à la bibliothèque CAEB" className="w-full h-full object-cover" />
+                <img src="/elève.jpg" alt="Activité à la bibliothèque CAEB" className="w-full h-full object-cover" style={{ imageRendering: "auto", backfaceVisibility: "hidden" }} />
               </div>
               {[
     {

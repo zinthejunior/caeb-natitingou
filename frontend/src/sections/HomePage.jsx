@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Calendar, Star, ChevronRight, Flame, Sparkles, TrendingUp, Lock, Newspaper, Heart, BookOpen } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { ApiImage } from "@/components/ApiImage";
@@ -35,7 +36,18 @@ function SkeletonNewsCard() {
       </div>
     </div>;
 }
-export function HomePage({ user, onNavigate }) {
+export function HomePage({ user }) {
+  const navigate = useNavigate();
+  const onNavigate = (route, params) => {
+    if (route === "profile") navigate("/profile");
+    if (route === "news") navigate("/news");
+    if (route === "news-detail") navigate(`/news/${params.newsId}`);
+    if (route === "catalog") navigate("/catalog");
+    if (route === "book-detail") navigate(`/catalog/${params.bookId}`);
+    if (route === "events") navigate("/events");
+    if (route === "event-detail") navigate(`/events/${params.eventId}`);
+  };
+
   const [greeting] = useState(() => {
     const hour = (/* @__PURE__ */ new Date()).getHours();
     if (hour < 12) return "Bonjour";
@@ -137,7 +149,7 @@ export function HomePage({ user, onNavigate }) {
               {!dataReady ? <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
                   {[0, 1, 2, 3].map((i) => <SkeletonBookCard key={i} />)}
                 </div> : recommendedBooks.length > 0 ? <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
-                  {recommendedBooks.map((book) => <div key={book.id} className="list-item-fade">
+                  {recommendedBooks.map((book, idx) => <div key={book.id || `rec-${idx}`} className="list-item-fade">
                       <BookCard
     book={book}
     user={user}
@@ -156,7 +168,7 @@ export function HomePage({ user, onNavigate }) {
               {!dataReady ? <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
                   {[0, 1, 2, 3].map((i) => <SkeletonBookCard key={i} />)}
                 </div> : <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
-                  {newBooks.map((book) => <div key={book.id} className="list-item-fade">
+                  {newBooks.map((book, idx) => <div key={book.id || `new-${idx}`} className="list-item-fade">
                       <BookCard
     book={book}
     user={user}
@@ -175,7 +187,7 @@ export function HomePage({ user, onNavigate }) {
               {!dataReady ? <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
                   {[0, 1, 2, 3].map((i) => <SkeletonBookCard key={i} />)}
                 </div> : <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
-                  {popularBooks.map((book) => <div key={book.id} className="list-item-fade">
+                  {popularBooks.map((book, idx) => <div key={book.id || `pop-${idx}`} className="list-item-fade">
                       <BookCard
     book={book}
     user={user}

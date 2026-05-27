@@ -9,7 +9,7 @@ import { genreList, educationLevels, classesParNiveau, intentionsList } from "@/
 import { useAuthentification } from "@/hooks/useAuthentification";
 
 export function RegisterPage() {
-  const { inscription, chargement: isLoading } = useAuthentification();
+  const { inscription, verifierEmail, chargement: isLoading } = useAuthentification();
   const navigate = useNavigate();
   const onRegister = inscription;
   const onBack = () => navigate("/");
@@ -66,7 +66,7 @@ export function RegisterPage() {
   const getAllSousGenres = (genres) => {
     return genres.flatMap((g) => SOUS_GENRES_PAR_GENRE[g] || []);
   };
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 1) {
       if (!formData.email || !formData.password || !formData.confirmPassword) {
         toast.error("Veuillez remplir tous les champs obligatoires");
@@ -78,6 +78,15 @@ export function RegisterPage() {
       }
       if (formData.password.length < 4) {
         toast.error("Le mot de passe doit contenir au moins 4 caractères");
+        return;
+      }
+      
+      const emailExiste = await verifierEmail(formData.email);
+      if (emailExiste) {
+        toast.error("Ce compte existe, connectez-vous.", {
+          action: { label: "Se connecter", onClick: () => navigate("/login") }
+        });
+        setTimeout(() => navigate("/login"), 3000);
         return;
       }
     }
@@ -100,7 +109,8 @@ export function RegisterPage() {
     else onBack();
   };
   const handleSubmit = async () => {
-    const success = await onRegister({
+    console.log("[RegisterPage] Bouton de soumission cliqué. Lancement de la requête...");
+    const result = await onRegister({
       email: formData.email,
       password: formData.password,
       firstName: formData.firstName,
@@ -113,9 +123,24 @@ export function RegisterPage() {
       intentions: formData.intentions,
       profil_complet: !!(formData.educationLevel && (classesParNiveau[formData.educationLevel]?.length === 0 || formData.classe) && formData.preferredGenres[0] && formData.sous_genre_prefere)
     });
-    if (!success) {
-      toast.error("Une erreur est survenue lors de l'inscription");
+    
+    // Ancien comportement (boolean) ou nouveau (objet avec success)
+    const isSuccess = typeof result === "boolean" ? result : result?.success;
+    
+    console.log(`[RegisterPage] Retour de l'API d'inscription. Succès ? ${isSuccess}`);
+    
+    if (!isSuccess) {
+      const errors = result?.errors || {};
+      console.log("[RegisterPage] Traitement des erreurs d'inscription à afficher :", errors);
+      if (errors.email) {
+        toast.error(`Email : ${errors.email[0]}`);
+      } else if (errors.username) {
+        toast.error(`Utilisateur : ${errors.username[0]}`);
+      } else {
+        toast.error("Une erreur est survenue lors de l'inscription");
+      }
     } else {
+      console.log("[RegisterPage] Inscription réussie, nettoyage du formulaire et redirection vers l'accueil...");
       sessionStorage.removeItem("register_step");
       sessionStorage.removeItem("register_formData");
     }

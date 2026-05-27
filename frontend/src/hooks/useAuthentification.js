@@ -79,7 +79,11 @@ export function useAuthentification() {
     return () => window.removeEventListener("app:logout", handleLogout);
   }, [recupererUtilisateur, deconnexion]);
   const connexion = useCallback(async (email, motDePasse) => {
-    if (!email || !motDePasse) return false;
+    console.log("[useAuth] Tentative de connexion...");
+    if (!email || !motDePasse) {
+      console.log("[useAuth] Email ou mot de passe manquant, annulation.");
+      return false;
+    }
     setEtat((prev) => ({ ...prev, chargement: true }));
     try {
       const response = await fetch(`${API_BASE_URL}/token/`, {
@@ -88,10 +92,13 @@ export function useAuthentification() {
         body: JSON.stringify({ username: email, password: motDePasse })
       });
       if (response.ok) {
+        console.log("[useAuth] API /token/ a répondu avec succès (200 OK). Jetons reçus.");
         const data = await response.json();
         localStorage.setItem("caeb_token", data.access);
         localStorage.setItem("caeb_refresh", data.refresh);
         return await recupererUtilisateur();
+      } else {
+        console.log(`[useAuth] Échec de la connexion. Statut HTTP: ${response.status}`);
       }
     } catch (err) {
       console.error("Erreur de connexion:", err);
@@ -100,6 +107,7 @@ export function useAuthentification() {
     return false;
   }, [recupererUtilisateur]);
   const inscription = useCallback(async (donnees) => {
+    console.log("[useAuth] Lancement du processus d'inscription...");
     setEtat((prev) => ({ ...prev, chargement: true }));
     try {
       const payload = {
@@ -122,17 +130,40 @@ export function useAuthentification() {
         body: JSON.stringify(payload)
       });
       if (response.ok) {
-        return await connexion(donnees.email, donnees.password);
+        console.log("[useAuth] Inscription réussie côté backend (201 Created). Connexion automatique...");
+        await connexion(donnees.email, donnees.password);
+        return { success: true };
       } else {
         const errData = await response.json();
-        console.error("Erreur inscription:", errData);
+        console.warn("[useAuth] Le backend a refusé l'inscription (Ex: email/username déjà pris). Erreurs:", errData);
+        setEtat((prev) => ({ ...prev, chargement: false }));
+        return { success: false, errors: errData };
       }
     } catch (err) {
       console.error("Erreur lors de l'inscription:", err);
+      setEtat((prev) => ({ ...prev, chargement: false }));
+      return { success: false, errors: { detail: err.message } };
     }
-    setEtat((prev) => ({ ...prev, chargement: false }));
-    return false;
   }, [connexion]);
+
+  const verifierEmail = useCallback(async (email) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/utilisateurs/check-email/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        return data.exists;
+      }
+      return false;
+    } catch (err) {
+      console.error("Erreur lors de la vérification de l'email:", err);
+      return false;
+    }
+  }, []);
+
   const mettreAJourUtilisateur = useCallback(async (updates) => {
     if (!etat.utilisateur) return false;
     try {
@@ -171,6 +202,7 @@ export function useAuthentification() {
     ...etat,
     connexion,
     inscription,
+    verifierEmail,
     deconnexion,
     mettreAJourUtilisateur,
     changerMotDePasse

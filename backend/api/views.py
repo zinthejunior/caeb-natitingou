@@ -65,6 +65,9 @@ def get_public_stats(request):
     """
     Renvoie les statistiques en temps réel pour la Landing Page.
     """
+    # On affiche dans la console backend que la fonction commence
+    print("Début de l'exécution de get_public_stats()")
+    
     from datetime import datetime
     from .models import Book, User
     
@@ -76,6 +79,10 @@ def get_public_stats(request):
     lab_count = 0
     # Expertise CAEB fondée en 1978
     expertise_years = datetime.now().year - 1978
+    
+    # PRINT DÉBOGAGE: On affiche les valeurs calculées
+    print(f"Statistiques calculées - Livres: {total_books}, Utilisateurs: {total_users}")
+    print(" Fin de get_public_stats() - Envoi de la réponse.")
     
     return Response({
         'total_books': total_books,
@@ -96,7 +103,16 @@ class GlobalStatsView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        return get_public_stats(request)
+        # PRINT DÉBOGAGE: On signale qu'on est entré dans GlobalStatsView
+        print(" Entrée dans GlobalStatsView.get()")
+        
+        
+        # get_public_stats a un décorateur @api_view qui s'attend à recevoir une requête Django de base (HttpRequest).
+        # Mais dans APIView, 'request' est déjà une requête modifiée par Django Rest Framework (DRF Request).
+        # Si on passe 'request' tel quel, DRF plante car il essaie de re-convertir une requête déjà convertie.
+        # Solution : On passe request._request, qui contient la requête d'origine de Django.
+        print(" Appel de get_public_stats(request._request)")
+        return get_public_stats(request._request)
 
 
 # ── UTILISATEURS ─────────────────────────────────────────────
@@ -177,6 +193,20 @@ class UserViewSet(viewsets.ModelViewSet):
         request.user.set_password(serializer.validated_data['new_password'])
         request.user.save()
         return Response({'detail': 'Mot de passe mis à jour avec succès.'})
+
+    @action(detail=False, methods=['post'], url_path='check-email', permission_classes=[permissions.AllowAny])
+    def check_email(self, request):
+        """
+        Vérifie si un email ou nom d'utilisateur existe déjà dans la base de données.
+        Utilisé lors de l'inscription à l'étape 1.
+        """
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email requis.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # On vérifie sur l'email ou sur le nom d'utilisateur (qui sert souvent d'email ici)
+        exists = User.objects.filter(email__iexact=email).exists() or User.objects.filter(username__iexact=email).exists()
+        return Response({'exists': exists})
 
 
 # ── LIVRES ────────────────────────────────────────────────────
