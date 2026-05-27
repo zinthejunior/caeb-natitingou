@@ -54,9 +54,7 @@ export function AIChatPage({ user, onNavigate }) {
           id: (Date.now() + 1).toString(),
           role: "assistant",
           content: data.response || "Voici ce que j'ai trouvé pour vous :",
-          // FastAPI retourne actuellement une liste vide pour les recommandations,
-          // à mapper le jour où l'API renverra de vrais objets
-          recommendations: []
+          recommendations: Array.isArray(data.suggested_books) ? data.suggested_books : []
         };
         setMessages((prev) => [...prev, botMessage]);
       } else {

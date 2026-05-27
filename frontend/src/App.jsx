@@ -12,7 +12,7 @@ import { EventsPage } from "@/sections/EventsPage";
 import { EventDetailPage } from "@/sections/EventDetailPage";
 import { NewsPage } from "@/sections/NewsPage";
 import { NewsDetailPage } from "@/sections/NewsDetailPage";
-import { FavoritesPage } from "@/sections/FavoritesPage";
+import { FavoritesPage } from "@/sections/FavoritesPage"; 
 import { BorrowsPage } from "@/sections/BorrowsPage";
 import { ProfilePage } from "@/sections/ProfilePage";
 import { SettingsPage } from "@/sections/SettingsPage";
