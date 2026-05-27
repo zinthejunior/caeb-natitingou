@@ -546,16 +546,6 @@ export async function recupererSessionChat(sessionId: number): Promise<DonneesSe
   return appelAPI(`/chat/${sessionId}/`);
 }
 
-/**
- * Crée une réservation pour le laboratoire.
- */
-export async function creerReservationLab(donnees: { station: number, date: string, start_time: string, end_time: string, purpose?: string }) {
-  return appelAPI('/lab-reservations/', {
-    method: 'POST',
-    body: JSON.stringify(donnees)
-  });
-}
-
 // ── ALIASES ANGLAIS (compatibilité UI) ──────────────────────────────────
 
 export function useBooks() {

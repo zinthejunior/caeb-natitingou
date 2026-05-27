@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
 
 // ── Pages ──────────────────────────────────────────────────────────────
@@ -24,393 +24,192 @@ import { NotFoundPage }   from '@/sections/NotFoundPage';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { useAuthentification } from '@/hooks/useAuthentification';
 
+// ── Route protégée ──────────────────────────────────────────────────────
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { estAuthentifie, chargement } = useAuthentification();
+  const location = useLocation();
 
-import type { Utilisateur as User } from '@/types';
+  if (chargement) {
+    return (
+      <div className="min-h-screen bg-library-bg flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-accent/30 border-t-accent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
-// ── Types ──────────────────────────────────────────────────────────────
+  if (!estAuthentifie) {
+    return <Navigate to="/" state={{ from: location }} replace />;
+  }
 
-export type View =
-  | 'landing' | 'login'      | 'register'
-  | 'home'    | 'catalog'    | 'book-detail'
-  | 'clubs'   | 'club-detail'
-  | 'events'  | 'event-detail'
-  | 'news'    | 'news-detail'
-  | 'favorites' | 'borrows'
-  | 'profile' | 'settings'   | 'search'
-  | 'ai-chat' | 'not-found';
-
-interface NavParams {
-  bookId?:  string;
-  clubId?:  string;
-  eventId?: string;
-  newsId?:  string;
+  return <>{children}</>;
 }
 
-// Vues protégées / publiques ─────────────────────────────────────────
+// ── Route publique (redirige si déjà connecté) ──────────────────────────
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const { estAuthentifie, chargement } = useAuthentification();
 
-const AUTH_VIEWS:      View[] = ['landing', 'login', 'register'];
-const PROTECTED_VIEWS: View[] = [
-  'home', 'catalog', 'book-detail',
-  'clubs', 'club-detail',
-  'events', 'event-detail',
-  'news', 'news-detail',
-  'favorites', 'borrows',
-  'profile', 'settings', 'search', 'ai-chat',
-];
+  if (chargement) {
+    return (
+      <div className="min-h-screen bg-library-bg flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-accent/30 border-t-accent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (estAuthentifie) {
+    return <Navigate to="/home" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// ── Layout avec navigation du bas ─────────────────────────────────────
+function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <div className="pb-20">{children}</div>
+      <BottomNavigation />
+    </>
+  );
+}
 
 // ── App ────────────────────────────────────────────────────────────────
-
 export default function App() {
+  const { utilisateur: user, mettreAJourUtilisateur: updateUser, changerMotDePasse: changePassword, deconnexion: logout } = useAuthentification();
 
-  // ── State ────────────────────────────────────────────────────────────
-
-  const { 
-    utilisateur: user, 
-    estAuthentifie: isAuthenticated, 
-    connexion: login, 
-    inscription: register, 
-    deconnexion: logout, 
-    mettreAJourUtilisateur: updateUser, 
-    changerMotDePasse: changePassword 
-  } = useAuthentification();
-
-  // ── Thème persisté ───────────────────────────────────────────────────
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('caeb_theme');
-    if (savedTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
-
-  const parseHash = () => {
-    const hash = window.location.hash.slice(1);
-    if (!hash) return { view: 'landing' as View, params: {} };
-    
-    const [viewPart, paramsPart] = hash.split('?');
-    const params = paramsPart ? Object.fromEntries(new URLSearchParams(paramsPart)) : {};
-    return { view: (viewPart || 'landing') as View, params };
-  };
-
-  const [currentView, setCurrentView] = useState<View>(() => parseHash().view);
-  const [navParams, setNavParams] = useState<NavParams>(() => parseHash().params);
-
-  useEffect(() => {
-    const handleHashChange = () => {
-      const { view, params } = parseHash();
-      setCurrentView(view);
-      setNavParams(params);
-    };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  useEffect(() => {
-    if (isAuthenticated && (currentView === 'landing' || currentView === 'login' || currentView === 'register')) {
-      navigateTo('home', undefined, true);
-    } else if (!isAuthenticated && PROTECTED_VIEWS.includes(currentView)) {
-      navigateTo('landing', undefined, true);
-    }
-  }, [isAuthenticated, currentView]);
-
-  // ── Vue résolue (pas de useEffect setState) ───────────────────────────
-  // On calcule directement la vue à afficher sans passer par un effect.
-  const resolvedView: View = (() => {
-    if (!isAuthenticated && PROTECTED_VIEWS.includes(currentView)) return 'landing';
-    if (isAuthenticated  && AUTH_VIEWS.includes(currentView))      return 'home';
-    return currentView;
-  })();
-
-  // ── Navigation ───────────────────────────────────────────────────────
-
-  const navigateTo = useCallback((view: View, params?: NavParams, replace = false) => {
-    setCurrentView(view);
-    setNavParams(params ?? {});
-    
-    let hash = `#${view}`;
-    if (params && Object.keys(params).length > 0) {
-      const searchParams = new URLSearchParams(params as Record<string, string>);
-      hash += `?${searchParams.toString()}`;
-    }
-    
-    if (window.location.hash !== hash) {
-      if (replace) {
-        window.history.replaceState(null, '', hash);
-      } else {
-        window.history.pushState(null, '', hash);
-      }
-    }
-    
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  // Variante compatible avec les pages qui typent onNavigate en (string)
-  const navigateLoose = navigateTo as (view: string, params?: NavParams) => void;
-
-  // ── Auth handlers ────────────────────────────────────────────────────
-
-  const handleLogin = useCallback(async (email: string, password: string): Promise<boolean> => {
-    const success = await login(email, password);
-    if (success) navigateTo('home');
-    return success;
-  }, [login]);
-
-  const handleRegister = useCallback(async (data: any): Promise<boolean> => {
-    const success = await register(data);
-    if (success) navigateTo('home');
-    return success;
-  }, [register]);
-
-  const handleLogout = useCallback(() => {
-    logout();
-    navigateTo('landing');
-  }, [logout]);
-
-  // ── Écouteurs d'événements globaux ───────────────────────────────────
-
-  useEffect(() => {
-    const handleNavigate = (e: any) => {
-      const { view, params } = e.detail;
-      navigateTo(view, params);
-    };
-
-    const handleLogoutEvent = () => {
-      handleLogout();
-    };
-
-    window.addEventListener('app:navigate', handleNavigate as EventListener);
-    window.addEventListener('app:logout', handleLogoutEvent as EventListener);
-
-    return () => {
-      window.removeEventListener('app:navigate', handleNavigate as EventListener);
-      window.removeEventListener('app:logout', handleLogoutEvent as EventListener);
-    };
-  }, [navigateTo, handleLogout]);
-
-  // ── Favoris (persistés) ──────────────────────────────────────────────
-
-  const handleToggleMemberStatus = useCallback(() => {
-    if (!user) return;
-    void updateUser({ estMembre: !user.estMembre, type_compte: !user.estMembre ? 'membre' : 'non_membre' });
-  }, [user, updateUser]);
-
-  const handleUpdateUser = useCallback(async (updates: Partial<User>) => {
-    await updateUser(updates);
-    return true;
-  }, [updateUser]);
-
-  const handleToggleFavorite = useCallback(async (bookId: string) => {
+  const handleToggleFavorite = async (bookId: string) => {
     if (!user) return;
     const favoris = user.favoris || [];
     const newFavoris = favoris.includes(bookId)
       ? favoris.filter((id: string) => id !== bookId)
       : [...favoris, bookId];
-    
     await updateUser({ favoris: newFavoris });
-  }, [user, updateUser]);
+  };
 
-  // ── Rendu ────────────────────────────────────────────────────────────
-
-  const renderPage = () => {
-    switch (resolvedView) {
-
-      // ── Authentification ────────────────────────────────────────────
-
-      case 'landing':
-        return (
-          <LandingPage
-            onLoginClick={() => navigateTo('login')}
-            onRegisterClick={() => navigateTo('register')}
-          />
-        );
-
-      case 'login':
-        return (
-          <LoginPage
-            onLogin={handleLogin}
-            onBack={() => navigateTo('landing')}
-            onRegisterClick={() => navigateTo('register')}
-            isLoading={false}
-          />
-        );
-
-      case 'register':
-        return (
-          <RegisterPage
-            onRegister={handleRegister}
-            onBack={() => navigateTo('landing')}
-            onLoginClick={() => navigateTo('login')}
-            isLoading={false}
-          />
-        );
-
-      // ── Pages principales ───────────────────────────────────────────
-
-      case 'home':
-        return (
-          <HomePage
-            user={user!}
-            onNavigate={navigateTo}
-          />
-        );
-
-      case 'catalog':
-        return (
-          <CatalogPage
-            user={user}
-            onBookClick={(bookId) => navigateTo('book-detail', { bookId })}
-          />
-        );
-
-      case 'book-detail':
-        return navParams.bookId ? (
-          <BookDetailPage
-            bookId={navParams.bookId}
-            user={user!}
-            onBack={() => navigateTo('catalog')}
-            onToggleFavorite={handleToggleFavorite}
-          />
-        ) : <NotFoundPage user={user} onNavigate={navigateLoose as (view: string) => void} />;
-
-      // ── Clubs ───────────────────────────────────────────────────────
-
-      case 'clubs':
-        return (
-          <ClubsPage
-            user={user}
-            onClubClick={(clubId) => navigateTo('club-detail', { clubId })}
-          />
-        );
-
-      case 'club-detail':
-        return navParams.clubId ? (
-          <ClubDetailPage
-            clubId={navParams.clubId}
-            user={user}
-            onBack={() => navigateTo('clubs')}
-          />
-        ) : <NotFoundPage user={user} onNavigate={navigateLoose as (view: string) => void} />;
-
-      // ── Événements ──────────────────────────────────────────────────
-
-      case 'events':
-        return (
-          <EventsPage
-            user={user}
-            onEventClick={(eventId) => navigateTo('event-detail', { eventId })}
-          />
-        );
-
-      case 'event-detail':
-        return navParams.eventId ? (
-          <EventDetailPage
-            eventId={navParams.eventId}
-            user={user}
-            onBack={() => navigateTo('events')}
-          />
-        ) : <NotFoundPage user={user} onNavigate={navigateLoose as (view: string) => void} />;
-
-      // ── Actualités ──────────────────────────────────────────────────
-
-      case 'news':
-        return (
-          <NewsPage
-            user={user!}  // NewsPage exige User non-null ; resolvedView garantit user !== null ici
-            onNewsClick={(newsId) => navigateTo('news-detail', { newsId })}
-          />
-        );
-
-      case 'news-detail':
-        return navParams.newsId ? (
-          <NewsDetailPage
-            newsId={navParams.newsId}
-            user={user}
-            onBack={() => navigateTo('news')}
-          />
-        ) : <NotFoundPage user={user} onNavigate={navigateLoose as (view: string) => void} />;
-
-      // ── Espace personnel ────────────────────────────────────────────
-
-      case 'favorites':
-        return (
-          <FavoritesPage
-            user={user}
-            onNavigate={navigateLoose}
-            onToggleFavorite={handleToggleFavorite}
-          />
-        );
-
-      case 'borrows':
-        return <BorrowsPage user={user} />;
-
-      case 'profile':
-        return (
-          <ProfilePage
-            user={user}
-            onLogout={handleLogout}
-            onToggleMemberStatus={handleToggleMemberStatus}
-            onNavigate={navigateLoose}
-            onUpdateUser={handleUpdateUser}
-          />
-        );
-
-      case 'settings':
-        return (
-          <SettingsPage
-            user={user}
-            onLogout={handleLogout}
-            onChangePassword={changePassword}
-          />
-        );
-
-      // ── Recherche & IA ──────────────────────────────────────────────
-
-      case 'search':
-        return (
-          <SearchPage
-            user={user}
-            onNavigate={navigateLoose}
-          />
-        );
-
-      case 'ai-chat':
-        return (
-          <AIChatPage
-            user={user}
-            onNavigate={navigateLoose}
-          />
-        );
-
-      // ── 404 ─────────────────────────────────────────────────────────
-
-      default:
-        return (
-          <NotFoundPage
-            user={user}
-            onNavigate={navigateLoose as (view: string) => void}
-          />
-        );
-    }
+  const handleUpdateUser = async (updates: any) => {
+    return await updateUser(updates);
   };
 
   return (
     <>
-      <div className={!AUTH_VIEWS.includes(resolvedView) ? "pb-20" : ""}>
-        {renderPage()}
-      </div>
-      {!AUTH_VIEWS.includes(resolvedView) && (
-        <BottomNavigation 
-          currentView={resolvedView} 
-          onNavigate={navigateLoose as (view: View) => void} 
-        />
-      )}
-      <Toaster
-        position="top-center"
-        richColors
-        closeButton
-        duration={3000}
-      />
+      <Routes>
+        {/* ── Authentification (publiques) ── */}
+        <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
+        <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+
+        {/* ── Pages protégées (avec bottom nav) ── */}
+        <Route path="/home" element={
+          <ProtectedRoute>
+            <AppLayout><HomePage user={user!} /></AppLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/catalog" element={
+          <ProtectedRoute>
+            <AppLayout><CatalogPage user={user} /></AppLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/catalog/:bookId" element={
+          <ProtectedRoute>
+            <AppLayout>
+              <BookDetailPage user={user!} onToggleFavorite={handleToggleFavorite} />
+            </AppLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/clubs" element={
+          <ProtectedRoute>
+            <AppLayout><ClubsPage user={user} /></AppLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/clubs/:clubId" element={
+          <ProtectedRoute>
+            <AppLayout><ClubDetailPage user={user} /></AppLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/events" element={
+          <ProtectedRoute>
+            <AppLayout><EventsPage user={user} /></AppLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/events/:eventId" element={
+          <ProtectedRoute>
+            <AppLayout><EventDetailPage user={user} /></AppLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/news" element={
+          <ProtectedRoute>
+            <AppLayout><NewsPage user={user!} /></AppLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/news/:newsId" element={
+          <ProtectedRoute>
+            <AppLayout><NewsDetailPage user={user} /></AppLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/favorites" element={
+          <ProtectedRoute>
+            <AppLayout>
+              <FavoritesPage user={user} onToggleFavorite={handleToggleFavorite} />
+            </AppLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/borrows" element={
+          <ProtectedRoute>
+            <AppLayout><BorrowsPage user={user} /></AppLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ProfilePage
+                user={user}
+                onLogout={logout}
+                onUpdateUser={handleUpdateUser}
+              />
+            </AppLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SettingsPage
+                user={user}
+                onLogout={logout}
+                onChangePassword={changePassword}
+              />
+            </AppLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/search" element={
+          <ProtectedRoute>
+            <AppLayout><SearchPage user={user} /></AppLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/chat" element={
+          <ProtectedRoute>
+            <AppLayout><AIChatPage user={user} /></AppLayout>
+          </ProtectedRoute>
+        } />
+
+        {/* ── 404 ── */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+
+      <Toaster position="top-center" richColors closeButton duration={3000} />
     </>
   );
 }

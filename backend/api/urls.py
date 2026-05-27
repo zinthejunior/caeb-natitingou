@@ -16,8 +16,6 @@ router.register(r'reservations',   views.ReservationViewSet,         basename='r
 router.register(r'contacts',       views.ClubContactMessageViewSet,  basename='contact')
 router.register(r'chat',           views.ChatSessionViewSet,         basename='chat')
 router.register(r'recommandations', views.RecommendationViewSet,       basename='recommendation')
-router.register(r'lab-stations',     views.LabStationViewSet)
-router.register(r'lab-reservations', views.LabReservationViewSet,       basename='lab-reservation')
 router.register(r'participations-evenements', views.ParticipationEventViewSet, basename='participation-event')
 
 urlpatterns = [

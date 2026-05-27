@@ -3,7 +3,7 @@ from .models import (
     User, Book, Borrow, Interaction, Notification,
     ReadingClub, Event, News, Review, Reservation,
     ClubContactMessage, ChatSession, ChatMessage,
-    LabStation, LabReservation, ParticipationEvent
+    ParticipationEvent
 )
 
 
@@ -25,9 +25,19 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'username', 'password', 'prenom', 'nom', 'firstName', 'lastName', 'email', 'telephone',
             'type_compte', 'date_naissance', 'niveau_etude', 'educationLevel', 'classe',
             'date_inscription', 'createdAt', 'favorites', 'intentions', 'estMembre', 'isMember',
-            'preferredGenres', 'sous_genre_prefere', 'pseudo', 'bio', 'avatar'
+            'preferredGenres', 'sous_genre_prefere', 'pseudo', 'bio', 'avatar', 'demande_adhesion'
         ]
         read_only_fields = ['id', 'date_inscription', 'createdAt']
+
+    def validate_email(self, value):
+        """
+        Vérifie l'unicité de l'adresse email lors de l'inscription pour éviter les doublons.
+        """
+        if value:
+            # Recherche insensible à la casse d'une autre adresse email identique
+            if User.objects.filter(email__iexact=value).exists():
+                raise serializers.ValidationError("Cette adresse email est déjà utilisée par un autre compte.")
+        return value
 
     def get_isMember(self, obj):
         return obj.type_compte == 'membre'
@@ -80,37 +90,45 @@ class BookSerializer(serializers.ModelSerializer):
     targetAudience = serializers.CharField(source='categorie_age', required=False)
 
     def get_estNouveau(self, obj):
-        return getattr(obj, 'is_new', False)
+        return obj.is_new
         
     def get_estPopulaire(self, obj):
-        return getattr(obj, 'is_popular', False)
+        return obj.is_popular
 
     class Meta:
         model  = Book
         fields = [
             'id', 'titre', 'auteur', 'couverture', 'cover', 'genre', 'sous_genre',
             'annee', 'nbPages', 'langue', 'resume', 'synopsis', 'note', 'nbAvis',
-            'exemplaires', 'estNouveau', 'estPopulaire', 'publicCible', 'targetAudience'
+            'exemplaires', 'estNouveau', 'estPopulaire', 'publicCible', 'targetAudience',
+            'cote', 'section', 'localisation', 'codes_barres', 'description', 'mots_cles',
+            'nb_emprunts', 'popularite', 'nb_emprunteurs_uniq', 'duree_emprunt_moy',
+            'score_lecture_moy', 'score_lecture_max', 'popularite_log'
         ]
 
 
 class BorrowSerializer(serializers.ModelSerializer):
     livre           = BookSerializer(read_only=True)
     utilisateur_id  = serializers.CharField(source='user_id')
-    date_emprunt    = serializers.DateField(source='date_emprunt')
-    date_prevue     = serializers.DateField()
-    date_retour     = serializers.DateField(required=False, allow_null=True)
+    
+    # Mappage bidirectionnel entre les anciens noms de champs (exposés à l'API) et les nouveaux noms physiques (en base)
+    date_emprunt    = serializers.DateField(source='date_sortie')
+    date_prevue     = serializers.DateField(source='date_retour_prevue')
+    date_retour     = serializers.DateField(source='date_retour_effective', required=False, allow_null=True)
     prolonge        = serializers.BooleanField(source='renouvele', required=False)
+    
     book            = BookSerializer(source='livre', read_only=True)
-    borrowDate      = serializers.DateField(source='date_emprunt', read_only=True)
-    returnDate      = serializers.DateField(source='date_prevue', read_only=True)
+    borrowDate      = serializers.DateField(source='date_sortie', read_only=True)
+    returnDate      = serializers.DateField(source='date_retour_prevue', read_only=True)
     isExtended      = serializers.BooleanField(source='renouvele', read_only=True)
+    duree_pret_jours = serializers.IntegerField(read_only=True)
 
     class Meta:
         model  = Borrow
         fields = [
-            'id', 'utilisateur_id', 'livre', 'book', 'date_emprunt', 'borrowDate', 
-            'date_prevue', 'returnDate', 'date_retour', 'renouvele', 'isExtended', 'prolonge', 'statut'
+            'id', 'utilisateur_id', 'livre', 'book', 'date_sortie', 'date_emprunt', 'borrowDate', 
+            'date_retour_prevue', 'date_prevue', 'returnDate', 'date_retour_effective', 'date_retour', 
+            'renouvele', 'isExtended', 'prolonge', 'statut', 'duree_pret_jours'
         ]
 
 
@@ -282,21 +300,6 @@ class ChatSessionSerializer(serializers.ModelSerializer):
         model  = ChatSession
         fields = ['id', 'titre', 'created_at', 'updated_at', 'messages']
         read_only_fields = ['id', 'created_at', 'updated_at']
-
-
-class LabStationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model  = LabStation
-        fields = '__all__'
-
-
-class LabReservationSerializer(serializers.ModelSerializer):
-    station_name = serializers.CharField(source='station.name', read_only=True)
-    
-    class Meta:
-        model  = LabReservation
-        fields = ['id', 'user', 'station', 'station_name', 'date', 'start_time', 'end_time', 'purpose', 'created_at']
-        read_only_fields = ['id', 'user', 'created_at']
 
 
 class ParticipationEventSerializer(serializers.ModelSerializer):

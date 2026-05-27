@@ -19,5 +19,6 @@ node_modules/
 frontend/.env.local
 backend/.env
 fastapi_kossi/.env
+.env.local
 
 *.md

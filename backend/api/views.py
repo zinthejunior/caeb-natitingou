@@ -20,14 +20,14 @@ from .models import (
     User, Book, Borrow, Interaction, Notification,
     ReadingClub, Event, News, Review, Reservation,
     ClubContactMessage, ChatSession, ChatMessage,
-    LabStation, LabReservation, ParticipationEvent
+    ParticipationEvent
 )
 from .serializers import (
     UserSerializer, UserPasswordSerializer, BookSerializer, BorrowSerializer,
     InteractionSerializer, NotificationSerializer, ReadingClubSerializer,
     EventSerializer, NewsSerializer, ReviewSerializer, ReservationSerializer,
     ClubContactMessageSerializer, ChatSessionSerializer, ChatMessageSerializer,
-    LabStationSerializer, LabReservationSerializer, ParticipationEventSerializer
+    ParticipationEventSerializer
 )
 
 
@@ -72,7 +72,8 @@ def get_public_stats(request):
     total_users = User.objects.count()
     clubs_count = ReadingClub.objects.count()
     news_count = News.objects.count()
-    lab_count = LabStation.objects.count() if LabStation.objects.exists() else 1
+    # Le Cyberespace / Lab n'est plus géré dans cette base
+    lab_count = 0
     # Expertise CAEB fondée en 1978
     expertise_years = datetime.now().year - 1978
     
@@ -163,23 +164,7 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.save()
         return Response(serializer.data)
 
-    @action(detail=False, methods=['post'], url_path='verify-code')
-    def verify_code(self, request):
-        """
-        Vérifie le code reçu par l'utilisateur (Email, SMS ou WhatsApp).
-        """
-        code = request.data.get('code')
-        user_id = request.data.get('user_id')
-        try:
-            user = User.objects.get(id=user_id)
-            if user.confirmation_code == code:
-                user.is_verified = True
-                user.confirmation_code = None # Code à usage unique
-                user.save()
-                return Response({'detail': 'Compte vérifié avec succès !'})
-            return Response({'error': 'Code incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
-        except User.DoesNotExist:
-            return Response({'error': 'Utilisateur non trouvé.'}, status=status.HTTP_404_NOT_FOUND)
+
 
     @action(detail=False, methods=['post'], url_path='me/change-password')
     def change_password(self, request):
@@ -322,16 +307,37 @@ def choices_view(request):
 
 class BorrowViewSet(viewsets.ModelViewSet):
     """
-    Gestion des emprunts de l'utilisateur connecté.
-    Chaque utilisateur ne voit QUE ses propres emprunts (filtrage par user).
-    Réservé aux utilisateurs authentifiés.
+    Gestion des emprunts physiques.
+    - Les abonnés ordinaires ne voient que leurs propres emprunts.
+    - Les bibliothécaires / admins ont accès à l'ensemble des prêts pour gestion.
     """
     serializer_class   = BorrowSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        """Filtre les emprunts pour ne retourner que ceux de l'utilisateur connecté."""
-        return Borrow.objects.filter(user=self.request.user).select_related('livre')
+        """
+        Filtre les emprunts : les utilisateurs normaux ne voient que les leurs,
+        les administrateurs / bibliothécaires voient tous les emprunts pour pouvoir les gérer.
+        """
+        user = self.request.user
+        if user.is_staff:
+            return Borrow.objects.all().select_related('livre', 'user')
+        return Borrow.objects.filter(user=user).select_related('livre')
+
+    def perform_create(self, serializer):
+        """
+        Enregistre l'emprunt physique en calculant la date_retour_prevue (date_sortie + 14 jours).
+        """
+        from datetime import timedelta
+        # Récupération ou initialisation de la date de sortie physique
+        date_sortie = serializer.validated_data.get('date_sortie')
+        if not date_sortie:
+            # En secours, on prend la date du jour
+            from django.utils.timezone import now
+            date_sortie = now().date()
+            
+        date_retour_prevue = date_sortie + timedelta(days=14)
+        serializer.save(date_retour_prevue=date_retour_prevue)
 
 
 # ── INTERACTIONS ──────────────────────────────────────────────
@@ -613,70 +619,3 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
 
         msg = ChatMessage.objects.create(session=session, role=role, content=content)
         return Response(ChatMessageSerializer(msg).data, status=status.HTTP_201_CREATED)
-
-
-# ── LABORATOIRE IA ──────────────────────────────────────────────
-
-class LabStationViewSet(viewsets.ModelViewSet):
-    """
-    Postes informatiques du Laboratoire IA.
-    - Lecture publique : tous peuvent voir les postes et leur statut.
-    - Écriture réservée aux administrateurs.
-    """
-    queryset           = LabStation.objects.all()
-    serializer_class   = LabStationSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [permissions.IsAdminUser()]
-        return [permissions.AllowAny()]
-
-
-class LabReservationViewSet(viewsets.ModelViewSet):
-    """
-    Réservations de postes du Laboratoire IA.
-    Règles métier :
-      - Seuls les membres connectés peuvent réserver.
-      - Un poste ne peut pas être réservé deux fois sur le même créneau.
-      - Un membre ne peut pas avoir deux réservations simultanées sur la même date.
-    """
-    serializer_class   = LabReservationSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        """Un membre ne voit que ses propres réservations lab. Un admin voit tout."""
-        user = self.request.user
-        if user.is_staff:
-            return LabReservation.objects.select_related('user', 'station').order_by('-date', '-start_time')
-        return LabReservation.objects.filter(user=user).select_related('station').order_by('-date', '-start_time')
-
-    def perform_create(self, serializer):
-        """
-        Crée une réservation après vérifications :
-          1. L'utilisateur doit être membre actif.
-          2. Le poste doit être actif (pas en maintenance).
-          3. Le créneau ne doit pas déjà être réservé.
-        """
-        from rest_framework.exceptions import PermissionDenied, ValidationError
-
-        user = self.request.user
-        if user.type_compte != 'membre':
-            raise PermissionDenied("Seuls les membres peuvent réserver un poste du laboratoire.")
-
-        station = serializer.validated_data.get('station')
-        if not station.isActive:
-            raise ValidationError("Ce poste est actuellement en maintenance.")
-
-        date       = serializer.validated_data.get('date')
-        start_time = serializer.validated_data.get('start_time')
-
-        # Vérifier que le créneau est libre
-        conflit = LabReservation.objects.filter(
-            station=station, date=date, start_time=start_time,
-            statut__in=['en_attente', 'confirmee']
-        ).exists()
-        if conflit:
-            raise ValidationError("Ce créneau est déjà réservé sur ce poste.")
-
-        serializer.save(user=user)
