@@ -547,6 +547,24 @@ async def _fetch_backend_recommendations(authorization: Optional[str]) -> List[s
 
     return []
 
+
+def _has_recommendation_intent(text: str) -> bool:
+    """Détermine si le message de l'utilisateur contient une intention de recherche,
+    d'emprunt ou de recommandation de livre.
+    """
+    if not text:
+        return False
+    # Mots-clés indiquant une intention de lecture/recommandation/recherche de livre
+    keywords = [
+        "recommande", "recommander", "recommandation", "suggestions", "suggestion", "suggere", "suggérer",
+        "cherche", "chercher", "trouve", "trouver", "propose", "proposer", "conseil", "conseille",
+        "conseiller", "quel livre", "quels livres", "lectures", "lecture", "lire", "ouvrage", "ouvrages",
+        "écrivain", "ecrivain", "auteur", "roman", "romans", "manga", "bd", "conte", "contes", "poésie", "poeme"
+    ]
+    text_lower = text.lower()
+    return any(kw in text_lower for kw in keywords)
+
+
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @app.get("/")
@@ -577,7 +595,8 @@ async def chat_with_kossi(request: ChatRequest, authorization: Optional[str] = H
         "- Les données métier (catalogue, clubs, événements, actualités, profil utilisateur) proviennent de l'API backend.\n"
         "- N'utilise que les informations non sensibles du profil pour personnaliser les réponses.\n"
         "- L'historique de discussion de l'utilisateur (sessions) est disponible et peut être utilisé pour contextualiser les réponses.\n"
-        "- Ne divulgue jamais les détails techniques internes, les clés ou l'architecture."
+        "- Ne divulgue jamais les détails techniques internes, les clés ou l'architecture.\n"
+        "- Tu ne dois JAMAIS générer, afficher ou mentionner d'URLs ou d'adresses techniques du backend ou de l'API (comme localhost, /api/, 127.0.0.1 ou des ports système). Les seules URLs autorisées à figurer dans tes réponses sont les liens web externes réels issus des sources de recherche internet (comme ChatGPT ou Perplexity) pour appuyer tes réponses."
     )
 
     system_prompt = {"role": "system", "content": system_prompt_text + extra_instructions}
@@ -776,21 +795,40 @@ async def chat_with_kossi(request: ChatRequest, authorization: Optional[str] = H
             if authorization and chat_session:
                 await _append_chat_message(str(chat_session.get("id")), "assistant", bot_reply, authorization)
 
-            # Essayer d'abord de récupérer des recommandations personnalisées
-            # depuis le backend. Si le backend ne renvoie rien, on utilise un
-            # fallback local basé sur le catalogue et les mots-clés du message.
-            suggested_books = await _fetch_backend_recommendations(authorization)
-            if not suggested_books:
-                terms = _extract_search_terms(request.messages)
-                suggested_books = _match_books(books, terms)
-
-            # Si toujours aucune recommandation locale, convertir les titres
-            # extraits des sources web en suggestions (respecter la limite).
-            # Remarque : ces suggestions proviennent de pages web et doivent
-            # idéalement être vérifiées avant d'être présentées comme
-            # recommandations officielles si la qualité est critique.
-            if (not suggested_books or len(suggested_books) == 0) and sources:
-                suggested_books = [s.get("title") for s in sources if s.get("title")][:MAX_SUGGESTED_BOOKS]
+            # Déterminer les livres suggérés uniquement si demandés ou mentionnés
+            suggested_books = []
+            
+            # 1. Extraction des livres du catalogue cités par l'assistant dans sa réponse
+            mentioned_books = []
+            if bot_reply and books:
+                reply_lower = bot_reply.lower()
+                for livre in books:
+                    titre = livre.get("titre") or livre.get("Titre") or livre.get("title")
+                    if titre:
+                        titre_str = str(titre)
+                        # Éviter les faux positifs pour les mots très courts
+                        if len(titre_str) >= 4 and titre_str.lower() in reply_lower:
+                            if titre_str not in mentioned_books:
+                                mentioned_books.append(titre_str)
+            
+            # 2. Si l'utilisateur a exprimé une intention de recommandation ou de recherche de livre
+            intent_books = []
+            if last_user_text and _has_recommendation_intent(last_user_text):
+                intent_books = await _fetch_backend_recommendations(authorization)
+                if not intent_books:
+                    terms = _extract_search_terms(request.messages)
+                    intent_books = _match_books(books, terms)
+                if (not intent_books or len(intent_books) == 0) and sources:
+                    intent_books = [s.get("title") for s in sources if s.get("title")][:MAX_SUGGESTED_BOOKS]
+            
+            # Fusionner les deux listes en privilégiant les livres mentionnés, sans doublon, sous la limite MAX_SUGGESTED_BOOKS
+            seen_books = set()
+            for b in mentioned_books + intent_books:
+                if b not in seen_books:
+                    seen_books.add(b)
+                    suggested_books.append(b)
+                    if len(suggested_books) >= MAX_SUGGESTED_BOOKS:
+                        break
 
             return ChatResponse(response=bot_reply, suggested_books=suggested_books, sources=sources)
 
