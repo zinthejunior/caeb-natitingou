@@ -1,4 +1,36 @@
-import { useState, useEffect } from "react";
+/**
+ * =============================================================================
+ * PAGE D'INSCRIPTION (RegisterPage)
+ * =============================================================================
+ * 
+ * Cette page permet aux nouveaux utilisateurs de créer un compte.
+ * L'inscription se fait en 3 étapes (wizard) :
+ * 
+ * ÉTAPE 1 - Identifiants :
+ * - Email (vérifié en temps réel pour éviter les doublons)
+ * - Mot de passe et confirmation
+ * 
+ * ÉTAPE 2 - Informations personnelles :
+ *   (accessible seulement si l'email est valide et le compte n'existe pas encore)
+ * - Prénom et nom
+ * - Date de naissance (optionnel)
+ * - Niveau d'études et classe
+ * 
+ * ÉTAPE 3 - Préférences de lecture :
+ * - Genres littéraires préférés
+ * - Sous-genres
+ * - Intentions (pourquoi rejoindre la bibliothèque)
+ * - Acceptation des conditions d'utilisation
+ * 
+ * CONCEPTS REACT UTILISÉS :
+ * - useState : gestion de l'état du formulaire multi-étapes
+ * - Formulaire contrôlé : chaque input est lié à l'état
+ * - Validation côté client : vérifications avant envoi
+ * - Navigation conditionnelle : affichage selon l'étape actuelle
+ * =============================================================================
+ */
+
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2, ChevronRight, Check, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,27 +41,38 @@ import { genreList, educationLevels, classesParNiveau, intentionsList } from "@/
 import { useAuthentification } from "@/hooks/useAuthentification";
 
 export function RegisterPage() {
+  // ─── HOOKS ─────────────────────────────────────────────────────────────────
   const { inscription, verifierEmail, chargement: isLoading } = useAuthentification();
   const navigate = useNavigate();
   const onRegister = inscription;
   const onBack = () => navigate("/");
   const onLoginClick = () => navigate("/login");
-  const [step, setStep] = useState(1);
+  
+  // ─── ÉTAT DU WIZARD (étape actuelle) ───────────────────────────────────────
+  const [step, setStep] = useState(1); // Étape 1, 2 ou 3
+  
+  // ─── ÉTAT DU FORMULAIRE ────────────────────────────────────────────────────
+  // Toutes les données saisies par l'utilisateur
   const [formData, setFormData] = useState({
+    // Étape 1 : Identifiants
     email: "",
     password: "",
     confirmPassword: "",
+    // Étape 2 : Informations personnelles
     firstName: "",
     lastName: "",
     birthDate: "",
     educationLevel: "",
-    preferredGenres: [],
     classe: "",
-    classeCustom: "",
-    sous_genre_prefere: [],
-    intentions: []
+    classeCustom: "",        // Si "Autre" est sélectionné
+    // Étape 3 : Préférences
+    preferredGenres: [],     // Tableau de genres sélectionnés
+    sous_genre_prefere: [],  // Tableau de sous-genres
+    intentions: []           // Pourquoi rejoindre la bibliothèque
   });
 
+  // ─── MAPPING SOUS-GENRES PAR GENRE ─────────────────────────────────────────
+  // Chaque genre principal a une liste de sous-genres associés
   const SOUS_GENRES_PAR_GENRE = {
     "Roman": ["Contemporain", "Classique", "Historique", "Science-fiction", "Fantastique", "Policier", "famille"],
     "Policier": ["Enquête", "Thriller", "Noir", "Espionnage", "Legal"],
@@ -48,9 +91,22 @@ export function RegisterPage() {
     "Fantastique": ["Épique", "Urbain", "Horreur", "Science-fiction", "Contemporain"],
     "Autre": []
   };
-  const [showPassword, setShowPassword] = useState(false);
-  const [acceptTerms, setAcceptTerms] = useState(false);
+  
+  // ─── AUTRES ÉTATS ──────────────────────────────────────────────────────────
+  const [showPassword, setShowPassword] = useState(false);   // Afficher/masquer mot de passe
+  const [acceptTerms, setAcceptTerms] = useState(false);     // Acceptation des CGU
+  
+  // ─── FONCTIONS UTILITAIRES ─────────────────────────────────────────────────
+  
+  /**
+   * Met à jour un champ du formulaire
+   * Utilise la syntaxe de spread pour créer un nouvel objet (immutabilité)
+   */
   const updateField = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
+  
+  /**
+   * Récupère tous les sous-genres disponibles pour les genres sélectionnés
+   */
   const getAllSousGenres = (genres) => {
     return genres.flatMap((g) => SOUS_GENRES_PAR_GENRE[g] || []);
   };
@@ -376,9 +432,9 @@ export function RegisterPage() {
           className="w-5 h-5 mt-0.5 rounded cursor-pointer accent-[var(--library-accent)] border-[var(--border-color)]"
         />
                 <label htmlFor="terms" className="text-sm text-muted cursor-pointer leading-relaxed">
-                  J'accepte les{" "}
-                  <a href="#" className="text-accent font-semibold hover:underline">conditions d'utilisation</a>
-                  {" "}et la{" "}
+                  {"J'accepte les "}
+                  <a href="#" className="text-accent font-semibold hover:underline">{"conditions d'utilisation"}</a>
+                  {" et la "}
                   <a href="#" className="text-accent font-semibold hover:underline">politique de confidentialité</a>
                 </label>
               </div>

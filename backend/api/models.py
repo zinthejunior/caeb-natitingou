@@ -501,24 +501,27 @@ def update_book_stats_on_borrow_save(sender, instance, **kwargs):
     # popularite_log = log(1 + nb_emprunteurs_uniq) pour normaliser l'impact
     book.popularite_log = math.log1p(book.nb_emprunteurs_uniq)
 
-    # Durée moyenne d'emprunt (sur les emprunts effectivement rendus)
-    returned_borrows = Borrow.objects.filter(
+    # Durée moyenne d'emprunt (sur les emprunts effectivement rendus) optimisée via SQL
+    from django.db.models import F, Avg
+    
+    stats = Borrow.objects.filter(
         livre=book, 
         statut='rendu', 
         date_retour_effective__isnull=False, 
         date_sortie__isnull=False
+    ).annotate(
+        duration=F('date_retour_effective') - F('date_sortie')
+    ).aggregate(
+        avg_duration=Avg('duration')
     )
     
-    total_days = 0
-    count_returned = 0
-    for b in returned_borrows:
-        duree = b.duree_pret_jours  # Propriété calculée dynamiquement
-        if duree is not None:
-            total_days += duree
-            count_returned += 1
-            
-    if count_returned > 0:
-        book.duree_emprunt_moy = float(total_days) / count_returned
+    avg_dur = stats.get('avg_duration')
+    if avg_dur is not None:
+        # PostgreSQL retourne un timedelta, SQLite peut retourner un nombre
+        if hasattr(avg_dur, 'days'):
+            book.duree_emprunt_moy = float(avg_dur.days)
+        else:
+            book.duree_emprunt_moy = float(avg_dur)
     else:
         book.duree_emprunt_moy = 0.0
 

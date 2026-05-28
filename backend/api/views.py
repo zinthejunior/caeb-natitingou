@@ -16,6 +16,8 @@ import joblib
 import os
 import logging
 from . import recommandations as reco_engine
+from .throttling import InscriptionRateThrottle, ContactRateThrottle, AuthRateThrottle
+from . import emails as mail_service
 from .models import (
     User, Book, Borrow, Interaction, Notification,
     ReadingClub, Event, News, Review, Reservation,
@@ -166,6 +168,18 @@ class UserViewSet(viewsets.ModelViewSet):
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
+    def get_throttles(self):
+        """
+        Applique un throttling renforcé sur les actions publiques sensibles :
+        - create       : inscription d'un nouveau compte (max 5/min par IP)
+        - check_email  : vérification d'existence d'email (max 10/min par IP)
+        """
+        if self.action == 'create':
+            return [InscriptionRateThrottle()]
+        if self.action == 'check_email':
+            return [AuthRateThrottle()]
+        return super().get_throttles()
+
     @action(detail=False, methods=['get'], url_path='me')
     def me(self, request):
         """Renvoie le profil complet de l'utilisateur actuellement connecté."""
@@ -181,6 +195,23 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+
+    def create(self, request, *args, **kwargs):
+        """
+        Inscription d'un nouvel utilisateur.
+        Envoie un email de bienvenue après la création du compte.
+        En mode DEBUG : l'email s'affiche dans la console Django.
+        En production  : envoi réel via SMTP.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        # Envoi de l'email de bienvenue (non bloquant : l'erreur est loguée, pas levée)
+        mail_service.envoyer_email_bienvenue(user)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     @action(detail=False, methods=['post'], url_path='me/change-password')
     def change_password(self, request):
@@ -245,41 +276,32 @@ class BookViewSet(viewsets.ModelViewSet):
 def choices_view(request):
     """
     Endpoint GET /api/choices/
-    Retourne les listes de choix dynamiques extraites de la base de données :
-      - genres         : extraits des livres existants
-      - sous_genres    : groupés par genre
-      - niveaux_etude  : extraits des profils utilisateurs
-      - classes        : groupées par niveau d'étude
-      - intentions     : liste statique (issues du cahier des charges)
-
-    Aucune table dédiée — tout est calculé depuis les données existantes.
-    Utilisé notamment par le formulaire d'inscription (RegisterPage).
+    Retourne les listes de choix dynamiques extraites de la base de données.
+    Optimisé pour limiter les traitements Python superflus.
     """
-    # Genres distincts depuis la table des livres (triés alphabétiquement)
+    from collections import defaultdict
+
+    # Genres distincts
     genres = list(
         Book.objects.exclude(genre__isnull=True).exclude(genre='')
         .values_list('genre', flat=True).distinct().order_by('genre')
     )
 
-    # Sous-genres distincts, regroupés par genre principal
+    # Sous-genres groupés par genre
     sous_genres_qs = (
         Book.objects.exclude(sous_genre__isnull=True).exclude(sous_genre='')
         .values('genre', 'sous_genre').distinct()
     )
-    sous_genres_par_genre: dict = {}
+    sous_genres_par_genre = defaultdict(list)
     for row in sous_genres_qs:
-        g, sg = row['genre'], row['sous_genre']
-        if g not in sous_genres_par_genre:
-            sous_genres_par_genre[g] = []
-        if sg not in sous_genres_par_genre[g]:
-            sous_genres_par_genre[g].append(sg)
+        sous_genres_par_genre[row['genre']].append(row['sous_genre'])
 
-    # Niveaux d'étude distincts depuis les profils utilisateurs
-    niveaux = list(
+    # Niveaux d'étude
+    niveaux_db = (
         User.objects.exclude(niveau_etude__isnull=True).exclude(niveau_etude='')
-        .values_list('niveau_etude', flat=True).distinct().order_by('niveau_etude')
+        .values_list('niveau_etude', flat=True).distinct()
     )
-    niveaux = [n.capitalize() for n in niveaux]  # Normalisation de la casse
+    niveaux = sorted({n.capitalize() for n in niveaux_db})
 
     # Classes groupées par niveau d'étude
     classes_qs = (
@@ -287,19 +309,14 @@ def choices_view(request):
         .exclude(classe='')
         .values('niveau_etude', 'classe').distinct()
     )
-    classes_par_niveau: dict = {}
+    classes_par_niveau = defaultdict(list)
     for row in classes_qs:
-        n  = row['niveau_etude'].capitalize()
-        cl = row['classe']
-        if n not in classes_par_niveau:
-            classes_par_niveau[n] = []
-        if cl not in classes_par_niveau[n]:
-            classes_par_niveau[n].append(cl)
-    # Tri alphabétique des classes dans chaque niveau
+        classes_par_niveau[row['niveau_etude'].capitalize()].append(row['classe'])
+        
     for n in classes_par_niveau:
         classes_par_niveau[n].sort()
 
-    # Intentions de lecture (base + dynamique depuis les profils existants)
+    # Intentions de lecture (base + dynamique)
     intentions_base = [
         "Emprunter des livres physiques",
         "Consulter le catalogue en ligne",
@@ -314,21 +331,21 @@ def choices_view(request):
     intentions_db = User.objects.exclude(intentions__isnull=True).values_list('intentions', flat=True)
     all_intentions = set(intentions_base)
     for i_json in intentions_db:
+        if not i_json: continue
         try:
             i_list = json.loads(i_json) if isinstance(i_json, str) else i_json
             if isinstance(i_list, list):
-                for item in i_list:
-                    all_intentions.add(item)
-        except:
-            continue
-    
+                all_intentions.update(i_list)
+        except Exception:
+            pass
+            
     intentions = sorted(list(all_intentions))
 
     return Response({
         'genres':               genres,
-        'sous_genres_par_genre': sous_genres_par_genre,
+        'sous_genres_par_genre': dict(sous_genres_par_genre),
         'niveaux_etude':        niveaux,
-        'classes_par_niveau':   classes_par_niveau,
+        'classes_par_niveau':   dict(classes_par_niveau),
         'intentions':           intentions,
     })
 
@@ -456,12 +473,17 @@ class ReadingClubViewSet(viewsets.ModelViewSet):
             msg = 'pas membre'
         return Response({'status': msg, 'memberCount': club.member_count})
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny])
+    @action(
+        detail=True,
+        methods=['post'],
+        permission_classes=[permissions.AllowAny],
+        throttle_classes=[ContactRateThrottle],  # Max 10 messages/min par IP
+    )
     def contact(self, request, pk=None):
         """
         POST /clubs/{id}/contact/
         Envoie un message de contact au responsable du club.
-        Accessible sans compte (AllowAny).
+        Accessible sans compte (AllowAny) mais limité par IP pour éviter le spam.
         """
         club = self.get_object()
         serializer = ClubContactMessageSerializer(data={**request.data, 'clubId': pk})
@@ -649,3 +671,87 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
 
         msg = ChatMessage.objects.create(session=session, role=role, content=content)
         return Response(ChatMessageSerializer(msg).data, status=status.HTTP_201_CREATED)
+
+
+# ── Custom Authentication Views (Cookies HttpOnly) ──
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
+
+def set_jwt_cookies(response, access_token, refresh_token):
+    from django.conf import settings
+    secure = not settings.DEBUG
+    response.set_cookie(
+        key='access',
+        value=access_token,
+        httponly=True,
+        secure=secure,
+        samesite='Lax',
+        max_age=3600 * 24
+    )
+    if refresh_token:
+        response.set_cookie(
+            key='refresh',
+            value=refresh_token,
+            httponly=True,
+            secure=secure,
+            samesite='Lax',
+            max_age=3600 * 24 * 7
+        )
+    return response
+
+class CookieTokenObtainPairView(TokenObtainPairView):
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            access_token = response.data.get('access')
+            refresh_token = response.data.get('refresh')
+            # Ne pas renvoyer le jeton dans le JSON de réponse pour plus de sécu
+            if 'access' in response.data:
+                del response.data['access']
+            if 'refresh' in response.data:
+                del response.data['refresh']
+            response.data['message'] = "Connexion réussie"
+            response = set_jwt_cookies(response, access_token, refresh_token)
+        return response
+
+class CookieTokenRefreshView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.COOKIES.get('refresh')
+        if refresh_token:
+            # Injecter le refresh token dans les data pour que TokenRefreshView le valide
+            request.data['refresh'] = refresh_token
+        
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            access_token = response.data.get('access')
+            new_refresh = response.data.get('refresh', refresh_token)
+            if 'access' in response.data:
+                del response.data['access']
+            if 'refresh' in response.data:
+                del response.data['refresh']
+            response.data['message'] = "Rafraîchissement réussi"
+            response = set_jwt_cookies(response, access_token, new_refresh)
+        return response
+
+class LogoutView(APIView):
+    # permission_classes vide : l'access token peut etre expire au moment de la deconnexion.
+    # On n'exige pas d'etre authentifie, on lit juste le cookie refresh et on le blackliste.
+    permission_classes = []
+
+    def post(self, request):
+        refresh_token = request.COOKIES.get('refresh')
+        response = Response({"message": "Deconnexion reussie"}, status=200)
+        response.delete_cookie('access', path='/')
+        response.delete_cookie('refresh', path='/')
+
+        if refresh_token:
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except Exception:
+                pass  # Token deja expire ou invalide
+
+        return response

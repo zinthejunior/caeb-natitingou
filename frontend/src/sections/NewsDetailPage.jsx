@@ -9,7 +9,7 @@ import { useSEO } from "@/lib/utils";
 import { useParams, useNavigate } from "react-router-dom";
 export function NewsDetailPage({ user }) {
   const { newsId } = useParams();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
   const { news: newsItem, isLoading } = useNewsItem(newsId);
   useSEO(newsItem?.title || "Actualité", newsItem?.excerpt || "Détails de l'actualité à la bibliothèque CAEB Natitingou.");
   if (isLoading) return <div className="min-h-screen bg-library-bg flex items-center justify-center">
@@ -148,7 +148,7 @@ export function NewsDetailPage({ user }) {
   }
             <div className="pt-8 border-t border-white/10">
               <p className="text-muted font-medium mb-6">
-                Une question sur cette actualité ? L'équipe de la CAEB est à votre écoute.
+                Une question sur cette actualité ? L&apos;équipe de la CAEB est à votre écoute.
               </p>
               <Button
     className="gap-3 bg-accent text-white hover:opacity-90 shadow-glow font-black h-12 px-8 rounded-2xl animate-pulse-soft"

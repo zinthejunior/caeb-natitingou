@@ -1,3 +1,29 @@
+/**
+ * =============================================================================
+ * PAGE CATALOGUE (CatalogPage)
+ * =============================================================================
+ * 
+ * Cette page affiche tous les livres de la bibliothèque avec des options de
+ * recherche, tri et filtrage.
+ * 
+ * FONCTIONNALITÉS :
+ * - Recherche par titre, auteur ou genre
+ * - Filtrage par genre littéraire et public cible
+ * - Tri par popularité, nouveautés ou notes
+ * - Affichage en grille ou en liste
+ * - Affichage de la disponibilité des livres
+ * 
+ * CONCEPTS REACT UTILISÉS :
+ * - useMemo : optimisation pour éviter les recalculs inutiles
+ * - useState : gestion de l'état local (recherche, filtres, tri)
+ * - useEffect : effets de bord (ex: marquer les données comme prêtes)
+ * 
+ * HOOKS PERSONNALISÉS :
+ * - useLivres : récupère la liste des livres depuis l'API
+ * - useGlobalStats : récupère les statistiques (nombre total de livres)
+ * =============================================================================
+ */
+
 import { useState, useMemo, useEffect } from "react";
 import { Search, Star, X, Grid3X3, List } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -6,17 +32,21 @@ import { ApiImage } from "@/components/ApiImage";
 import { Navbar } from "@/components/Navbar";
 import { useLivres, useGlobalStats } from "@/hooks/useData";
 import { useSEO } from "@/lib/utils";
+
+/**
+ * Composant d'affichage quand aucun livre n'est trouvé
+ * Montre une illustration et un message adapté selon si des filtres sont actifs
+ */
 function EtagereVide({ aDesFiltres }) {
   return <div className="empty-state py-20 surface rounded-2xl border border-[var(--border-color)]">
-      {
-    /* Illustration SVG d'une étagère */
-  }
+      {/* Illustration SVG d'une étagère vide */}
       <svg className="empty-state-illustration" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="10" y="85" width="100" height="6" rx="3" fill="currentColor" className="text-[var(--library-accent)] opacity-20" />
         <rect x="18" y="55" width="18" height="30" rx="2" stroke="currentColor" strokeWidth="1.5" className="text-[var(--library-accent)] opacity-30" fill="none" />
         <rect x="40" y="62" width="14" height="23" rx="2" stroke="currentColor" strokeWidth="1.5" className="text-[var(--library-accent)] opacity-20" fill="none" />
         <rect x="58" y="50" width="20" height="35" rx="2" stroke="currentColor" strokeWidth="1.5" className="text-[var(--library-accent)] opacity-30" fill="none" />
         <rect x="82" y="60" width="16" height="25" rx="2" stroke="currentColor" strokeWidth="1.5" className="text-[var(--library-accent)] opacity-20" fill="none" />
+        {/* Affiche une loupe si des filtres sont actifs, sinon un point d'interrogation */}
         {aDesFiltres && <>
             <circle cx="60" cy="30" r="14" stroke="currentColor" strokeWidth="2" className="text-[var(--library-accent)] opacity-40" fill="none" />
             <line x1="70" y1="40" x2="78" y2="48" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-[var(--library-accent)] opacity-40" />
@@ -31,6 +61,11 @@ function EtagereVide({ aDesFiltres }) {
       </p>
     </div>;
 }
+
+/**
+ * Squelette de chargement pour l'affichage en grille
+ * Affiché pendant que les données sont récupérées
+ */
 function SkeletonGrille() {
   return <div className="flex flex-col h-full">
       <div className="skeleton skeleton-book-cover mb-3" />
@@ -43,6 +78,10 @@ function SkeletonGrille() {
       </div>
     </div>;
 }
+
+/**
+ * Squelette de chargement pour l'affichage en liste
+ */
 function SkeletonListe() {
   return <div className="surface rounded-xl p-4 border border-[var(--border-color)] flex gap-4">
       <div className="skeleton w-20 h-28 rounded-lg flex-shrink-0" />
@@ -54,32 +93,59 @@ function SkeletonListe() {
       </div>
     </div>;
 }
+
+/**
+ * Composant principal de la page Catalogue
+ * @param {function} onBookClick - Fonction appelée quand on clique sur un livre
+ * @param {object} user - Informations de l'utilisateur connecté
+ */
 export function CatalogPage({ onBookClick, user }) {
+  // ─── RÉCUPÉRATION DES DONNÉES ──────────────────────────────────────────────
+  // useLivres() est un hook personnalisé qui récupère les livres depuis l'API
   const { livres, chargement } = useLivres();
-  const [recherche, setRecherche] = useState("");
-  const [modeAffichage, setModeAffichage] = useState("grid");
-  const [genresSelectionnes, setGenresSelectionnes] = useState([]);
-  const [publicSelectionne, setPublicSelectionne] = useState([]);
+  
+  // ─── ÉTAT LOCAL POUR LA RECHERCHE ET LES FILTRES ───────────────────────────
+  const [recherche, setRecherche] = useState("");           // Texte de recherche
+  const [modeAffichage, setModeAffichage] = useState("grid"); // "grid" ou "list"
+  const [genresSelectionnes, setGenresSelectionnes] = useState([]);    // Filtres genre
+  const [publicSelectionne, setPublicSelectionne] = useState([]);      // Filtres public
   const [afficherDispoUniquement, setAfficherDispoUniquement] = useState(false);
-  const [triPar, setTriPar] = useState("popular");
+  const [triPar, setTriPar] = useState("popular");          // Critère de tri
   const [donneesPretes, setDonneesPretes] = useState(false);
+  
+  // Marquer les données comme prêtes quand le chargement est terminé
   useEffect(() => {
     if (!chargement) setDonneesPretes(true);
   }, [chargement]);
+  
+  // Récupération des statistiques globales pour le SEO
   const { stats } = useGlobalStats();
   const bookCount = stats?.books_count?.toLocaleString() ?? "...";
   useSEO("Catalogue", `Explorez notre catalogue de ${bookCount} ouvrages : romans, essais, jeunesse, et bien plus encore.`);
+  
+  // ─── FILTRAGE ET TRI DES LIVRES (avec useMemo pour optimiser) ──────────────
+  // useMemo mémorise le résultat et ne recalcule que si les dépendances changent
   const livresFiltres = useMemo(() => {
     let resultat = [...livres];
+    
+    // 1. Filtre par recherche textuelle
     if (recherche) {
       const q = recherche.toLowerCase();
       resultat = resultat.filter(
         (l) => l.titre.toLowerCase().includes(q) || l.auteur.toLowerCase().includes(q) || l.genre.toLowerCase().includes(q)
       );
     }
+    
+    // 2. Filtre par genre
     if (genresSelectionnes.length > 0) resultat = resultat.filter((l) => genresSelectionnes.includes(l.genre));
+    
+    // 3. Filtre par public cible
     if (publicSelectionne.length > 0) resultat = resultat.filter((l) => publicSelectionne.includes(l.publicCible || ""));
+    
+    // 4. Filtre disponibilité
     if (afficherDispoUniquement) resultat = resultat.filter((l) => l.exemplaires > 0);
+    
+    // 5. Tri selon le critère sélectionné
     switch (triPar) {
       case "newest":
         resultat.sort((a, b) => (b.annee || 0) - (a.annee || 0));
@@ -87,13 +153,18 @@ export function CatalogPage({ onBookClick, user }) {
       case "rating":
         resultat.sort((a, b) => b.note - a.note);
         break;
-      default:
+      default: // "popular"
         resultat.sort((a, b) => (b.estPopulaire ? 1 : 0) - (a.estPopulaire ? 1 : 0));
     }
+    
     return resultat;
   }, [recherche, genresSelectionnes, publicSelectionne, afficherDispoUniquement, triPar, livres]);
+  
+  // ─── EXTRACTION DES GENRES ET PUBLICS DISPONIBLES ──────────────────────────
   const tousLesGenres = useMemo(() => Array.from(new Set(livres.map((l) => l.genre))).sort(), [livres]);
   const tousLesPublics = useMemo(() => Array.from(new Set(livres.map((l) => l.publicCible || ""))).sort(), [livres]);
+  
+  // ─── FONCTIONS DE GESTION DES FILTRES ──────────────────────────────────────
   const basculerGenre = (genre) => {
     setGenresSelectionnes((precedents) => precedents.includes(genre) ? precedents.filter((g) => g !== genre) : [...precedents, genre]);
   };
@@ -105,6 +176,8 @@ export function CatalogPage({ onBookClick, user }) {
     setPublicSelectionne([]);
     setAfficherDispoUniquement(false);
   };
+  
+  // Calcul du nombre de filtres actifs
   const nbFiltresActifs = genresSelectionnes.length + publicSelectionne.length + (afficherDispoUniquement ? 1 : 0);
   const aDesFiltres = nbFiltresActifs > 0 || recherche.length > 0;
   if (!user) return null;

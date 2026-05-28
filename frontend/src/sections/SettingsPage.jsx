@@ -12,7 +12,7 @@ const Toggle = ({ active, onToggle }) => <button
   className={`relative w-12 h-7 rounded-full transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-accent/20 ${active ? "bg-accent shadow-glow" : "bg-white/10"}`}
 >
     <span className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-medium transition-transform duration-500 ${active ? "translate-x-5" : "translate-x-0"}`} />
-  </button>;
+  </button>; 
 const SectionTitle = ({ icon: Icon, title }) => <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
     {Icon ? <div className="p-2 bg-accent/10 rounded-xl border border-accent/20 shadow-glow">
         <Icon className="w-5 h-5 text-accent" />
@@ -110,7 +110,7 @@ export function SettingsPage({ user, onLogout, onChangePassword }) {
               <span className="text-gradient">Paramètres</span>
             </h1>
           </div>
-          <p className="text-muted text-lg pl-1 font-medium">Configurez votre expérience au sein de l'excellence culturelle.</p>
+          <p className="text-muted text-lg pl-1 font-medium">Configurez votre expérience au sein de l&apos;excellence culturelle.</p>
         </div>
 
         <div className="space-y-5">
@@ -142,7 +142,7 @@ export function SettingsPage({ user, onLogout, onChangePassword }) {
                   {darkMode ? <Moon className="w-6 h-6 text-accent" /> : <Sun className="w-6 h-6 text-blue-500" />}
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-primary">Mode d'affichage</p>
+                  <p className="font-bold text-primary">Mode d&apos;affichage</p>
                   <p className="text-xs text-muted font-medium">{darkMode ? "Thème Midnight Gold — actif" : "Thème Clair Saphir — actif"}</p>
                 </div>
               </div>
@@ -156,8 +156,8 @@ export function SettingsPage({ user, onLogout, onChangePassword }) {
   >
                 <div className="flex items-center gap-3">
                   <div className="text-left text-accent">
-                    <p className="font-bold">Installer l'application (PWA)</p>
-                    <p className="text-xs opacity-90">Accédez à la bibliothèque directement depuis votre écran d'accueil.</p>
+                    <p className="font-bold">Installer l&apos;application (PWA)</p>
+                    <p className="text-xs opacity-90">Accédez à la bibliothèque directement depuis votre écran d&apos;accueil.</p>
                   </div>
                 </div>
               </button>}

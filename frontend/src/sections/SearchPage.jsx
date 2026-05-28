@@ -11,7 +11,7 @@ const SectionTitle = ({ icon: Icon, label, count }) => <div className="flex item
     </div>
     <h2 className="text-2xl font-bold">
       <span className="text-gradient">{label}</span>
-    </h2>
+    </h2> 
     <span className="text-sm text-muted font-bold ml-1">({count})</span>
   </div>;
 export function SearchPage({ user, onNavigate }) {
@@ -139,14 +139,14 @@ export function SearchPage({ user, onNavigate }) {
                   <Search className="w-8 h-8 text-muted opacity-50" />
                 </div>
                 <h3 className="text-lg font-semibold text-primary mb-2">Aucun résultat pour « {query} »</h3>
-                <p className="text-muted">Vérifiez l'orthographe ou essayez un mot-clé différent</p>
+                <p className="text-muted">Vérifiez l&apos;orthographe ou essayez un mot-clé différent</p>
               </div>}
           </div> : <div className="text-center py-20">
             <div className="w-20 h-20 bg-[var(--library-accent)]/10 border border-[var(--library-accent)]/20 rounded-full flex items-center justify-center mx-auto mb-5">
               <Search className="w-10 h-10 text-accent opacity-60" />
             </div>
             <h2 className="text-xl font-semibold text-primary mb-2">Que cherchez-vous ?</h2>
-            <p className="text-muted max-w-xs mx-auto">Tapez un titre, un auteur, le nom d'un club ou d'un événement pour commencer</p>
+            <p className="text-muted max-w-xs mx-auto">Tapez un titre, un auteur, le nom d&apos;un club ou d&apos;un événement pour commencer</p>
           </div>}
       </main>
     </div>;

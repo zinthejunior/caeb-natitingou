@@ -10,7 +10,7 @@ export function LandingPage() {
   const onLoginClick = () => navigate("/login");
   const onRegisterClick = () => navigate("/register");
   const heroRef = useRef(null);
-  const featuresRef = useRef(null);
+  const featuresRef = useRef(null); 
   const booksRef = useRef(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const { stats } = useGlobalStats();
@@ -154,7 +154,7 @@ export function LandingPage() {
     onClick={onRegisterClick}
     className="btn-solid font-semibold shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all sheen relative overflow-hidden"
   >
-                S'inscrire
+                {"S'inscrire"}
               </Button>
             </div>
           </div>
@@ -180,12 +180,12 @@ export function LandingPage() {
 
               <div className="space-y-3">
                 <p className="text-lg text-muted max-w-lg leading-relaxed">
-                  Depuis plus de {displayStats.years} ans, la <span className="font-semibold text-[var(--library-text)]">CAEB</span> s'engage avec la <span className="font-semibold text-accent">Fondation Vallet</span> pour faire rayonner la culture. 
+                  Depuis plus de {displayStats.years} ans, la <span className="font-semibold text-[var(--library-text)]">CAEB</span> s&apos;engage avec la <span className="font-semibold text-accent">Fondation Vallet</span> pour faire rayonner la culture. 
                   Plongez dans un catalogue de <span className="font-semibold text-[var(--library-text)]">{displayStats.books} ouvrages</span> adapté à tous.
                 </p>
                 <p className="text-base text-muted max-w-lg leading-relaxed">
-                  Et préparez l'avenir avec nos{" "}
-                  <span className="font-semibold text-accent">{displayStats.labs} laboratoire{parseInt(displayStats.labs) > 1 ? "s" : ""} d'intelligence artificielle</span>
+                  Et préparez l&apos;avenir avec nos{" "}
+                  <span className="font-semibold text-accent">{displayStats.labs} laboratoire{parseInt(displayStats.labs) > 1 ? "s" : ""} d&apos;intelligence artificielle</span>
                   , une initiative inédite au nord du Bénin.
                 </p>
               </div>
@@ -205,7 +205,7 @@ export function LandingPage() {
     onClick={onLoginClick}
     className="border-[var(--border-strong)] text-primary hover:bg-[var(--library-surface-alt)] font-semibold"
   >
-                  J'ai déjà un compte
+                  J&apos;ai déjà un compte
                 </Button>
               </div>
 
@@ -328,10 +328,10 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16 reveal-on-scroll opacity-0 translate-y-8">
             <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-primary mb-4">
-              Plus qu'une bibliothèque, un espace de vie
+              Plus qu&apos;une bibliothèque, un espace de vie
             </h2>
             <p className="text-muted leading-relaxed max-w-xl mx-auto">
-              Nous croyons que l'éducation transforme des vies. Découvrez un écosystème conçu pour stimuler votre curiosité, encourager l'échange et vous accompagner vers la réussite.
+              Nous croyons que l&apos;éducation transforme des vies. Découvrez un écosystème conçu pour stimuler votre curiosité, encourager l&apos;échange et vous accompagner vers la réussite.
             </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -430,7 +430,7 @@ export function LandingPage() {
   >
                 <Quote className="w-8 h-8 text-[var(--library-accent)]/30 flex-shrink-0" />
                 <p className="text-[var(--library-text)] leading-relaxed italic flex-1">
-                  "{t.text}"
+                  &quot;{t.text}&quot;
                 </p>
                 <div className="flex items-center gap-3 pt-2 border-t border-[var(--border-color)]">
                   <img
@@ -462,7 +462,7 @@ export function LandingPage() {
               <div className="space-y-4 text-muted leading-relaxed">
                 <p>
                   Soutenue par la bienveillance de la <span className="font-semibold text-[var(--library-text)]">Fondation Vallet</span> depuis un quart de siècle, 
-                  la Bibliothèque du CAEB offre à la jeunesse de l'Atacora un cadre d'excellence pour étudier, s'exprimer et se dépasser.
+                  la Bibliothèque du CAEB offre à la jeunesse de l&apos;Atacora un cadre d&apos;excellence pour étudier, s&apos;exprimer et se dépasser.
                 </p>
                 <p>
                   Avec nos salles de lecture apaisantes, notre <span className="font-semibold text-[var(--library-text)]">Wi-Fi gratuit</span>, 
@@ -512,9 +512,9 @@ export function LandingPage() {
       <section className="py-12 surface border-t border-[var(--border-color)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="surface rounded-2xl p-6 md:p-8 shadow-card border border-[var(--border-color)]">
-            <h3 className="font-display text-xl font-semibold text-primary mb-1">Horaires d'ouverture</h3>
+            <h3 className="font-display text-xl font-semibold text-primary mb-1">Horaires d&apos;ouverture</h3>
             <p className="text-sm text-muted mb-6">
-              Nous vous accueillons du lundi au samedi. Pas d'inscription requise pour consulter sur place.
+              Nous vous accueillons du lundi au samedi. Pas d&apos;inscription requise pour consulter sur place.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
@@ -613,7 +613,7 @@ export function LandingPage() {
             Rejoignez des milliers de lecteurs, accédez à nos clubs et développez vos compétences au labo IA.
           </p>
           <p className="text-base font-semibold text-on-accent mb-10 reveal-on-scroll opacity-0 translate-y-8">
-            C'est gratuit. C'est pour vous. Bienvenue chez vous.
+            C&apos;est gratuit. C&apos;est pour vous. Bienvenue chez vous.
           </p>
           <div className="flex flex-wrap justify-center gap-4 reveal-on-scroll opacity-0 translate-y-8">
             <Button
@@ -621,7 +621,7 @@ export function LandingPage() {
     onClick={onRegisterClick}
     className="bg-[var(--library-surface)] text-[var(--library-accent)] font-bold shadow-elevated hover:shadow-glow hover:-translate-y-1 transition-all gap-2 group"
   >
-              Rejoindre l'aventure
+              Rejoindre l&apos;aventure
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button

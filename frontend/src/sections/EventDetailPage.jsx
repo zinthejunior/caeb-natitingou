@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useEvent, useClubs, sinscrireEvenementDetaillee } from "@/hooks/useData";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"; 
 import { useSEO } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -185,7 +185,7 @@ export function EventDetailPage({ user }) {
               <div className="w-16 h-16 bg-accent/20 border-2 border-accent/30 rounded-2xl flex items-center justify-center mb-4 shadow-glow">
                 <Bell className="w-8 h-8 text-accent" />
               </div>
-              <DialogTitle className="text-2xl font-bold text-white mb-2">Inscription à l'événement</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-white mb-2">Inscription à l&apos;événement</DialogTitle>
               <DialogDescription className="text-white/60 font-medium">
                 Complétez vos informations pour finaliser votre participation à <span className="text-accent">{event.title}</span>.
               </DialogDescription>

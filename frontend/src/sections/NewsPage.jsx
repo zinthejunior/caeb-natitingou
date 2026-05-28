@@ -1,3 +1,32 @@
+/**
+ * =============================================================================
+ * PAGE DES ACTUALITÉS (NewsPage)
+ * =============================================================================
+ * 
+ * Cette page affiche les actualités de la bibliothèque : annonces, événements,
+ * formations, visites et fermetures exceptionnelles.
+ * 
+ * FONCTIONNALITÉS :
+ * - Affichage des articles avec image, catégorie, date et résumé
+ * - Filtrage par catégorie (annonces, événements, formations, etc.)
+ * - Compteur d'articles par catégorie
+ * - Tri par date (plus récent en premier)
+ * - Détails extensibles (lire la suite)
+ * 
+ * CONCEPTS REACT UTILISÉS :
+ * - useState : gestion de la catégorie sélectionnée
+ * - filter() et sort() : filtrage et tri des actualités
+ * - Rendu conditionnel : affichage différent selon la catégorie
+ * 
+ * STRUCTURE D'UNE ACTUALITÉ :
+ * - news.categorie : type d'actualité (announcement, event, course, etc.)
+ * - news.date : date de publication
+ * - news.titre, news.resume, news.contenu : textes
+ * - news.image : URL de l'image (optionnelle)
+ * - news.misEnAvant : booléen pour mettre en avant
+ * =============================================================================
+ */
+
 import { useState } from "react";
 import { Newspaper, Filter, ChevronRight } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
@@ -5,12 +34,30 @@ import { ApiImage } from "@/components/ApiImage";
 import { Badge } from "@/components/ui/badge";
 import { useNews } from "@/hooks/useData";
 import { useSEO } from "@/lib/utils";
+
+/**
+ * Composant principal de la page Actualités
+ * @param {object} user - Informations de l'utilisateur connecté
+ * @param {function} onNewsClick - Fonction appelée quand on clique sur une actualité
+ */
 export function NewsPage({ user, onNewsClick }) {
+  // ─── RÉCUPÉRATION DES DONNÉES ──────────────────────────────────────────────
   const { news } = useNews();
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  
+  // ─── ÉTAT LOCAL ────────────────────────────────────────────────────────────
+  const [selectedCategory, setSelectedCategory] = useState("all"); // Catégorie filtrée
+  
+  // SEO
   useSEO("Actualités", "Retrouvez toutes les nouveautés, annonces et événements de la bibliothèque CAEB Natitingou.");
+  
+  // ─── FILTRAGE ET TRI DES ACTUALITÉS ────────────────────────────────────────
   const filteredNews = selectedCategory === "all" ? news : news.filter((n) => n.category === selectedCategory);
+  
+  // Tri par date décroissante (plus récent en premier)
   const sortedNews = [...filteredNews].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  
+  // ─── CONFIGURATION DES CATÉGORIES ──────────────────────────────────────────
+  // Chaque catégorie a un compteur dynamique basé sur les données
   const categories = [
     { id: "all", label: "Tous", count: news.length },
     { id: "announcement", label: "Annonces", count: news.filter((n) => n.categorie === "announcement").length },
@@ -19,6 +66,8 @@ export function NewsPage({ user, onNewsClick }) {
     { id: "visit", label: "Visites", count: news.filter((n) => n.categorie === "visit").length },
     { id: "closure", label: "Fermetures", count: news.filter((n) => n.categorie === "closure").length }
   ];
+  
+  // ─── LABELS ET COULEURS DES BADGES ─────────────────────────────────────────
   const categoryLabels = {
     announcement: "Annonce",
     event: "Événement",
@@ -27,6 +76,7 @@ export function NewsPage({ user, onNewsClick }) {
     closure: "Fermeture",
     general: "Actualité"
   };
+  
   const categoryColors = {
     announcement: "bg-[var(--library-accent)]/10 text-accent border-[var(--library-accent)]/20",
     event: "bg-purple-500/10 text-purple-500 border-purple-500/20",

@@ -1,3 +1,29 @@
+/**
+ * =============================================================================
+ * PAGE DES ÉVÉNEMENTS (EventsPage)
+ * =============================================================================
+ * 
+ * Cette page affiche l'agenda des événements culturels de la bibliothèque :
+ * conférences, ateliers, réunions de clubs de lecture, etc.
+ * 
+ * FONCTIONNALITÉS :
+ * - Affichage des événements groupés par mois
+ * - Filtrage par type d'événement (clubs, conférences, ateliers)
+ * - Inscription/désinscription aux événements
+ * - Affichage du nombre de participants
+ * 
+ * CONCEPTS REACT UTILISÉS :
+ * - useState : gestion des filtres et des inscriptions
+ * - reduce() : regroupement des événements par mois
+ * - Rendu conditionnel : affichage différent selon l'état
+ * 
+ * STRUCTURE DES DONNÉES :
+ * - event.date : date de l'événement (format ISO)
+ * - event.type : type d'événement (club, conference, workshop)
+ * - event.participantCount : nombre de participants
+ * =============================================================================
+ */
+
 import { useState } from "react";
 import { Calendar, MapPin, Users, Check, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,23 +32,22 @@ import { toast } from "sonner";
 import { Navbar } from "@/components/Navbar";
 import { useEvents, useClubs, registerEvent } from "@/hooks/useData";
 import { useSEO } from "@/lib/utils";
+
+/**
+ * Composant affiché quand il n'y a pas d'événements
+ * Montre une illustration de calendrier vide avec un message
+ */
 function EmptyCalendar() {
   return <div className="empty-state py-20 surface rounded-2xl border border-[var(--border-color)]">
       <svg className="empty-state-illustration" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {
-    /* Calendrier */
-  }
+        {/* Calendrier stylisé */}
         <rect x="15" y="25" width="90" height="80" rx="10" stroke="currentColor" strokeWidth="1.5" fill="none" className="text-[var(--library-accent)] opacity-20" />
        <rect x="15" y="25" width="90" height="25" rx="10" fill="currentColor" className="text-[var(--library-accent)] opacity-10" />
         <rect x="15" y="38" width="90" height="12" fill="currentColor" className="text-[var(--library-accent)] opacity-10" />
-        {
-    /* Crochets */
-  }
+        {/* Crochets du calendrier */}
         <rect x="38" y="16" width="7" height="18" rx="3.5" fill="currentColor" className="text-[var(--library-accent)] opacity-30" />
         <rect x="75" y="16" width="7" height="18" rx="3.5" fill="currentColor" className="text-[var(--library-accent)] opacity-30" />
-        {
-    /* Jours */
-  }
+        {/* Cases des jours */}
         {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => <rect
     key={i}
     x={22 + i % 3 * 28}
@@ -35,9 +60,7 @@ function EmptyCalendar() {
     fill="none"
     className="text-[var(--library-accent)] opacity-12"
   />)}
-        {
-    /* Étoile "bientôt" */
-  }
+        {/* Étoile décorative */}
         <path
     d="M60 18 L62 22 L66 22 L63 25 L64 29 L60 27 L56 29 L57 25 L54 22 L58 22 Z"
     fill="currentColor"
@@ -46,50 +69,79 @@ function EmptyCalendar() {
       </svg>
       <h3 className="text-lg font-semibold text-primary">Aucun événement prévu</h3>
       <p className="text-sm text-muted max-w-xs text-center mt-2">
-        Nos équipes vous concoctent un programme riche en découvertes. Restez à l'affût de nos prochaines conférences et ateliers !
+        Nos équipes vous concoctent un programme riche en découvertes. Restez à l&apos;affût de nos prochaines conférences et ateliers !
       </p>
     </div>;
 }
+
+/**
+ * Composant principal de la page Événements
+ * @param {object} user - Informations de l'utilisateur connecté
+ * @param {function} onEventClick - Fonction appelée quand on clique sur un événement
+ */
 export function EventsPage({ user, onEventClick }) {
-  const { events } = useEvents();
-  const { clubs } = useClubs();
-  const [filter, setFilter] = useState("all");
+  // ─── RÉCUPÉRATION DES DONNÉES ──────────────────────────────────────────────
+  const { events } = useEvents();  // Liste des événements
+  const { clubs } = useClubs();    // Liste des clubs (pour afficher l'organisateur)
+  
+  // ─── ÉTAT LOCAL ────────────────────────────────────────────────────────────
+  const [filter, setFilter] = useState("all"); // Filtre par type
   const [participatingEvents, setParticipatingEvents] = useState(
     events.filter((e) => e.isParticipating).map((e) => e.id)
   );
+  
+  // SEO
   useSEO("Événements Culturels", "Participez à nos conférences, ateliers et clubs de lecture. Agenda culturel de la bibliothèque CAEB à Natitingou.");
+  
+  // ─── FILTRAGE DES ÉVÉNEMENTS ───────────────────────────────────────────────
   const filteredEvents = events.filter((e) => filter === "all" || e.type === filter);
+  
+  /**
+   * Gère l'inscription/désinscription à un événement
+   * Toggle : si déjà inscrit, annule l'inscription et vice versa
+   */
   const handleParticipate = async (eventId) => {
     try {
-      await registerEvent(eventId);
+      await registerEvent(eventId); // Appel API
       if (participatingEvents.includes(eventId)) {
+        // Déjà inscrit → annuler
         setParticipatingEvents((prev) => prev.filter((id) => id !== eventId));
         toast.success("Inscription annulée");
       } else {
+        // Pas inscrit → inscrire
         setParticipatingEvents((prev) => [...prev, eventId]);
-        toast.success("Inscription confirmée !", { description: "Vous recevrez un rappel avant l'événement." });
+        toast.success("Inscription confirmée !", { description: "Vous recevrez un rappel avant l&apos;événement." });
       }
     } catch (err) {
-      toast.error("Erreur lors de l'inscription à l'événement");
+      toast.error("Erreur lors de l&apos;inscription à l&apos;événement");
     }
   };
+  
+  // ─── CONFIGURATION DES TYPES D'ÉVÉNEMENTS ──────────────────────────────────
   const typeConfig = {
     club: { label: "Club de lecture", class: "bg-[var(--library-accent)]/10 text-accent border-[var(--library-accent)]/20" },
     conference: { label: "Conférence", class: "bg-purple-500/10 text-purple-500 border-purple-500/20" },
     workshop: { label: "Atelier", class: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" }
   };
+  
+  // ─── REGROUPEMENT DES ÉVÉNEMENTS PAR MOIS ──────────────────────────────────
+  // reduce() parcourt le tableau et construit un objet { "janvier 2024": [...], ... }
   const groupedEvents = filteredEvents.reduce((acc, event) => {
     const monthKey = new Date(event.date).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
     if (!acc[monthKey]) acc[monthKey] = [];
     acc[monthKey].push(event);
     return acc;
   }, {});
+  
+  // Options de filtrage
   const filterOptions = [
     { id: "all", label: "Tous" },
     { id: "club", label: "Clubs" },
     { id: "conference", label: "Conférences" },
     { id: "workshop", label: "Ateliers" }
   ];
+  
+  // Protection si utilisateur non connecté
   if (!user) return null;
   return <div className="min-h-screen bg-library-bg pb-24">
       <Navbar user={user} />

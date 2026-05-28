@@ -25,8 +25,7 @@ from dotenv import load_dotenv  # Charger variables d'environnement depuis fichi
 load_dotenv()
 
 # URL du backend Django + DRF pour accéder au catalogue et aux recommandations.
-# Toutes les données métier (livres, clubs, événements, actualités, utilisateur)
-# sont récupérées depuis cette API backend, pas depuis le frontend.
+# Lue depuis la variable d'environnement BACKEND_API_URL (définie dans .env).
 BACKEND_API_URL = os.getenv("BACKEND_API_URL", "http://localhost:8000/api")
 
 # Nombre maximum de recommandations de livres à renvoyer dans une réponse.
@@ -57,12 +56,16 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configuration CORS pour autoriser l'accès depuis le frontend.
-# En développement, on autorise toutes les origines par simplicité.
-# En production, il faudra restreindre allow_origins aux domaines approuvés.
+# Configuration CORS : les origines autorisées sont lues depuis la variable
+# d'environnement CORS_ALLOWED_ORIGINS (format : virgule-séparé).
+# En production, ne JAMAIS laisser allow_origins=["*"] car cela autorise
+# n'importe quel site web à appeler ce service au nom de l'utilisateur.
+_cors_origins_env = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174")
+_cors_origins = [o.strip() for o in _cors_origins_env.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # À restreindre en production (ex: http://localhost:5173)
+    allow_origins=_cors_origins,   # Origines explicitement autorisées (depuis .env)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -197,26 +200,32 @@ async def _post_backend_resource(path: str, json_data: Dict[str, Any], authoriza
 
 
 async def _fetch_books_from_backend() -> List[dict]:
-    # Récupère la liste complète des livres du catalogue depuis l'endpoint du backend.
-    data = await _fetch_backend_resource("livres/")
+    # Récupère une portion du catalogue (limité à 100) au lieu de tout charger en mémoire.
+    # Gère la réponse paginée de DRF.
+    data = await _fetch_backend_resource("livres/", params={"page_size": 100})
+    if isinstance(data, dict) and "results" in data:
+        return data["results"]
     return data if isinstance(data, list) else []
 
 
 async def _fetch_clubs_from_backend() -> List[dict]:
-    # Récupère la liste complète des clubs de lecture depuis l'endpoint du backend.
-    data = await _fetch_backend_resource("clubs/")
+    data = await _fetch_backend_resource("clubs/", params={"page_size": 50})
+    if isinstance(data, dict) and "results" in data:
+        return data["results"]
     return data if isinstance(data, list) else []
 
 
 async def _fetch_events_from_backend() -> List[dict]:
-    # Récupère la liste complète des événements et cours depuis l'endpoint du backend.
-    data = await _fetch_backend_resource("evenements/")
+    data = await _fetch_backend_resource("evenements/", params={"page_size": 50})
+    if isinstance(data, dict) and "results" in data:
+        return data["results"]
     return data if isinstance(data, list) else []
 
 
 async def _fetch_news_from_backend() -> List[dict]:
-    # Récupère la liste complète des actualités depuis l'endpoint du backend.
-    data = await _fetch_backend_resource("actualites/")
+    data = await _fetch_backend_resource("actualites/", params={"page_size": 20})
+    if isinstance(data, dict) and "results" in data:
+        return data["results"]
     return data if isinstance(data, list) else []
 
 
@@ -579,7 +588,7 @@ async def chat_with_kossi(request: ChatRequest, authorization: Optional[str] = H
     Endpoint principal pour le chat avec Kossi.
     Kossi se comporte comme un bibliothécaire expert et répond aux questions des utilisateurs.
     """
-
+ 
     # Récupérer la clé API depuis les variables d'environnement.
     api_key = os.getenv("OPENROUTER_API_KEY")
 

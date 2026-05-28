@@ -1,3 +1,28 @@
+/**
+ * =============================================================================
+ * PAGE DES FAVORIS (FavoritesPage)
+ * =============================================================================
+ * 
+ * Cette page affiche les livres que l'utilisateur a marqués comme favoris
+ * (en cliquant sur le cœur dans les autres pages).
+ * 
+ * FONCTIONNALITÉS : 
+ * - Affichage des livres favoris avec couverture, note et disponibilité
+ * - Tri par date d'ajout, note ou titre
+ * - Possibilité de retirer un livre des favoris
+ * - Lien vers la page de détail du livre
+ * 
+ * CONCEPTS REACT UTILISÉS :
+ * - useState : gestion du tri sélectionné
+ * - filter() : filtrage des livres pour ne garder que les favoris
+ * - sort() : tri des livres selon le critère choisi
+ * 
+ * STOCKAGE DES FAVORIS :
+ * - Les IDs des favoris sont stockés dans user.favorites (tableau)
+ * - La synchronisation se fait via le hook onToggleFavorite du parent
+ * =============================================================================
+ */
+
 import { Heart, ChevronLeft, Star } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { ApiImage } from "@/components/ApiImage";
@@ -6,24 +31,21 @@ import { Badge } from "@/components/ui/badge";
 import { useBooks } from "@/hooks/useData";
 import { useState } from "react";
 import { useSEO } from "@/lib/utils";
+
+/**
+ * Composant affiché quand il n'y a pas de favoris
+ * Montre une illustration de cœur vide avec un bouton vers le catalogue
+ */
 function EmptyFavorites({ onNavigate }) {
   return <div className="empty-state py-20 surface rounded-2xl border border-[var(--border-color)]">
-      {
-    /* SVG cœur avec étagère */
-  }
+      {/* SVG : cœur avec étagère */}
       <svg className="empty-state-illustration" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {
-    /* Étagère */
-  }
+        {/* Étagère */}
         <rect x="15" y="90" width="90" height="5" rx="2.5" fill="currentColor" className="text-red-400 opacity-15" />
-        {
-    /* Deux livres ternes */
-  }
+        {/* Deux livres ternes */}
         <rect x="25" y="65" width="16" height="25" rx="2" fill="currentColor" className="text-[var(--library-accent)] opacity-10" />
         <rect x="80" y="70" width="14" height="20" rx="2" fill="currentColor" className="text-[var(--library-accent)] opacity-10" />
-        {
-    /* Grand cœur central creux */
-  }
+        {/* Grand cœur central creux */}
         <path
     d="M60 78 L35 58 C28 51 28 40 38 37 C44 35 50 38 54 43 L60 50 L66 43 C70 38 76 35 82 37 C92 40 92 51 85 58 Z"
     stroke="currentColor"
@@ -32,25 +54,37 @@ function EmptyFavorites({ onNavigate }) {
     className="text-red-400 opacity-30"
     fill="none"
   />
-        {
-    /* Petit plus au centre */
-  }
+        {/* Petit plus au centre du cœur */}
         <line x1="60" y1="56" x2="60" y2="68" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-red-400 opacity-40" />
         <line x1="54" y1="62" x2="66" y2="62" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-red-400 opacity-40" />
       </svg>
       <h3 className="text-xl font-semibold text-primary">Pas encore de favoris</h3>
       <p className="text-sm text-muted max-w-xs text-center mt-2">
-        Mettez de côté vos futurs coups de cœur. Touchez le petit ❤ sur un livre et gardez-le précieusement ici !
+        Mettez de côté vos futurs coups de cœur. Touchez le petit cœur sur un livre et gardez-le précieusement ici !
       </p>
       <Button onClick={() => onNavigate("catalog")} className="btn-solid gap-2 shadow-medium hover:shadow-elevated transition-all font-bold mt-2 tap-feedback">
         <ChevronLeft className="w-4 h-4" />Explorer le catalogue
       </Button>
     </div>;
 }
+
+/**
+ * Composant principal de la page Favoris
+ * @param {object} user - Informations de l'utilisateur (contient user.favorites)
+ * @param {function} onNavigate - Fonction de navigation vers d'autres pages
+ * @param {function} onToggleFavorite - Fonction pour ajouter/retirer un favori
+ */
 export function FavoritesPage({ user, onNavigate, onToggleFavorite }) {
-  const [sortBy, setSortBy] = useState("recent");
+  // ─── ÉTAT LOCAL ────────────────────────────────────────────────────────────
+  const [sortBy, setSortBy] = useState("recent"); // Critère de tri : "recent", "rating", "title"
+  
+  // ─── RÉCUPÉRATION DES LIVRES ───────────────────────────────────────────────
   const { books } = useBooks();
+  
+  // SEO
   useSEO("Mes Favoris", "Consultez et gérez votre liste de livres coups de cœur à la bibliothèque CAEB Natitingou.");
+  
+  // ─── PROTECTION : Utilisateur non connecté ─────────────────────────────────
   if (!user) {
     return <div className="min-h-screen bg-library-bg pb-24">
         <Navbar user={user} />
@@ -61,12 +95,19 @@ export function FavoritesPage({ user, onNavigate, onToggleFavorite }) {
         </main>
       </div>;
   }
+  
+  // ─── FILTRAGE ET TRI DES FAVORIS ───────────────────────────────────────────
+  // 1. Filtrer pour ne garder que les livres dont l'ID est dans user.favorites
   const favoriteBooks = books.filter((book) => user.favorites?.includes(book.id));
+  
+  // 2. Trier selon le critère sélectionné
   const sortedFavorites = [...favoriteBooks].sort((a, b) => {
-    if (sortBy === "rating") return b.note - a.note;
-    if (sortBy === "title") return a.titre.localeCompare(b.titre);
-    return 0;
+    if (sortBy === "rating") return b.note - a.note;           // Par note décroissante
+    if (sortBy === "title") return a.titre.localeCompare(b.titre); // Alphabétique
+    return 0; // Par défaut (récent) : ordre d'origine
   });
+  
+  // ─── OPTIONS DE TRI ────────────────────────────────────────────────────────
   const sortOptions = [
     { key: "recent", label: "Récent" },
     { key: "rating", label: "Note" },

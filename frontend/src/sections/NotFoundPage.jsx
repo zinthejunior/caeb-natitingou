@@ -11,7 +11,7 @@ export function NotFoundPage({ user, onNavigate }) {
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16 pt-24">
         <div className="text-center">
  
-          {
+          { 
     /* Icône */
   }
           <div className="mb-8 flex justify-center">
@@ -31,7 +31,7 @@ export function NotFoundPage({ user, onNavigate }) {
   }
           <h2 className="text-2xl md:text-3xl font-bold text-primary mb-3">Cette page est introuvable</h2>
           <p className="text-lg text-muted mb-12 max-w-md mx-auto leading-relaxed">
-            Le lien que vous avez suivi n'existe plus ou a été déplacé. Pas d'inquiétude, le catalogue vous attend.
+            Le lien que vous avez suivi n&apos;existe plus ou a été déplacé. Pas d&apos;inquiétude, le catalogue vous attend.
           </p>
 
           {
@@ -42,7 +42,7 @@ export function NotFoundPage({ user, onNavigate }) {
     onClick={() => onNavigate("home")}
     className="btn-solid gap-2 shadow-medium hover:shadow-elevated hover:-translate-y-0.5 transition-all font-bold sheen relative overflow-hidden"
   >
-              <Home className="w-4 h-4" />Retour à l'accueil
+              <Home className="w-4 h-4" />Retour à l&apos;accueil
             </Button>
             <Button
     onClick={() => onNavigate("catalog")}
@@ -57,7 +57,7 @@ export function NotFoundPage({ user, onNavigate }) {
     /* Aide */
   }
           <div className="mt-16 pt-12 border-t border-[var(--border-color)]">
-            <h3 className="font-semibold text-primary mb-6">Besoin d'aide ?</h3>
+            <h3 className="font-semibold text-primary mb-6">Besoin d&apos;aide ?</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {[
     { icon: BookOpen, label: "Catalogue", desc: bookCount ? `${bookCount} ouvrages à explorer — romans, essais, jeunesse et plus.` : "Un vaste catalogue à explorer — romans, essais, jeunesse et plus.", view: "catalog" },
