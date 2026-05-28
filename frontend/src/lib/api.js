@@ -59,8 +59,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api"
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECTION STOCKAGE DES TOKENS - Variables pour garder les tokens en mémoire
-// ═══════════════════════════════════════════════════════════════════════════════
-
+// ════════════════════════════════════
 /**
  * Variables pour stocker les tokens JWT.
  * 
