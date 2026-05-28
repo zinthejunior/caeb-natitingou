@@ -102,16 +102,16 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 
 # ── Base de données ───────────────────────────────────────────────────────────
-# L'URL de connexion est construite depuis les variables d'environnement.
-# On NE définit PAS de valeur par défaut avec des identifiants codés en dur
-# (ex: postgres://postgres:root@...) car cela exposerait des credentials en clair.
-#
-# Format attendu dans .env :
-#   DATABASE_URL=postgres://utilisateur:motdepasse@hote:port/nomdb
-#
-# Si DATABASE_URL n'est pas défini, dj_database_url utilisera SQLite en local
-# uniquement en mode développement (DEBUG=True), sinon une erreur est levée.
+# Configuration de la base de données PostgreSQL / Supabase.
+# Nous n'utilisons plus SQLite. En l'absence de configuration, nous faisons
+# un fallback vers une base de données PostgreSQL locale.
 _database_url = os.environ.get('DATABASE_URL')
+_db_name = os.environ.get('DB_NAME')
+_db_user = os.environ.get('DB_USER')
+_db_password = os.environ.get('DB_PASSWORD')
+_db_host = os.environ.get('DB_HOST')
+_db_port = os.environ.get('DB_PORT', '5432')
+_db_sslmode = os.environ.get('DB_SSLMODE')
 
 if _database_url:
     DATABASES = {
@@ -121,19 +121,35 @@ if _database_url:
             conn_health_checks=True, # Vérifie la santé des connexions persistantes
         )
     }
-elif DEBUG:
-    # Fallback SQLite uniquement en développement local (sans DATABASE_URL)
+elif _db_host:
+    # Utilisation des paramètres PostgreSQL / Supabase individuels
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': _db_name or 'postgres',
+            'USER': _db_user or 'postgres',
+            'PASSWORD': _db_password or '',
+            'HOST': _db_host,
+            'PORT': _db_port or '5432',
         }
     }
+    # Supabase requiert parfois sslmode=require
+    if _db_sslmode:
+        DATABASES['default']['OPTIONS'] = {
+            'sslmode': _db_sslmode,
+        }
 else:
-    raise ValueError(
-        "La variable d'environnement DATABASE_URL est manquante en mode production. "
-        "Veuillez la définir dans votre fichier .env."
-    )
+    # Fallback PostgreSQL local si les variables d'environnement ne sont pas remplies
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': _db_name or 'postgres',
+            'USER': _db_user or 'postgres',
+            'PASSWORD': _db_password or 'root',
+            'HOST': 'localhost',
+            'PORT': '5432',
+        }
+    }
 
 
 # ── CORS (Cross-Origin Resource Sharing) ──────────────────────────────────────
