@@ -50,12 +50,12 @@
  * 
  * L'opérateur || (ou logique) :
  * - Si VITE_API_URL existe et n'est pas vide, on l'utilise
- * - Sinon, on utilise la valeur par défaut "http://localhost:8000/api"
+ * - Sinon, on utilise la valeur par défaut "http://localhost:8080/api"
  * 
- * En développement : http://localhost:8000/api (serveur Django local)
+ * En développement : http://localhost:8080/api (serveur Django local)
  * En production : https://votre-domaine.com/api
  */
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECTION STOCKAGE DES TOKENS - Variables pour garder les tokens en mémoire

@@ -98,16 +98,16 @@ import { fetchWithAuth, setAuthTokens, clearAuthTokens, getAuthToken } from "@/l
 /**
  * URL de base de l'API backend.
  * 
- * En développement : http://localhost:8000/api (Django local)
+ * En développement : http://localhost:8080/api (Django local)
  * En production : URL du serveur de production
  * 
  * La valeur peut être définie via la variable d'environnement VITE_API_URL.
  */
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECTION FONCTIONS UTILITAIRES - Helpers pour transformer les données
-// ═══════════════════════════════════════════════════════════════════════════════
+// ═════════════════──────────────────────────────────────────────────────────────
 
 /**
  * normaliserUtilisateur : Transforme les données brutes de l'API en format standardisé.
