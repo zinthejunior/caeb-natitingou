@@ -26,7 +26,8 @@ load_dotenv()
 
 # URL du backend Django + DRF pour accéder au catalogue et aux recommandations.
 # Lue depuis la variable d'environnement BACKEND_API_URL (définie dans .env).
-BACKEND_API_URL = os.getenv("BACKEND_API_URL", "http://localhost:8000/api")
+# Le serveur Django est démarré par npm run dev:backend sur le port 8080.
+BACKEND_API_URL = os.getenv("BACKEND_API_URL", "http://localhost:8080/api")
 
 # Nombre maximum de recommandations de livres à renvoyer dans une réponse.
 # Limite la taille du payload et améliore les performances.
@@ -161,14 +162,19 @@ async def _fetch_backend_resource(path: str, authorization: Optional[str] = None
         entetes["Authorization"] = authorization
 
     async with httpx.AsyncClient() as client:
-        # Appel HTTP GET asynchrone avec timeout ; f-string pour construire l'URL
-        # lstrip('/') supprime les slashes en début de path (normalisation URL)
-        response = await client.get(
-            f"{BACKEND_API_URL}/{path.lstrip('/')}",
-            headers=entetes,
-            params=params,
-            timeout=30.0,
-        )
+        try:
+            response = await client.get(
+                f"{BACKEND_API_URL}/{path.lstrip('/')}",
+                headers=entetes,
+                params=params,
+                timeout=30.0,
+            )
+        except httpx.RequestError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=f"Impossible de contacter le backend DRF ({BACKEND_API_URL}) : {exc}",
+            ) from exc
+
         # Vérifier le code HTTP 200 avant de parser le JSON
         if response.status_code == 200:
             return response.json()
@@ -186,13 +192,19 @@ async def _post_backend_resource(path: str, json_data: Dict[str, Any], authoriza
         entetes["Authorization"] = authorization
 
     async with httpx.AsyncClient() as client:
-        # POST avec json_data encodé automatiquement en JSON par httpx
-        response = await client.post(
-            f"{BACKEND_API_URL}/{path.lstrip('/')}",
-            headers=entetes,
-            json=json_data,
-            timeout=30.0,
-        )
+        try:
+            response = await client.post(
+                f"{BACKEND_API_URL}/{path.lstrip('/')}",
+                headers=entetes,
+                json=json_data,
+                timeout=30.0,
+            )
+        except httpx.RequestError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=f"Impossible de contacter le backend DRF ({BACKEND_API_URL}) : {exc}",
+            ) from exc
+
         # Accepter les codes 200 (mise à jour) et 201 (création)
         if response.status_code in (200, 201):
             return response.json()
