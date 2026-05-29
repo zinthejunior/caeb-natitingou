@@ -2,6 +2,7 @@
 import os  # Accès aux variables d'environnement et chemins du système
 import re  # Expressions régulières pour recherche et nettoyage de texte
 import datetime  # Gestion des dates (parsing ISO, calcul d'âge)
+import difflib  # Recherche floue et similarité de chaînes (SequenceMatcher)
 
 # ── Imports de bibliothèques externes ──────────────────────────────────────────
 import httpx  # Client HTTP asynchrone pour appels APIs (SerpAPI, Bing, DuckDuckGo, OpenRouter)
@@ -491,47 +492,80 @@ def _build_backend_context(books: List[dict], clubs: List[dict], events: List[di
 
 
 def _match_books(books: List[dict], terms: List[str], limit: int = MAX_SUGGESTED_BOOKS) -> List[str]:
-    """Sélectionne les livres dont le titre, l'auteur ou les mots-clés correspondent aux termes.
+    """Sélectionne les livres avec un scoring pondéré et du fuzzy matching (recherche floue).
     
-    Attribue un score à chaque livre en fonction du nombre de termes trouvés dans
-    son contenu (titre, auteur, genre, résumé, mots-clés). Retourne les livres
-    les mieux notés jusqu'à la limite spécifiée.
+    Attribue un score à chaque livre en fonction de l'endroit où les termes
+    correspondent (titre, auteur, genre, mots-clés, résumé) et utilise difflib pour
+    pardonner les fautes d'orthographe de l'utilisateur.
     """
     if not terms or not books:
         return []
 
     livres_scores = []  # Liste des tuples (score, livre)
     for livre in books:
-        parties_texte = []  # Accumuler tous les champs pertinents du livre
-        # Chercher dans ces champs : titre, auteur, genre, résumé, mots-clés, description
-        for champ in ["titre", "auteur", "genre", "sous_genre", "resume", "mots_cles", "description"]:
-            valeur = livre.get(champ)
-            # Si la valeur est une liste, la joindre avec des espaces
-            if isinstance(valeur, list):
-                valeur = " ".join(map(str, valeur))
-            if valeur:
-                parties_texte.append(str(valeur).lower())
+        score = 0.0
+        
+        # Récupérer et normaliser les différents champs
+        titre = str(livre.get("titre") or livre.get("Titre") or livre.get("title") or "").lower()
+        auteur = str(livre.get("auteur") or livre.get("Auteur") or livre.get("author") or "").lower()
+        genre = str(livre.get("genre") or "").lower()
+        sous_genre = str(livre.get("sous_genre") or "").lower()
+        mots_cles = str(livre.get("mots_cles") or "").lower()
+        resume = str(livre.get("resume") or livre.get("description") or "").lower()
 
-        # Fusionner tous les champs en un seul texte pour chercher les termes
-        texte_combine = " ".join(parties_texte)
-        # Compter combien de termes apparaissent dans le texte
-        score = sum(1 for terme in terms if terme in texte_combine)
+        mots_titre = titre.split()
+        mots_auteur = auteur.split()
+
+        for term in terms:
+            term = term.lower()
+            
+            # 1. Matching Titre (Poids maximal : 10)
+            if term in titre:
+                score += 10.0
+            else:
+                # Fuzzy matching sur les mots individuels du titre
+                for mot in mots_titre:
+                    ratio = difflib.SequenceMatcher(None, term, mot).ratio()
+                    if ratio > 0.8:
+                        score += 8.0 * ratio
+            
+            # 2. Matching Auteur (Poids élevé : 6)
+            if term in auteur:
+                score += 6.0
+            else:
+                # Fuzzy matching sur les mots de l'auteur
+                for mot in mots_auteur:
+                    ratio = difflib.SequenceMatcher(None, term, mot).ratio()
+                    if ratio > 0.8:
+                        score += 5.0 * ratio
+
+            # 3. Matching Genre & Sous-genre (Poids moyen : 4)
+            if term in genre or term in sous_genre:
+                score += 4.0
+
+            # 4. Matching Mots-clés (Poids moyen-faible : 3)
+            if term in mots_cles:
+                score += 3.0
+
+            # 5. Matching Résumé/Description (Poids faible : 1)
+            if term in resume:
+                score += 1.0
+
         if score > 0:
-            # Stocker le tuple (score, livre) pour tri ultérieur
             livres_scores.append((score, livre))
 
-    # Tri décroissant par score (livres avec plus de correspondances d'abord)
+    if not livres_scores:
+        # Fallback : retourner les premiers livres du catalogue si aucun match
+        return [str(livre.get("titre") or livre.get("Titre") or livre.get("title")) for livre in books[:limit] if livre]
+
+    # Tri décroissant par score
     livres_scores.sort(key=lambda item: item[0], reverse=True)
-    # Extraire les titres des livres les mieux notés
+    
     resultat = []
     for _, livre in livres_scores[:limit]:
-        titre = livre.get("titre") or livre.get("Titre") or livre.get("title")
-        if titre:
-            resultat.append(str(titre))
-
-    if not resultat:
-        # Fallback : retourner les premiers livres du catalogue si aucun mot-clé ne match
-        resultat = [str(livre.get("titre") or livre.get("Titre") or livre.get("title")) for livre in books[:limit] if livre]
+        t = livre.get("titre") or livre.get("Titre") or livre.get("title")
+        if t:
+            resultat.append(str(t))
 
     return resultat[:limit]
 
@@ -603,11 +637,11 @@ async def chat_with_kossi(request: ChatRequest, authorization: Optional[str] = H
  
     # Récupérer la clé API depuis les variables d'environnement.
     api_key = os.getenv("OPENROUTER_API_KEY")
+    
+    # Choix dynamique du modèle (avec Gemini 2.5 Flash comme valeur par défaut très rapide et performante)
+    model_name = os.getenv("OPENROUTER_MODEL", "google/gemini-2.5-flash:free")
 
     # Prompt système chargé depuis le fichier `Prompt_Systems.txt`.
-    # Ce fichier contient le prompt maître (instructions système) que Kossi
-    # doit toujours respecter. Ne pas remplacer ni supprimer ce contenu —
-    # on peut uniquement ajouter des instructions complémentaires ci‑dessous.
     system_prompt_text = FILE_SYSTEM_PROMPT
 
     # Instructions additionnelles pour guider Kossi sur les données métier disponibles et les bonnes pratiques.:
@@ -719,18 +753,13 @@ async def chat_with_kossi(request: ChatRequest, authorization: Optional[str] = H
                 sources = [{"title": "Catalogue de la bibliothèque", "url": "", "snippet": summary}]
 
     # Convertir les messages reçus en format attendu par l'API OpenRouter.
-    # On envoie ici :
-    # - le prompt système lu depuis `Prompt_Systems.txt` (autorité primaire),
-    # - le contexte métier construit depuis le backend (sans exposer de champs
-    #   sensibles),
-    # - l'historique de la session (si disponible),
-    # - puis la conversation utilisateur.
-    # Ces couches garantissent que Kossi utilise prioritairement les données
-    # backend et que les sources web ne servent que de complément.
+    # On envoie le prompt système et le contexte métier.
+    # Pour l'historique, on injecte l'historique backend seulement si le frontend n'envoie qu'un seul message,
+    # pour éviter de dupliquer l'historique si le frontend le transmet déjà entièrement.
     messages = [system_prompt]
     if backend_context:
         messages.append({"role": "system", "content": backend_context})
-    if chat_history:
+    if chat_history and len(request.messages) <= 1:
         messages.append({"role": "system", "content": chat_history})
     for msg in request.messages:
         messages.append({"role": msg.role, "content": msg.content})
@@ -768,9 +797,10 @@ async def chat_with_kossi(request: ChatRequest, authorization: Optional[str] = H
                     "X-Title": "Kossi AI"
                 },
                 json={
-                    "model": "openai/gpt-oss-120b:free",
+                    "model": model_name,
                     "messages": messages,
-                    "temperature": 0.7
+                    "temperature": 0.7,
+                    "max_tokens": 1500
                 },
                 timeout=30.0
             )

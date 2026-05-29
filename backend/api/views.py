@@ -682,13 +682,18 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 def set_jwt_cookies(response, access_token, refresh_token):
     from django.conf import settings
-    secure = not settings.DEBUG
+    # SameSite=None est requis pour que les cookies soient envoyés par les requêtes
+    # cross-origin (frontend localhost:5173 -> backend localhost:8080) via fetch.
+    # Secure est activé pour respecter les navigateurs modernes qui exigent
+    # Secure avec SameSite=None.
+    secure = True
     response.set_cookie(
         key='access',
         value=access_token,
         httponly=True,
         secure=secure,
-        samesite='Lax',
+        samesite='None',
+        path='/',
         max_age=3600 * 24
     )
     if refresh_token:
@@ -697,7 +702,8 @@ def set_jwt_cookies(response, access_token, refresh_token):
             value=refresh_token,
             httponly=True,
             secure=secure,
-            samesite='Lax',
+            samesite='None',
+            path='/',
             max_age=3600 * 24 * 7
         )
     return response

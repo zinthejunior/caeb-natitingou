@@ -205,7 +205,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
  * - connexion/deconnexion : fonctions pour se connecter/déconnecter
  * - mettreAJourUtilisateur : fonction pour modifier le profil
  */
-import { useAuthentification } from "@/hooks/useAuthentification";
+import { AuthProvider, useAuthentification } from "@/hooks/useAuthentification";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -287,7 +287,7 @@ function AppLayout({ children }) {
  * Point d'entrée de l'application. Définit toutes les routes et gère
  * les données utilisateur partagées entre les pages.
  */
-export default function App() {
+function AppRoutes() {
   // ─── RÉCUPÉRATION DES DONNÉES D'AUTHENTIFICATION ───────────────────────────
   // useAuthentification() est un hook personnalisé qui gère :
   // - L'état de connexion (utilisateur, tokens JWT)
@@ -473,4 +473,8 @@ export default function App() {
           Position en haut au centre, avec bouton de fermeture */}
       <Toaster position="top-center" richColors closeButton duration={3e3} />
     </>;
+}
+
+export default function App() {
+  return <AuthProvider><AppRoutes /></AuthProvider>;
 }

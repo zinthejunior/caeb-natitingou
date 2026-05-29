@@ -78,18 +78,15 @@
  * Syntaxe : useEffect(() => { ... }, [dépendances]);
  * L'effet s'exécute après le rendu, et se ré-exécute si les dépendances changent.
  */
-import { useState, useCallback, useEffect } from "react";
+import { createContext, useContext, useState, useCallback, useEffect } from "react";
 
 /**
  * IMPORT : Fonctions de l'API
  * 
  * Ces fonctions sont définies dans lib/api.js :
- * - fetchWithAuth : fait des requêtes HTTP avec le token JWT automatiquement
- * - setAuthTokens : stocke les tokens après connexion
- * - clearAuthTokens : supprime les tokens (déconnexion)
- * - getAuthToken : récupère le token actuel (pour vérifier si connecté)
+ * - fetchWithAuth : fait des requêtes HTTP avec authentification par cookies automatique
  */
-import { fetchWithAuth, setAuthTokens, clearAuthTokens, getAuthToken } from "@/lib/api";
+import { fetchWithAuth } from "@/lib/api";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECTION CONFIGURATION - Constantes et paramètres
@@ -232,7 +229,7 @@ function denormaliserMisesAJour(updates) {
  * - changerMotDePasse : fonction pour changer le mot de passe
  * - verifierEmail : fonction pour vérifier si un email existe
  */
-export function useAuthentification() {
+function useProvideAuthentification() {
   // ─────────────────────────────────────────────────────────────────────────────
   // ÉTAT PRINCIPAL - Stocke toutes les informations d'authentification
   // ─────────────────────────────────────────────────────────────────────────────
@@ -252,6 +249,17 @@ export function useAuthentification() {
     chargement: true        // Booléen : est-ce qu'une opération est en cours ?
     // Note : chargement commence à true car on vérifie le token au montage
   });
+
+  /**
+   * Réinitialise l'état d'authentification local sans requêtes réseau supplémentaires.
+   */
+  const reinitialiserEtatLocal = useCallback(() => {
+    setEtat({ 
+      utilisateur: null,      // Plus d'utilisateur
+      estAuthentifie: false,  // Plus connecté
+      chargement: false       // Pas de chargement en cours
+    });
+  }, []);
   
   // ─────────────────────────────────────────────────────────────────────────────
   // FONCTION : deconnexion
@@ -260,18 +268,16 @@ export function useAuthentification() {
   /**
    * Déconnecte l'utilisateur actuel.
    * 
-   * useCallback mémorise la fonction pour éviter des re-rendus inutiles.
-   * Le tableau vide [] signifie que la fonction ne dépend d'aucune variable
-   * et ne sera jamais recréée.
+   * Effectue un appel POST à l'API /logout/ pour effacer et blacklister les cookies.
    */
-  const deconnexion = useCallback(() => {
-    clearAuthTokens(); // Supprime les tokens JWT de la mémoire
-    setEtat({ 
-      utilisateur: null,      // Plus d'utilisateur
-      estAuthentifie: false,  // Plus connecté
-      chargement: false       // Pas de chargement en cours
-    });
-  }, []); // Tableau de dépendances vide = fonction constante
+  const deconnexion = useCallback(async () => {
+    try {
+      await fetchWithAuth("/logout/", { method: "POST" });
+    } catch (err) {
+      console.error("Erreur lors de la déconnexion backend:", err);
+    }
+    reinitialiserEtatLocal();
+  }, [reinitialiserEtatLocal]);
   
   // ─────────────────────────────────────────────────────────────────────────────
   // FONCTION : recupererUtilisateur
@@ -319,33 +325,23 @@ export function useAuthentification() {
    * Cet effet s'exécute une fois au montage du composant.
    * 
    * OBJECTIF :
-   * - Vérifier si l'utilisateur a un token valide
-   * - Si oui, récupérer ses informations
+   * - Tenter de récupérer l'utilisateur via les cookies HttpOnly (si une session existe)
    * - Écouter l'événement de déconnexion forcée (token expiré)
    */
   useEffect(() => {
-    // Vérifie si un token existe déjà (connexion précédente)
-    const token = getAuthToken();
-
-    if (token) {
-      // Token trouvé en mémoire : récupère le profil utilisateur
-      void recupererUtilisateur();
-    } else {
-      // Si le token en mémoire a disparu (rechargement de page),
-      // on tente quand même de récupérer l'utilisateur via les cookies HttpOnly.
-      void recupererUtilisateur();
-    }
+    // Tente de récupérer l'utilisateur connecté via les cookies de session.
+    void recupererUtilisateur();
     
     // ─── ÉCOUTE DE L'ÉVÉNEMENT DE DÉCONNEXION ────────────────────────────────
     // Cet événement est émis par api.js quand le refresh token a expiré
-    const handleLogout = () => deconnexion();
+    const handleLogout = () => reinitialiserEtatLocal();
     window.addEventListener("app:logout", handleLogout);
     
     // ─── FONCTION DE NETTOYAGE ───────────────────────────────────────────────
     // Retournée par useEffect, elle s'exécute quand le composant est démonté
     // Cela évite les fuites de mémoire (memory leaks)
     return () => window.removeEventListener("app:logout", handleLogout);
-  }, [recupererUtilisateur, deconnexion]); // Dépendances : recréer si ces fonctions changent
+  }, [recupererUtilisateur, reinitialiserEtatLocal]); // Dépendances : recréer si ces fonctions changent
   
   // ─────────────────────────────────────────────────────────────────────────────
   // FONCTION : connexion
@@ -357,57 +353,35 @@ export function useAuthentification() {
    * @param {string} email - L'adresse email de l'utilisateur
    * @param {string} motDePasse - Le mot de passe de l'utilisateur
    * @returns {Promise<boolean>} - true si connexion réussie, false sinon
-   * 
-   * FLUX :
-   * 1. Envoie les identifiants à l'API /token/
-   * 2. Si OK : reçoit et stocke les tokens JWT
-   * 3. Récupère les données utilisateur
-   * 4. Met à jour l'état
    */
   const connexion = useCallback(async (email, motDePasse) => {
-    // Log pour le débogage (visible dans la console)
     console.log("[useAuth] Tentative de connexion...");
     
-    // Validation des entrées
     if (!email || !motDePasse) {
       console.log("[useAuth] Email ou mot de passe manquant, annulation.");
       return false;
     }
     
-    // Indique que le chargement est en cours
     setEtat((prev) => ({ ...prev, chargement: true }));
     
     try {
-      // ─── ÉTAPE 1 : OBTENIR LES TOKENS ───────────────────────────────────────
-      // On utilise fetch() directement car on n'a pas encore de token
       const response = await fetch(`${API_BASE_URL}/token/`, {
-        method: "POST",                                      // Requête POST
-        headers: { "Content-Type": "application/json" },     // Format JSON
-        body: JSON.stringify({ username: email, password: motDePasse }), // Données
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: email, password: motDePasse }),
         credentials: "include"
-        // Note : Django JWT attend "username" et non "email"
       });
       
       if (response.ok) {
-        console.log("[useAuth] API /token/ a répondu avec succès (200 OK). Jetons reçus.");
-        
-        // Parse la réponse JSON
-        const data = await response.json();
-        
-        // ─── ÉTAPE 2 : STOCKER LES TOKENS ─────────────────────────────────────
-        setAuthTokens(data.access, data.refresh);
-        
-        // ─── ÉTAPE 3 : RÉCUPÉRER LES DONNÉES UTILISATEUR ──────────────────────
+        console.log("[useAuth] API /token/ a répondu avec succès (200 OK) avec cookies HttpOnly.");
         return await recupererUtilisateur();
       } else {
         console.log(`[useAuth] Échec de la connexion. Statut HTTP: ${response.status}`);
       }
     } catch (err) {
-      // Gestion des erreurs (réseau, serveur inaccessible, etc.)
       console.error("Erreur de connexion:", err);
     }
     
-    // Échec : arrêter le chargement
     setEtat((prev) => ({ ...prev, chargement: false }));
     return false;
   }, [recupererUtilisateur]); // Dépend de recupererUtilisateur
@@ -647,4 +621,19 @@ export function useAuthentification() {
  * // ou
  * import { useAuthentification } from "@/hooks/useAuthentification";
  */
+const AuthContext = createContext(null);
+
+export function AuthProvider({ children }) {
+  const auth = useProvideAuthentification();
+  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
+}
+
+export function useAuthentification() {
+  const context = useContext(AuthContext);
+  if (context === null) {
+    throw new Error("useAuthentification must be used within AuthProvider");
+  }
+  return context;
+}
+
 export const useAuth = useAuthentification;

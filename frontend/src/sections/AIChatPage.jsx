@@ -33,7 +33,6 @@ import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { useNavigate } from "react-router-dom";
 import { useLivres, appelAPI, creerSessionChat, ajouterMessageChat, recupererSessionChat } from "@/hooks/useData";
-import { getAuthToken } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 /**
@@ -501,10 +500,8 @@ export function AIChatPage({ user }) {
       }
 
       // Préparer la requête pour l'API Kossi
-      const authToken = getAuthToken() || "";
       const headers = {
-        "Content-Type": "application/json",
-        ...(authToken && { "Authorization": `Bearer ${authToken}` })
+        "Content-Type": "application/json"
       };
 
       // Construire l'historique des messages pour le contexte
@@ -514,11 +511,12 @@ export function AIChatPage({ user }) {
         files: m.files || []
       }));
 
-      // Envoyer la requête à l'API Kossi
+      // Envoyer la requête à l'API Kossi (avec credentials pour inclure les cookies si applicable)
       const kossiUrl = import.meta.env.VITE_KOSSI_URL || "http://localhost:8001";
       const response = await fetch(`${kossiUrl}/chat`, {
         method: "POST",
         headers,
+        credentials: "include",
         body: JSON.stringify({
           user_id: user?.id,
           messages: chatMessages,
@@ -943,19 +941,22 @@ export function AIChatPage({ user }) {
                                 <BookOpen className="w-3.5 h-3.5" />
                                 Livres suggérés
                               </p>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                 {msg.recommendations.slice(0, 4).map((book, idx) => (
                                   <button
                                     key={idx}
                                     onClick={() => navigate(`/catalog/${book.id}`)}
-                                    className="text-left p-3 rounded-lg bg-[var(--library-surface-alt)] hover:bg-[var(--library-accent)]/10 transition-colors border border-transparent hover:border-[var(--library-accent)]/20"
+                                    className="text-left p-3 rounded-xl bg-[var(--library-surface-alt)] hover:bg-[var(--library-surface)] hover:-translate-y-0.5 transition-all duration-200 border border-[var(--border-color)] hover:border-[var(--library-accent)]/30 hover:shadow-md flex items-center justify-between group"
                                   >
-                                    <p className="font-medium text-xs text-primary truncate">
-                                      {book.titre}
-                                    </p>
-                                    <p className="text-[10px] text-muted truncate mt-0.5">
-                                      {book.auteur}
-                                    </p>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-medium text-xs text-primary truncate group-hover:text-[var(--library-accent)] transition-colors">
+                                        {book.titre}
+                                      </p>
+                                      <p className="text-[10px] text-muted truncate mt-0.5">
+                                        {book.auteur}
+                                      </p>
+                                    </div>
+                                    <ChevronRight className="w-3.5 h-3.5 text-muted group-hover:text-[var(--library-accent)] group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
                                   </button>
                                 ))}
                               </div>
