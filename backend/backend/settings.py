@@ -10,7 +10,6 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
-import dj_database_url
 from dotenv import load_dotenv
 
 # ── Chargement des variables d'environnement depuis le fichier .env ───────────
@@ -102,54 +101,24 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 
 # ── Base de données ───────────────────────────────────────────────────────────
-# Configuration de la base de données PostgreSQL / Supabase.
-# Nous n'utilisons plus SQLite. En l'absence de configuration, nous faisons
-# un fallback vers une base de données PostgreSQL locale.
-_database_url = os.environ.get('DATABASE_URL')
-_db_name = os.environ.get('DB_NAME')
-_db_user = os.environ.get('DB_USER')
-_db_password = os.environ.get('DB_PASSWORD')
-_db_host = os.environ.get('DB_HOST')
-_db_port = os.environ.get('DB_PORT', '5432')
-_db_sslmode = os.environ.get('DB_SSLMODE')
+# Configuration PostgreSQL locale uniquement.
+# Les variables d'environnement suivantes peuvent être définies dans .env :
+#   - DB_NAME : nom de la base (par défaut: 'caeb_bibliotheque')
+#   - DB_USER : utilisateur PostgreSQL (par défaut: 'postgres')
+#   - DB_PASSWORD : mot de passe PostgreSQL (par défaut: 'postgres')
+#   - DB_HOST : host PostgreSQL (par défaut: 'localhost')
+#   - DB_PORT : port PostgreSQL (par défaut: '5432')
 
-if _database_url:
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=_database_url,
-            conn_max_age=600,       # Réutilisation des connexions pendant 600 secondes
-            conn_health_checks=True, # Vérifie la santé des connexions persistantes
-        )
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'caeb_bibliotheque'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
-elif _db_host:
-    # Utilisation des paramètres PostgreSQL / Supabase individuels
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': _db_name or 'postgres',
-            'USER': _db_user or 'postgres',
-            'PASSWORD': _db_password or '',
-            'HOST': _db_host,
-            'PORT': _db_port or '5432',
-        }
-    }
-    # Supabase requiert parfois sslmode=require
-    if _db_sslmode:
-        DATABASES['default']['OPTIONS'] = {
-            'sslmode': _db_sslmode,
-        }
-else:
-    # Fallback PostgreSQL local si les variables d'environnement ne sont pas remplies
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': _db_name or 'postgres',
-            'USER': _db_user or 'postgres',
-            'PASSWORD': _db_password or 'root',
-            'HOST': 'localhost',
-            'PORT': '5432',
-        }
-    }
+}
 
 
 # ── CORS (Cross-Origin Resource Sharing) ──────────────────────────────────────
