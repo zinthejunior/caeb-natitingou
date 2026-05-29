@@ -103,7 +103,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # ── Base de données ───────────────────────────────────────────────────────────
 # Configuration PostgreSQL locale uniquement.
 # Les variables d'environnement suivantes peuvent être définies dans .env :
-#   - DB_NAME : nom de la base (par défaut: 'caeb_bibliotheque')
+#   - DB_NAME : nom de la base (par défaut: 'caeb_db')
 #   - DB_USER : utilisateur PostgreSQL (par défaut: 'postgres')
 #   - DB_PASSWORD : mot de passe PostgreSQL (par défaut: 'postgres')
 #   - DB_HOST : host PostgreSQL (par défaut: 'localhost')
@@ -112,9 +112,9 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'caeb_bibliotheque'),
+        'NAME': os.environ.get('DB_NAME', 'caeb_db'),
         'USER': os.environ.get('DB_USER', 'postgres'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'root'),
         'HOST': os.environ.get('DB_HOST', 'localhost'),
         'PORT': os.environ.get('DB_PORT', '5432'),
     }
@@ -231,22 +231,6 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
 
 
-# ── Configuration Email ───────────────────────────────────────────────────────
-# En développement (DEBUG=True) : les emails s'affichent dans la console.
-# En production (DEBUG=False)   : les emails sont envoyés via SMTP.
-
-if DEBUG:
-    # Affiche le contenu des emails dans le terminal (parfait pour les tests)
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-else:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-
-EMAIL_HOST          = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT          = int(os.environ.get('EMAIL_PORT', 587))
-EMAIL_USE_TLS       = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
-EMAIL_HOST_USER     = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL  = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@caeb-natitingou.org')
-
-# URL de base du frontend (utilisée dans les liens d'email : confirmation, reset mdp, etc.)
+# ── URL du Frontend ──────────────────────────────────────────────────────────
+# URL de base du frontend pour les redirections et liens
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
