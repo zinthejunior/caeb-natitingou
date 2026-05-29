@@ -72,15 +72,11 @@ async function rafraichirToken() {
   }
   
   // ─────────────────────────────────────────────────────────────────────────────
-  // ÉCHEC DU RAFRAÎCHISSEMENT - Déconnexion de l'utilisateur
+  // ÉCHEC DU RAFRAÎCHISSEMENT - Le rafraîchissement a échoué.
+  // Ne pas forcer la déconnexion générale du site ; seul le bouton de logout
+  // doit déclencher la déconnexion globale.
   // ─────────────────────────────────────────────────────────────────────────────
-  console.warn("[api.js] Échec du rafraîchissement du jeton. Déconnexion forcée.");
-  
-  /**
-   * Émet un événement personnalisé pour notifier l'application.
-   * Le hook useAuthentification écoute cet événement et réinitialise l'état utilisateur.
-   */
-  window.dispatchEvent(new CustomEvent("app:logout"));
+  console.warn("[api.js] Échec du rafraîchissement du jeton. Session invalide mais pas de déconnexion forcée.");
   
   return false;
 }

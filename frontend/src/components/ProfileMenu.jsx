@@ -1,5 +1,7 @@
+import { useNavigate } from "react-router-dom";
 import { User, Settings, LogOut, ChevronRight } from "lucide-react";
 export function ProfileMenu({ utilisateur: user, onClose }) {
+  const navigate = useNavigate();
   return <div className="surface rounded-lg shadow-lg p-3 border border-muted">
       <div className="flex items-center gap-3 mb-3">
         <div className="w-10 h-10 rounded-full bg-library-primary/10 flex items-center justify-center font-bold">{user?.prenom?.[0] || "U"}</div>
@@ -14,7 +16,7 @@ export function ProfileMenu({ utilisateur: user, onClose }) {
     className="flex items-center justify-between py-2 px-1 hover:bg-surface-weak dark:hover:bg-library-dark-secondary focus:outline-none focus:ring-2 focus:ring-library-primary dark:focus:ring-library-dark-accent focus:ring-inset rounded transition-colors"
     onClick={() => {
       onClose?.();
-      window.dispatchEvent(new CustomEvent("app:navigate", { detail: { view: "profile" } }));
+      navigate("/profile");
     }}
     title="Afficher votre profil"
   >
@@ -25,7 +27,7 @@ export function ProfileMenu({ utilisateur: user, onClose }) {
     className="flex items-center justify-between py-2 px-1 hover:bg-surface-weak dark:hover:bg-library-dark-secondary focus:outline-none focus:ring-2 focus:ring-library-primary dark:focus:ring-library-dark-accent focus:ring-inset rounded transition-colors"
     onClick={() => {
       onClose?.();
-      window.dispatchEvent(new CustomEvent("app:navigate", { detail: { view: "settings" } }));
+      navigate("/settings");
     }}
     title="Ouvrir les paramètres"
   >

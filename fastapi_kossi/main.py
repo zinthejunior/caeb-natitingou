@@ -58,6 +58,29 @@ app = FastAPI(
     version="1.0.0"
 )
 
+@app.on_event("startup")
+async def startup_event():
+    """Vérifier la disponibilité du backend au démarrage."""
+    print("\n" + "="*60)
+    print("🚀 Kossi AI Service - Démarrage")
+    print("="*60)
+    print(f"📡 Backend API URL: {BACKEND_API_URL}")
+    print(f"🔑 OpenRouter Model: {os.getenv('OPENROUTER_MODEL', 'deepseek/deepseek-v4-flash:free')}")
+    
+    # Tenter une connexion de test au backend
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"{BACKEND_API_URL}/", timeout=5.0)
+            if response.status_code == 200 or response.status_code == 404:
+                print("✅ Backend API accessible")
+            else:
+                print(f"⚠️ Backend API répond avec HTTP {response.status_code}")
+    except Exception as e:
+        print(f"⚠️ Backend API indisponible: {e}")
+        print("   ℹ️ Le service continuera avec dégradation gracieuse")
+    
+    print("="*60 + "\n")
+
 # Configuration CORS : les origines autorisées sont lues depuis la variable
 # d'environnement CORS_ALLOWED_ORIGINS (format : virgule-séparé).
 # En production, ne JAMAIS laisser allow_origins=["*"] car cela autorise
@@ -156,6 +179,8 @@ async def _fetch_backend_resource(path: str, authorization: Optional[str] = None
     Cette fonction regroupe tous les appels vers l'API backend de la base de données.
     Elle accepte un token Authorization pour récupérer les données utilisateur
     du profil connecté via /api/utilisateurs/me/.
+    
+    En cas d'erreur, retourne None pour permettre une dégradation gracieuse du service.
     """
     # Dictionnaire pour stocker les en-têtes HTTP (vide si pas d'authentification)
     entetes = {}
@@ -168,17 +193,22 @@ async def _fetch_backend_resource(path: str, authorization: Optional[str] = None
                 f"{BACKEND_API_URL}/{path.lstrip('/')}",
                 headers=entetes,
                 params=params,
-                timeout=30.0,
+                timeout=10.0,
             )
         except httpx.RequestError as exc:
-            raise HTTPException(
-                status_code=503,
-                detail=f"Impossible de contacter le backend DRF ({BACKEND_API_URL}) : {exc}",
-            ) from exc
+            # Au lieu de lever une exception, enregistrer l'erreur et retourner None
+            # pour permettre au service de continuer avec dégradation gracieuse
+            print(f"⚠️ Erreur de connexion backend ({path}): {exc}")
+            return None
+        except Exception as exc:
+            print(f"⚠️ Erreur inattendue lors de la récupération de {path}: {exc}")
+            return None
 
         # Vérifier le code HTTP 200 avant de parser le JSON
         if response.status_code == 200:
             return response.json()
+        else:
+            print(f"⚠️ Réponse backend ({path}): HTTP {response.status_code}")
     return None
 
 
@@ -186,6 +216,7 @@ async def _post_backend_resource(path: str, json_data: Dict[str, Any], authoriza
     """Envoie un POST vers le backend DRF et retourne la réponse JSON.
     
     Utilisé pour créer ou modifier des ressources (sessions, messages, etc.).
+    En cas d'erreur, retourne None pour permettre une dégradation gracieuse.
     """
     # Dictionnaire d'en-têtes ; on précise que le body est du JSON
     entetes = {"Content-Type": "application/json"}
@@ -198,17 +229,21 @@ async def _post_backend_resource(path: str, json_data: Dict[str, Any], authoriza
                 f"{BACKEND_API_URL}/{path.lstrip('/')}",
                 headers=entetes,
                 json=json_data,
-                timeout=30.0,
+                timeout=10.0,
             )
         except httpx.RequestError as exc:
-            raise HTTPException(
-                status_code=503,
-                detail=f"Impossible de contacter le backend DRF ({BACKEND_API_URL}) : {exc}",
-            ) from exc
+            # Au lieu de lever une exception, enregistrer l'erreur et retourner None
+            print(f"⚠️ Erreur de connexion backend (POST {path}): {exc}")
+            return None
+        except Exception as exc:
+            print(f"⚠️ Erreur inattendue lors du POST {path}: {exc}")
+            return None
 
         # Accepter les codes 200 (mise à jour) et 201 (création)
         if response.status_code in (200, 201):
             return response.json()
+        else:
+            print(f"⚠️ Réponse backend (POST {path}): HTTP {response.status_code}")
     return None
 
 
@@ -639,7 +674,7 @@ async def chat_with_kossi(request: ChatRequest, authorization: Optional[str] = H
     api_key = os.getenv("OPENROUTER_API_KEY")
     
     # Choix dynamique du modèle (avec Gemini 2.5 Flash comme valeur par défaut très rapide et performante)
-    model_name = os.getenv("OPENROUTER_MODEL", "google/gemini-2.5-flash:free")
+    model_name = os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-v4-flash:free")
 
     # Prompt système chargé depuis le fichier `Prompt_Systems.txt`.
     system_prompt_text = FILE_SYSTEM_PROMPT
@@ -660,15 +695,38 @@ async def chat_with_kossi(request: ChatRequest, authorization: Optional[str] = H
     # IMPORTANT : toutes les informations métier proviennent de l'API Django/DRF
     # (BACKEND_API_URL). On ne lit pas le contenu envoyé par le frontend pour
     # ces données afin d'éviter les données non vérifiées ou manipulées.
-    books = await _fetch_books_from_backend()
-    clubs = await _fetch_clubs_from_backend()
-    events = await _fetch_events_from_backend()
-    news_items = await _fetch_news_from_backend()
+    try:
+        books = await _fetch_books_from_backend()
+    except Exception as e:
+        print(f"⚠️ Erreur lors de la récupération des livres: {e}")
+        books = []
+    
+    try:
+        clubs = await _fetch_clubs_from_backend()
+    except Exception as e:
+        print(f"⚠️ Erreur lors de la récupération des clubs: {e}")
+        clubs = []
+    
+    try:
+        events = await _fetch_events_from_backend()
+    except Exception as e:
+        print(f"⚠️ Erreur lors de la récupération des événements: {e}")
+        events = []
+    
+    try:
+        news_items = await _fetch_news_from_backend()
+    except Exception as e:
+        print(f"⚠️ Erreur lors de la récupération des actualités: {e}")
+        news_items = []
 
     # Récupération du profil utilisateur connecté via le token Authorization.
     # Si aucun token n'est fourni, `user_profile` restera vide — ceci protège
     # l'accès aux données sensibles et évite de se fier à des payloads frontaux.
-    user_profile = await _fetch_user_profile(authorization)
+    try:
+        user_profile = await _fetch_user_profile(authorization)
+    except Exception as e:
+        print(f"⚠️ Erreur lors de la récupération du profil utilisateur: {e}")
+        user_profile = {}
 
     backend_context = _build_backend_context(books, clubs, events, news_items, user_profile)
 
@@ -676,14 +734,19 @@ async def chat_with_kossi(request: ChatRequest, authorization: Optional[str] = H
     chat_session = None
     chat_history = ""
     if authorization:
-        sessions = await _fetch_user_chat_sessions(authorization)
-        if sessions:
-            sessions.sort(key=lambda s: s.get("updated_at") or s.get("created_at") or "", reverse=True)
-            chat_session = sessions[0]
-        if not chat_session:
-            chat_session = await _create_chat_session(authorization)
-        if chat_session:
-            chat_history = _build_chat_history_context(chat_session.get("messages", []), limit=MAX_CHAT_HISTORY)
+        try:
+            sessions = await _fetch_user_chat_sessions(authorization)
+            if sessions:
+                sessions.sort(key=lambda s: s.get("updated_at") or s.get("created_at") or "", reverse=True)
+                chat_session = sessions[0]
+            if not chat_session:
+                chat_session = await _create_chat_session(authorization)
+            if chat_session:
+                chat_history = _build_chat_history_context(chat_session.get("messages", []), limit=MAX_CHAT_HISTORY)
+        except Exception as e:
+            print(f"⚠️ Erreur lors de la gestion de la session: {e}")
+            chat_session = None
+            chat_history = ""
 
     # Recherche web automatique : interroger la toile pour la dernière question
     # de l'utilisateur afin de compléter les données internes si besoin.
@@ -698,20 +761,28 @@ async def chat_with_kossi(request: ChatRequest, authorization: Optional[str] = H
                 break
 
     if last_user_text:
-        # Effectuer une recherche web (SerpAPI -> Bing -> DuckDuckGo) pour
-        # compléter l'information disponible localement. Les résultats sont
-        # stockés dans `sources` et peuvent être utilisés en secours.
-        web_sources = await _search_web(last_user_text, limit=5)
-        if web_sources:
-            sources = web_sources
-            # Enregistrer les sources comme messages de type 'system' dans la
-            # session pour assurer la traçabilité et permettre une revue
-            # ultérieure (ex: marquer comme à vérifier si nécessaire).
-            if authorization and chat_session:
-                for src in sources:
-                    content = f"Source: {src.get('title','')} - {src.get('url','')}\n{src.get('snippet','')[:400]}"
-                    await _append_chat_message(str(chat_session.get("id")), "system", content, authorization)
-        else:
+        try:
+            # Effectuer une recherche web (SerpAPI -> Bing -> DuckDuckGo) pour
+            # compléter l'information disponible localement. Les résultats sont
+            # stockés dans `sources` et peuvent être utilisés en secours.
+            web_sources = await _search_web(last_user_text, limit=5)
+            if web_sources:
+                sources = web_sources
+                # Enregistrer les sources comme messages de type 'system' dans la
+                # session pour assurer la traçabilité et permettre une revue
+                # ultérieure (ex: marquer comme à vérifier si nécessaire).
+                if authorization and chat_session:
+                    for src in sources:
+                        content = f"Source: {src.get('title','')} - {src.get('url','')}\n{src.get('snippet','')[:400]}"
+                        try:
+                            await _append_chat_message(str(chat_session.get("id")), "system", content, authorization)
+                        except Exception:
+                            pass
+        except Exception as e:
+            print(f"⚠️ Erreur lors de la recherche web: {e}")
+            sources = []
+        
+        if not sources:
             # Si la recherche web ne retourne rien, construire des sources à
             # partir des données locales (livres, clubs, événements, actualités)
             # afin d'éviter une liste de sources vide. Les URLs backend ne
@@ -745,7 +816,10 @@ async def chat_with_kossi(request: ChatRequest, authorization: Optional[str] = H
                 if authorization and chat_session:
                     for src in sources:
                         content = f"Source locale: {src.get('title','')}\n{src.get('snippet','')[:400]}"
-                        await _append_chat_message(str(chat_session.get("id")), "system", content, authorization)
+                        try:
+                            await _append_chat_message(str(chat_session.get("id")), "system", content, authorization)
+                        except Exception:
+                            pass
             else:
                 # Dernier recours : inclure une source générique sans exposer
                 # l'URL backend, afin que `sources` ne soit jamais vide.
@@ -772,7 +846,10 @@ async def chat_with_kossi(request: ChatRequest, authorization: Optional[str] = H
             None
         )
         if last_user_message:
-            await _append_chat_message(str(chat_session.get("id")), "user", last_user_message.content, authorization)
+            try:
+                await _append_chat_message(str(chat_session.get("id")), "user", last_user_message.content, authorization)
+            except Exception as e:
+                print(f"⚠️ Erreur lors de la sauvegarde du message utilisateur: {e}")
 
     if not api_key:
         # Si l'API n'est pas configurée, retourner une réponse de secours claire.
@@ -807,21 +884,25 @@ async def chat_with_kossi(request: ChatRequest, authorization: Optional[str] = H
 
             # Logs de debug pour inspecter la réponse de l'API externe.
             # Ces logs aident au dépannage en cas d'erreur ou de réponse inattendue.
-            print("Status:", response.status_code)
+            print(f"📊 OpenRouter Status: {response.status_code}")
             try:
-                print("Réponse OpenRouter:", repr(response.text[:1000]) + "...")
+                resp_preview = response.text[:500] if len(response.text) > 500 else response.text
+                print(f"📊 OpenRouter Response: {repr(resp_preview)}")
             except Exception:
                 pass
 
             if response.status_code != 200:
                 # L'API a retourné une erreur HTTP (ex: clé invalide, solde insuffisant).
+                error_msg = "Erreur d'appel API"
                 try:
-                    print(repr(response.text[:1000]) + "...")
+                    error_detail = response.text[:500]
+                    print(f"❌ Erreur OpenRouter: {error_detail}")
+                    error_msg = error_detail
                 except Exception:
                     pass
 
                 return ChatResponse(
-                    response="Le service IA est indisponible ou le solde API est insuffisant.",
+                    response="Le service IA est indisponible ou le solde API est insuffisant. Détail: " + error_msg,
                     suggested_books=[]
                 )
 
@@ -844,7 +925,10 @@ async def chat_with_kossi(request: ChatRequest, authorization: Optional[str] = H
             # Persister la réponse d'assistant dans la session utilisateur (si authentifié).
             # Cela enregistre l'ensemble de l'historique du chat côté backend.
             if authorization and chat_session:
-                await _append_chat_message(str(chat_session.get("id")), "assistant", bot_reply, authorization)
+                try:
+                    await _append_chat_message(str(chat_session.get("id")), "assistant", bot_reply, authorization)
+                except Exception as e:
+                    print(f"⚠️ Erreur lors de la sauvegarde de la réponse assistant: {e}")
 
             # Déterminer les livres suggérés uniquement si demandés ou mentionnés
             suggested_books = []
@@ -887,11 +971,14 @@ async def chat_with_kossi(request: ChatRequest, authorization: Optional[str] = H
         # En cas d'erreur réseau, timeout ou autre problème d'exécution,
         # enregistrer le détail côté serveur et retourner une erreur HTTP 500.
         # Cela évite de divulguer les détails techniques au client.
-        try:
-            print(f"Erreur OpenRouter: {repr(str(e))}")
-        except Exception:
-            pass
-        raise HTTPException(status_code=500, detail="Erreur de communication avec l'API IA.")
+        error_str = str(e)
+        print(f"❌ Erreur chat endpoint: {error_str}")
+        import traceback
+        traceback.print_exc()
+        return ChatResponse(
+            response=f"Erreur lors du traitement: {error_str[:200]}",
+            suggested_books=[]
+        )
 
 @app.post("/vectorize")
 def vectorize_book(request: VectorizeRequest):
