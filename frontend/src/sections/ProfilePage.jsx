@@ -149,8 +149,7 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
   const { borrows = [] } = useBorrows();
   const { reservations = [] } = useReservations();
   const { participations = [] } = useParticipationsEvenements();
-  if (!user) return null;
-  const stats = user.stats ?? { booksRead: 0, reviewsPosted: 0, clubsJoined: 0, eventsAttended: 0 };
+  const stats = user?.stats ?? { booksRead: 0, reviewsPosted: 0, clubsJoined: 0, eventsAttended: 0 };
   const handleLogout = () => {
     if (confirm("Êtes-vous sûr de vouloir vous déconnecter ?")) onLogout();
   };

@@ -570,7 +570,7 @@ export function HomePage({ user }) {
               <span className="text-[10px] font-bold tracking-wider text-accent bg-[var(--library-accent)]/10 px-2 py-0.5 rounded-full border border-[var(--library-accent)]/20">IA</span>
             </h2>
             <button
-              onClick={() => onNavigate("catalog")}
+              onClick={() => onNavigate("recommendations")}
               className="text-sm font-semibold text-accent hover:opacity-75 flex items-center gap-1 transition-opacity focus:outline-none focus:ring-2 focus:ring-[var(--library-accent)] rounded px-2 py-1 tap-feedback"
             >
               <span className="hidden sm:inline">Voir tout</span>

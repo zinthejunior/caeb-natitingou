@@ -180,7 +180,6 @@ export function CatalogPage({ onBookClick, user }) {
   // Calcul du nombre de filtres actifs
   const nbFiltresActifs = genresSelectionnes.length + publicSelectionne.length + (afficherDispoUniquement ? 1 : 0);
   const aDesFiltres = nbFiltresActifs > 0 || recherche.length > 0;
-  if (!user) return null;
   return <div className="min-h-screen bg-library-bg pb-24">
       <Navbar user={user} />
 
@@ -328,11 +327,11 @@ export function CatalogPage({ onBookClick, user }) {
             </div>
   ) : livresFiltres.length === 0 ? <EtagereVide aDesFiltres={aDesFiltres} /> : modeAffichage === "grid" ? <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
             {livresFiltres.map((livre) => <div key={livre.id} className="animate-flow-in">
-                <CarteLivreGrille livre={livre} onClick={() => onBookClick(livre.id)} />
+                <CarteLivreGrille livre={livre} onClick={() => onBookClick?.(livre.id)} />
               </div>)}
           </div> : <div className="space-y-4">
             {livresFiltres.map((livre) => <div key={livre.id} className="animate-flow-in">
-                <CarteLivreListe livre={livre} onClick={() => onBookClick(livre.id)} />
+                <CarteLivreListe livre={livre} onClick={() => onBookClick?.(livre.id)} />
               </div>)}
           </div>}
       </div>

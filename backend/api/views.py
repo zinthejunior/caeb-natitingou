@@ -164,7 +164,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """Inscription ouverte à tous ; le reste nécessite un token JWT valide."""
-        if self.action == 'create':
+        if self.action in ['create', 'check_email']:
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
@@ -708,11 +708,6 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         if response.status_code == 200:
             access_token = response.data.get('access')
             refresh_token = response.data.get('refresh')
-            # Ne pas renvoyer le jeton dans le JSON de réponse pour plus de sécu
-            if 'access' in response.data:
-                del response.data['access']
-            if 'refresh' in response.data:
-                del response.data['refresh']
             response.data['message'] = "Connexion réussie"
             response = set_jwt_cookies(response, access_token, refresh_token)
         return response
@@ -728,10 +723,6 @@ class CookieTokenRefreshView(TokenRefreshView):
         if response.status_code == 200:
             access_token = response.data.get('access')
             new_refresh = response.data.get('refresh', refresh_token)
-            if 'access' in response.data:
-                del response.data['access']
-            if 'refresh' in response.data:
-                del response.data['refresh']
             response.data['message'] = "Rafraîchissement réussi"
             response = set_jwt_cookies(response, access_token, new_refresh)
         return response

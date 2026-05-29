@@ -188,7 +188,8 @@ async function rafraichirToken() {
     const response = await fetch(`${API_BASE_URL}/token/refresh/`, {
       method: "POST",                              // Type de requête HTTP
       headers: { "Content-Type": "application/json" }, // Format des données
-      body: JSON.stringify({ refresh: refreshToken })  // Données envoyées
+      body: JSON.stringify({ refresh: refreshToken }),  // Données envoyées
+      credentials: "include"
     });
     
     /**
@@ -361,7 +362,7 @@ export async function fetchWithAuth(endpoint, options = {}, retries = 1) {
        * - Toutes les options fournies (method, body, etc.)
        * - Les headers qu'on vient de construire (écrase les headers d'origine)
        */
-      return await fetch(url, { ...options, headers });
+      return await fetch(url, { ...options, headers, credentials: options.credentials || "include" });
     } catch (error) {
       /**
        * Gestion des erreurs réseau.

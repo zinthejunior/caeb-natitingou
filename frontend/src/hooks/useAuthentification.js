@@ -326,14 +326,14 @@ export function useAuthentification() {
   useEffect(() => {
     // Vérifie si un token existe déjà (connexion précédente)
     const token = getAuthToken();
-    
+
     if (token) {
-      // Token trouvé : tente de récupérer les données utilisateur
-      // "void" indique explicitement qu'on ignore la valeur de retour
+      // Token trouvé en mémoire : récupère le profil utilisateur
       void recupererUtilisateur();
     } else {
-      // Pas de token : l'utilisateur n'est pas connecté
-      setEtat((prev) => ({ ...prev, chargement: false }));
+      // Si le token en mémoire a disparu (rechargement de page),
+      // on tente quand même de récupérer l'utilisateur via les cookies HttpOnly.
+      void recupererUtilisateur();
     }
     
     // ─── ÉCOUTE DE L'ÉVÉNEMENT DE DÉCONNEXION ────────────────────────────────
@@ -383,7 +383,8 @@ export function useAuthentification() {
       const response = await fetch(`${API_BASE_URL}/token/`, {
         method: "POST",                                      // Requête POST
         headers: { "Content-Type": "application/json" },     // Format JSON
-        body: JSON.stringify({ username: email, password: motDePasse }) // Données
+        body: JSON.stringify({ username: email, password: motDePasse }), // Données
+        credentials: "include"
         // Note : Django JWT attend "username" et non "email"
       });
       

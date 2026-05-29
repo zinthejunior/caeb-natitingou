@@ -55,7 +55,7 @@
  * - Navigate : Composant qui redirige automatiquement vers une autre URL
  * - useLocation : Hook qui donne accès à l'URL actuelle (utile pour les redirections)
  */
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 /**
  * IMPORT : sonner (Toaster)
@@ -106,6 +106,7 @@ import { CatalogPage } from "@/sections/CatalogPage";
  * Affiche toutes les informations d'un livre spécifique.
  */
 import { BookDetailPage } from "@/sections/BookDetailPage";
+import { RecommendationsPage } from "@/sections/RecommendationsPage";
 
 /**
  * ClubsPage : Liste des clubs culturels
@@ -312,6 +313,49 @@ export default function App() {
     return await updateUser(updates);
   };
   
+  const navigate = useNavigate();
+
+  const handleBookClick = (bookId) => {
+    if (!bookId) return;
+    navigate(`/catalog/${bookId}`);
+  };
+
+  const handleClubClick = (clubId) => {
+    if (!clubId) return;
+    navigate(`/clubs/${clubId}`);
+  };
+
+  const handleEventClick = (eventId) => {
+    if (!eventId) return;
+    navigate(`/events/${eventId}`);
+  };
+
+  const handleNewsClick = (newsId) => {
+    if (!newsId) return;
+    navigate(`/news/${newsId}`);
+  };
+
+  const handleNavigate = (view, params = {}) => {
+    switch (view) {
+      case "home":
+        return navigate("/home");
+      case "catalog":
+        return navigate("/catalog");
+      case "book-detail":
+        return params.bookId ? navigate(`/catalog/${params.bookId}`) : null;
+      case "club-detail":
+        return params.clubId ? navigate(`/clubs/${params.clubId}`) : null;
+      case "event-detail":
+        return params.eventId ? navigate(`/events/${params.eventId}`) : null;
+      case "news-detail":
+        return params.newsId ? navigate(`/news/${params.newsId}`) : null;
+      case "recommendations":
+        return navigate("/recommendations");
+      default:
+        return typeof view === "string" ? navigate(view) : null;
+    }
+  };
+
   // ─── RENDU DES ROUTES ──────────────────────────────────────────────────────
   return <>
       {/* Routes : définit quelle page afficher selon l'URL */}
@@ -335,7 +379,12 @@ export default function App() {
 
         {/* Catalogue des livres */}
         <Route path="/catalog" element={<ProtectedRoute>
-            <AppLayout><CatalogPage user={user} /></AppLayout>
+            <AppLayout><CatalogPage user={user} onBookClick={handleBookClick} /></AppLayout>
+          </ProtectedRoute>} />
+
+        {/* Recommandations */}
+        <Route path="/recommendations" element={<ProtectedRoute>
+            <AppLayout><RecommendationsPage user={user} onNavigate={handleNavigate} /></AppLayout>
           </ProtectedRoute>} />
 
         {/* Détail d'un livre (URL dynamique avec :bookId) */}
@@ -347,7 +396,7 @@ export default function App() {
 
         {/* Clubs culturels */}
         <Route path="/clubs" element={<ProtectedRoute>
-            <AppLayout><ClubsPage user={user} /></AppLayout>
+            <AppLayout><ClubsPage user={user} onClubClick={handleClubClick} /></AppLayout>
           </ProtectedRoute>} />
 
         <Route path="/clubs/:clubId" element={<ProtectedRoute>
@@ -356,7 +405,7 @@ export default function App() {
 
         {/* Événements */}
         <Route path="/events" element={<ProtectedRoute>
-            <AppLayout><EventsPage user={user} /></AppLayout>
+            <AppLayout><EventsPage user={user} onEventClick={handleEventClick} /></AppLayout>
           </ProtectedRoute>} />
 
         <Route path="/events/:eventId" element={<ProtectedRoute>
@@ -365,7 +414,7 @@ export default function App() {
 
         {/* Actualités */}
         <Route path="/news" element={<ProtectedRoute>
-            <AppLayout><NewsPage user={user} /></AppLayout>
+            <AppLayout><NewsPage user={user} onNewsClick={handleNewsClick} /></AppLayout>
           </ProtectedRoute>} />
 
         <Route path="/news/:newsId" element={<ProtectedRoute>
@@ -406,7 +455,7 @@ export default function App() {
 
         {/* Recherche et Assistant IA */}
         <Route path="/search" element={<ProtectedRoute>
-            <AppLayout><SearchPage user={user} /></AppLayout>
+            <AppLayout><SearchPage user={user} onNavigate={handleNavigate} /></AppLayout>
           </ProtectedRoute>} />
 
         <Route path="/chat" element={<ProtectedRoute>

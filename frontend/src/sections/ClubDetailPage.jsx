@@ -74,7 +74,6 @@ export function ClubDetailPage({ user }) {
         return "Tout public";
     }
   };
-  if (!user) return null;
   return <div className="min-h-screen bg-library-bg adaptive-fg pb-24">
       <Navbar user={user} />
 

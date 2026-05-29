@@ -9,3 +9,8 @@ psycopg2-binary
 dj-database-url
 python-dotenv
 nltk
+fastapi
+uvicorn
+pandas
+numpy
+httpx

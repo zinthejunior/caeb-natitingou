@@ -140,9 +140,6 @@ export function EventsPage({ user, onEventClick }) {
     { id: "conference", label: "Conférences" },
     { id: "workshop", label: "Ateliers" }
   ];
-  
-  // Protection si utilisateur non connecté
-  if (!user) return null;
   return <div className="min-h-screen bg-library-bg pb-24">
       <Navbar user={user} />
 

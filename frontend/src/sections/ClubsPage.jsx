@@ -136,8 +136,6 @@ export function ClubsPage({ onClubClick, user }) {
     all: { label: "Tout public", icon: <Users className="w-3.5 h-3.5" /> }
   };
   
-  // Protection : ne rien afficher si l'utilisateur n'est pas connecté
-  if (!user) return null;
   return <div className="min-h-screen bg-library-bg pb-24">
       <Navbar user={user} />
 
@@ -192,7 +190,7 @@ export function ClubsPage({ onClubClick, user }) {
     club={club}
     isJoined
     audienceConfig={audienceConfig}
-    onClick={() => onClubClick(club.id)}
+    onClick={() => onClubClick?.(club.id)}
     onJoin={(e) => handleJoinClub(club.id, e)}
     onLeave={(e) => handleLeaveClub(club.id, e)}
   />)}
@@ -211,7 +209,7 @@ export function ClubsPage({ onClubClick, user }) {
     club={club}
     isJoined={false}
     audienceConfig={audienceConfig}
-    onClick={() => onClubClick(club.id)}
+    onClick={() => onClubClick?.(club.id)}
     onJoin={(e) => handleJoinClub(club.id, e)}
     onLeave={(e) => handleLeaveClub(club.id, e)}
   />)}
