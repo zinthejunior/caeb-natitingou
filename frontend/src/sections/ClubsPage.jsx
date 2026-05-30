@@ -36,6 +36,7 @@ import { Navbar } from "@/components/Navbar";
 import { ApiImage } from "@/components/ApiImage";
 import { useClubs, rejoindreClub, quitterClub } from "@/hooks/useData";
 import { useSEO } from "@/lib/utils";
+import { useAuthentification } from "@/hooks/useAuthentification";
 
 /**
  * Composant principal de la page des Clubs
@@ -43,6 +44,7 @@ import { useSEO } from "@/lib/utils";
  * @param {object} user - Informations de l'utilisateur connecté
  */
 export function ClubsPage({ onClubClick, user }) {
+  const { recupererUtilisateur } = useAuthentification();
   // ─── RÉCUPÉRATION DES DONNÉES ──────────────────────────────────────────────
   const { clubs } = useClubs();
   
@@ -104,6 +106,7 @@ export function ClubsPage({ onClubClick, user }) {
       toast.success("Vous avez rejoint le club !", { description: "La bibliothèque a été notifiée de votre inscription." });
       setShowContactForm(false);
       setSelectedClubId(null);
+      if (recupererUtilisateur) void recupererUtilisateur();
     } catch {
       toast.error("Erreur lors de l&apos;adhésion au club");
     }
@@ -123,6 +126,7 @@ export function ClubsPage({ onClubClick, user }) {
         setRemovedJoined((prev) => (prev.includes(clubId) ? prev : [...prev, clubId]));
       }
       toast.success("Vous avez quitté le club");
+      if (recupererUtilisateur) void recupererUtilisateur();
     } catch {
       toast.error("Erreur lors du départ du club");
     }

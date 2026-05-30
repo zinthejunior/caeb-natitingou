@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { Navbar } from "@/components/Navbar";
 import { useEvents, useClubs, registerEvent } from "@/hooks/useData";
 import { useSEO } from "@/lib/utils";
+import { useAuthentification } from "@/hooks/useAuthentification";
 
 /**
  * Composant affiché quand il n'y a pas d'événements
@@ -80,6 +81,7 @@ function EmptyCalendar() {
  * @param {function} onEventClick - Fonction appelée quand on clique sur un événement
  */
 export function EventsPage({ user, onEventClick }) {
+  const { recupererUtilisateur } = useAuthentification();
   // ─── RÉCUPÉRATION DES DONNÉES ──────────────────────────────────────────────
   const { events } = useEvents();  // Liste des événements
   const { clubs } = useClubs();    // Liste des clubs (pour afficher l'organisateur)
@@ -112,6 +114,7 @@ export function EventsPage({ user, onEventClick }) {
         setParticipatingEvents((prev) => [...prev, eventId]);
         toast.success("Inscription confirmée !", { description: "Vous recevrez un rappel avant l&apos;événement." });
       }
+      if (recupererUtilisateur) void recupererUtilisateur();
     } catch (err) {
       toast.error("Erreur lors de l&apos;inscription à l&apos;événement");
     }

@@ -87,8 +87,8 @@ export function RecommendationsPage({ user, onNavigate }) {
               <h2 className="text-2xl font-bold text-primary mb-2">Aucune recommandation pour l'instant</h2>
               <p className="text-sm text-muted">Le système ne dispose pas encore de suggestions personnalisées. Revenez bientôt ou explorez le catalogue.</p>
             </div> : <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {recommendations.map((book) => <RecommendationCard
-    key={book.id || book.title}
+              {recommendations.map((book, index) => <RecommendationCard
+    key={book.id ?? `${book.title || book.titre || "book"}-${index}`}
     book={book}
     onClick={() => onNavigate("book-detail", { bookId: book.id })}
   />)}

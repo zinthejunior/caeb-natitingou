@@ -8,6 +8,7 @@ import { Navbar } from "@/components/Navbar";
 import { ClubContactForm } from "@/components/ClubContactForm";
 import { useClub, useEvents, rejoindreClub, quitterClub } from "@/hooks/useData";
 import { useSEO } from "@/lib/utils";
+import { useAuthentification } from "@/hooks/useAuthentification";
 export function ClubDetailPage({ user }) {
   const { clubId } = useParams();
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export function ClubDetailPage({ user }) {
   const { events, isLoading: isEventsLoading } = useEvents();
   const [isJoined, setIsJoined] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
+  const { recupererUtilisateur } = useAuthentification();
   useEffect(() => {
     if (club) setIsJoined(club.estMembre || false);
   }, [club]);
@@ -32,6 +34,7 @@ export function ClubDetailPage({ user }) {
       toast.success("Vous avez rejoint le club !", {
         description: "La bibliothèque a été notifiée de votre inscription."
       });
+      if (recupererUtilisateur) void recupererUtilisateur();
     } catch (err) {
       toast.error("Erreur lors de l'adhésion au club");
     }
@@ -41,6 +44,7 @@ export function ClubDetailPage({ user }) {
       await quitterClub(clubId);
       setIsJoined(false);
       toast.success("Vous avez quitté le club");
+      if (recupererUtilisateur) void recupererUtilisateur();
     } catch (err) {
       toast.error("Erreur lors du départ du club");
     }

@@ -25,6 +25,7 @@
  */
 
 import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Search, Star, X, Grid3X3, List } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -105,23 +106,45 @@ export function CatalogPage({ onBookClick, user }) {
   const { livres, chargement } = useLivres();
   
   // ─── ÉTAT LOCAL POUR LA RECHERCHE ET LES FILTRES ───────────────────────────
-  const [recherche, setRecherche] = useState("");           // Texte de recherche
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = searchParams.get("view");
+  const [recherche, setRecherche] = useState(() => searchParams.get("search") || "");           // Texte de recherche
   const [modeAffichage, setModeAffichage] = useState("grid"); // "grid" ou "list"
   const [genresSelectionnes, setGenresSelectionnes] = useState([]);    // Filtres genre
   const [publicSelectionne, setPublicSelectionne] = useState([]);      // Filtres public
   const [afficherDispoUniquement, setAfficherDispoUniquement] = useState(false);
-  const [triPar, setTriPar] = useState("popular");          // Critère de tri
+  const [triPar, setTriPar] = useState(view === "new" ? "newest" : view === "popular" ? "popular" : "popular");          // Critère de tri
   const [donneesPretes, setDonneesPretes] = useState(false);
   
   // Marquer les données comme prêtes quand le chargement est terminé
   useEffect(() => {
     if (!chargement) setDonneesPretes(true);
   }, [chargement]);
+
+  // Synchroniser le tri avec la vue de catégorie (si on arrive depuis la home)
+  useEffect(() => {
+    if (view === "new") setTriPar("newest");
+    else if (view === "popular") setTriPar("popular");
+  }, [view]);
+
+  // Synchroniser le texte de recherche avec l'URL pour pouvoir partager l'état
+  useEffect(() => {
+    const params = {};
+    if (view) params.view = view;
+    if (recherche) params.search = recherche;
+    setSearchParams(params, { replace: true });
+  }, [recherche, view, setSearchParams]);
   
   // Récupération des statistiques globales pour le SEO
   const { stats } = useGlobalStats();
   const bookCount = stats?.books_count?.toLocaleString() ?? "...";
-  useSEO("Catalogue", `Explorez notre catalogue de ${bookCount} ouvrages : romans, essais, jeunesse, et bien plus encore.`);
+  const viewLabel = view === "new" ? "Nouveautés" : view === "popular" ? "Les plus populaires" : "";
+  useSEO(
+    `Catalogue${viewLabel ? ` • ${viewLabel}` : ""}`,
+    viewLabel
+      ? `Retrouvez toutes les ${viewLabel.toLowerCase()} de notre catalogue.`
+      : `Explorez notre catalogue de ${bookCount} ouvrages : romans, essais, jeunesse, et bien plus encore.`
+  );
   
   // ─── FILTRAGE ET TRI DES LIVRES (avec useMemo pour optimiser) ──────────────
   // useMemo mémorise le résultat et ne recalcule que si les dépendances changent
@@ -131,15 +154,23 @@ export function CatalogPage({ onBookClick, user }) {
     // 1. Filtre par recherche textuelle
     if (recherche) {
       const q = recherche.toLowerCase();
-      resultat = resultat.filter(
-        (l) => l.titre.toLowerCase().includes(q) || l.auteur.toLowerCase().includes(q) || l.genre.toLowerCase().includes(q)
-      );
+      resultat = resultat.filter((l) => {
+        const titre = String(l.titre || "").toLowerCase();
+        const auteur = String(l.auteur || "").toLowerCase();
+        const genre = String(l.genre || "").toLowerCase();
+        const sousGenre = String(l.sous_genre || "").toLowerCase();
+        return titre.includes(q) || auteur.includes(q) || genre.includes(q) || sousGenre.includes(q);
+      });
     }
     
-    // 2. Filtre par genre
+    // 2. Filtre par vue spécifique (nouvelles / populaires depuis la page d'accueil)
+    if (view === "new") resultat = resultat.filter((l) => l.estNouveau);
+    if (view === "popular") resultat = resultat.filter((l) => l.estPopulaire);
+
+    // 3. Filtre par genre
     if (genresSelectionnes.length > 0) resultat = resultat.filter((l) => genresSelectionnes.includes(l.genre));
     
-    // 3. Filtre par public cible
+    // 4. Filtre par public cible
     if (publicSelectionne.length > 0) resultat = resultat.filter((l) => publicSelectionne.includes(l.publicCible || ""));
     
     // 4. Filtre disponibilité
@@ -151,7 +182,7 @@ export function CatalogPage({ onBookClick, user }) {
         resultat.sort((a, b) => (b.annee || 0) - (a.annee || 0));
         break;
       case "rating":
-        resultat.sort((a, b) => b.note - a.note);
+        resultat.sort((a, b) => (b.note || 0) - (a.note || 0));
         break;
       default: // "popular"
         resultat.sort((a, b) => (b.estPopulaire ? 1 : 0) - (a.estPopulaire ? 1 : 0));
@@ -161,8 +192,14 @@ export function CatalogPage({ onBookClick, user }) {
   }, [recherche, genresSelectionnes, publicSelectionne, afficherDispoUniquement, triPar, livres]);
   
   // ─── EXTRACTION DES GENRES ET PUBLICS DISPONIBLES ──────────────────────────
-  const tousLesGenres = useMemo(() => Array.from(new Set(livres.map((l) => l.genre))).sort(), [livres]);
-  const tousLesPublics = useMemo(() => Array.from(new Set(livres.map((l) => l.publicCible || ""))).sort(), [livres]);
+  const tousLesGenres = useMemo(
+    () => Array.from(new Set(livres.map((l) => l.genre || "").filter(Boolean))).sort(),
+    [livres]
+  );
+  const tousLesPublics = useMemo(
+    () => Array.from(new Set(livres.map((l) => String(l.publicCible || "")))).sort(),
+    [livres]
+  );
   
   // ─── FONCTIONS DE GESTION DES FILTRES ──────────────────────────────────────
   const basculerGenre = (genre) => {
@@ -191,8 +228,13 @@ export function CatalogPage({ onBookClick, user }) {
         <div className="mb-10">
           <h1 className="font-display text-4xl md:text-5xl font-bold mb-3">
             <span className="text-gradient">Le Catalogue</span>
+            {viewLabel && <span className="text-lg text-accent font-semibold"> • {viewLabel}</span>}
           </h1>
-          <p className="text-muted text-lg pl-1 font-medium">Explorez nos 7 000 trésors littéraires — romans, essais et découvertes.</p>
+          <p className="text-muted text-lg pl-1 font-medium">
+            {viewLabel
+              ? `Retrouvez toutes les ${viewLabel.toLowerCase()} de notre collection.`
+              : `Explorez nos ${bookCount} trésors littéraires — romans, essais et découvertes.`}
+          </p>
         </div>
 
         {
@@ -202,21 +244,32 @@ export function CatalogPage({ onBookClick, user }) {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 mb-4">
             <div className="lg:col-span-2">
               <div className="relative group">
+              <form
+    onSubmit={(e) => e.preventDefault()}
+    className="relative"
+  >
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-accent pointer-events-none group-focus-within:scale-110 transition-transform duration-300" />
                 <Input
-    placeholder="Rechercher par titre, auteur, genre..."
+    type="search"
+    autoComplete="off"
+    placeholder="Rechercher un titre, un auteur, un genre ou un sous-genre..."
+    aria-label="Rechercher dans le catalogue"
     value={recherche}
     onChange={(e) => setRecherche(e.target.value)}
     className="pl-12 h-14 glass-effect border-white/10 focus:ring-4 focus:ring-accent/10 focus:border-accent/40 rounded-2xl text-primary placeholder:text-muted text-lg font-medium shadow-glow transition-all"
   />
                 {recherche && <button
+    type="button"
     onClick={() => setRecherche("")}
     className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-accent transition-colors tap-feedback"
+    aria-label="Effacer la recherche"
   >
                     <X className="w-5 h-5" />
                   </button>}
-              </div>
+              </form>
+              <p className="mt-3 text-sm text-muted">Résultats instantanés pendant la saisie : titre, auteur, genre ou sous-genre.</p>
             </div>
+          </div>
 
             <div className="flex gap-3">
               <select

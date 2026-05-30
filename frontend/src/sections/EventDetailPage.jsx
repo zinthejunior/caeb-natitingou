@@ -11,7 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useParams, useNavigate } from "react-router-dom";
+import { useAuthentification } from "@/hooks/useAuthentification";
 export function EventDetailPage({ user }) {
+  const { recupererUtilisateur } = useAuthentification();
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { event, isLoading: isEventLoading } = useEvent(eventId);
@@ -72,6 +74,7 @@ export function EventDetailPage({ user }) {
       toast.success("Inscription confirmée !", {
         description: "Votre participation a été enregistrée avec succès. À très bientôt !"
       });
+      if (recupererUtilisateur) void recupererUtilisateur();
     } catch (err) {
       toast.error(err.message || "Erreur lors de l'inscription");
     } finally {

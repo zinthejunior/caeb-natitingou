@@ -1,13 +1,24 @@
 import { useState, useEffect } from "react";
 import { fetchWithAuth } from "@/lib/api";
 export async function appelAPI(endpoint, options = {}) {
-  const response = await fetchWithAuth(endpoint, options);
-  if (!response.ok) {
-    const texteErreur = await response.text();
-    throw new Error(`Erreur API ${response.status}: ${texteErreur}`);
+  try {
+    const response = await fetchWithAuth(endpoint, options);
+    if (!response.ok) {
+      console.warn(`[API] Endpoint ${endpoint} returned ${response.status}`);
+      // Pour les erreurs 401, retourner un tableau vide plutôt que de lever une erreur
+      if (response.status === 401) {
+        return { results: [] };
+      }
+      const texteErreur = await response.text();
+      throw new Error(`Erreur API ${response.status}: ${texteErreur}`);
+    }
+    if (response.status === 204) return null;
+    return response.json();
+  } catch (error) {
+    console.error(`[API] Erreur lors de l'appel à ${endpoint}:`, error);
+    // Retourner une structure vide pour éviter que l'app se casse
+    return { results: [] };
   }
-  if (response.status === 204) return null;
-  return response.json();
 }
 export function useLivres() {
   const [livres, setLivres] = useState([]);
@@ -17,9 +28,11 @@ export function useLivres() {
     (async () => {
       try {
         setChargement(true);
-        const donnees = await appelAPI("/livres/");
+        // Récupérer tous les livres avec une grande taille de page
+        const donnees = await appelAPI("/livres/?page_size=5000");
         setLivres(donnees.results || donnees);
-      } catch {
+      } catch (err) {
+        console.error("Erreur lors du chargement des livres:", err);
         setErreur("Erreur lors du chargement des livres");
       } finally {
         setChargement(false);
@@ -190,39 +203,41 @@ export function useEmprunts() {
   const [emprunts, setEmprunts] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(null);
+  const recharger = async () => {
+    try {
+      setChargement(true);
+      const donnees = await appelAPI("/emprunts/");
+      setEmprunts(donnees.results || donnees);
+    } catch {
+      setErreur("Erreur lors du chargement des emprunts");
+    } finally {
+      setChargement(false);
+    }
+  };
   useEffect(() => {
-    (async () => {
-      try {
-        setChargement(true);
-        const donnees = await appelAPI("/emprunts/");
-        setEmprunts(donnees.results || donnees);
-      } catch {
-        setErreur("Erreur lors du chargement des emprunts");
-      } finally {
-        setChargement(false);
-      }
-    })();
+    void recharger();
   }, []);
-  return { emprunts, chargement, erreur };
+  return { emprunts, chargement, erreur, recharger };
 }
 export function useReservations() {
   const [reservations, setReservations] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(null);
+  const recharger = async () => {
+    try {
+      setChargement(true);
+      const donnees = await appelAPI("/reservations/");
+      setReservations(donnees.results || donnees);
+    } catch {
+      setErreur("Erreur lors du chargement des réservations");
+    } finally {
+      setChargement(false);
+    }
+  };
   useEffect(() => {
-    (async () => {
-      try {
-        setChargement(true);
-        const donnees = await appelAPI("/reservations/");
-        setReservations(donnees.results || donnees);
-      } catch {
-        setErreur("Erreur lors du chargement des réservations");
-      } finally {
-        setChargement(false);
-      }
-    })();
+    void recharger();
   }, []);
-  return { reservations, chargement, erreur };
+  return { reservations, chargement, erreur, recharger };
 }
 export function useRecommandations(humeur = "neutre") {
   const [recommandations, setRecommandations] = useState(null);
@@ -320,20 +335,38 @@ export async function inverserFavori(livreId) {
   return appelAPI(`/livres/${livreId}/favorite/`, { method: "POST" });
 }
 export async function marquerCommeLu(livreId, estLu = true) {
-  return appelAPI(`/livres/${livreId}/mark_read/`, {
+  return appelAPI(`/livres/${livreId}/mark-as-read/`, {
     method: "POST",
     body: JSON.stringify({ is_read: estLu })
   });
 }
+
+export async function marquerCommeNonLu(livreId) {
+  return appelAPI(`/livres/${livreId}/unmark-as-read/`, {
+    method: "POST",
+  });
+}
 export function useLivresLus() {
   const [livresLus, setLivresLus] = useState([]);
+  const [livresLusIds, setLivresLusIds] = useState(new Set());
   const [chargement, setChargement] = useState(true);
   const recharger = async () => {
     try {
       setChargement(true);
       const data = await appelAPI("/interactions/?type_action=marquage&livre_lu=true");
       const liste = data.results || data;
-      setLivresLus(Array.isArray(liste) ? liste : []);
+      const listeArray = Array.isArray(liste) ? liste : [];
+      setLivresLus(listeArray);
+      // Construire un Set des IDs de livres lus pour vérification O(1)
+      const idsSet = new Set(
+        listeArray
+          .map(i => i.livre_detail?.id || i.livre)
+          .filter(Boolean)
+      );
+      setLivresLusIds(idsSet);
+    } catch {
+      setLivresLus([]);
+      setLivresLusIds(new Set());
     } finally {
       setChargement(false);
     }
@@ -341,7 +374,7 @@ export function useLivresLus() {
   useEffect(() => {
     void recharger();
   }, []);
-  return { livresLus, chargement, recharger };
+  return { livresLus, livresLusIds, chargement, recharger };
 }
 export function useHistorique() {
   const [historique, setHistorique] = useState([]);
@@ -404,8 +437,8 @@ export function useReviews(livreId) {
   return { data: avis, isLoading: chargement, error: erreur, reload: recharger };
 }
 export function useBorrows() {
-  const { emprunts, chargement, erreur } = useEmprunts();
-  return { borrows: emprunts, isLoading: chargement, error: erreur };
+  const { emprunts, chargement, erreur, recharger } = useEmprunts();
+  return { borrows: emprunts, isLoading: chargement, error: erreur, reload: recharger };
 }
 export function useLabStations() {
   return { stations: [], isLoading: false, error: null };

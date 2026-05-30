@@ -143,3 +143,18 @@ export async function fetchWithAuth(endpoint, options = {}, retries = 1) {
   
   return response;
 }
+
+/**
+ * getAuthToken : Récupère le token d'authentification.
+ * 
+ * NOTE: Avec les cookies HttpOnly, le token n'est pas accessible en JavaScript.
+ * Cette fonction retourne null, mais elle est gardée pour compatibilité.
+ * Les cookies sont envoyés automatiquement via `credentials: "include"` dans fetchWithAuth.
+ * 
+ * @returns {null} Toujours null car les tokens sont stockés en cookies HttpOnly
+ */
+export function getAuthToken() {
+  // Les tokens HttpOnly ne sont pas accessibles depuis JavaScript
+  // Ils sont envoyés automatiquement par le navigateur avec credentials: "include"
+  return null;
+}

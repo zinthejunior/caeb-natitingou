@@ -107,6 +107,7 @@ import { CatalogPage } from "@/sections/CatalogPage";
  */
 import { BookDetailPage } from "@/sections/BookDetailPage";
 import { RecommendationsPage } from "@/sections/RecommendationsPage";
+import { toggleFavorite } from "@/hooks/useData";
 
 /**
  * ClubsPage : Liste des clubs culturels
@@ -293,7 +294,7 @@ function AppRoutes() {
   // - L'état de connexion (utilisateur, tokens JWT)
   // - Les fonctions de connexion/déconnexion
   // - La mise à jour du profil
-  const { utilisateur: user, mettreAJourUtilisateur: updateUser, changerMotDePasse: changePassword, deconnexion: logout } = useAuthentification();
+  const { utilisateur: user, mettreAJourUtilisateur: updateUser, changerMotDePasse: changePassword, deconnexion: logout, recupererUtilisateur } = useAuthentification();
   
   /**
    * Gère l'ajout/suppression d'un livre des favoris
@@ -301,9 +302,14 @@ function AppRoutes() {
    */
   const handleToggleFavorite = async (bookId) => {
     if (!user) return;
-    const favoris = user.favoris || [];
-    const newFavoris = favoris.includes(bookId) ? favoris.filter((id) => id !== bookId) : [...favoris, bookId];
-    await updateUser({ favoris: newFavoris });
+    try {
+      await toggleFavorite(bookId);
+      if (recupererUtilisateur) {
+        await recupererUtilisateur();
+      }
+    } catch (err) {
+      toast.error("Erreur lors de la mise à jour des favoris");
+    }
   };
   
   /**

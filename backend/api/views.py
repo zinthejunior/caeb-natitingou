@@ -11,13 +11,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes as perm_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from django.db.models import Count
+from django.db.models import Count, Q
 import joblib
 import os
 import logging
 from . import recommandations as reco_engine
 from .throttling import InscriptionRateThrottle, ContactRateThrottle, AuthRateThrottle
 from . import emails as mail_service
+
 from .models import (
     User, Book, Borrow, Interaction, Notification,
     ReadingClub, Event, News, Review, Reservation,
@@ -32,6 +33,8 @@ from .serializers import (
     ParticipationEventSerializer
 )
 
+
+# On va essayer d'exécuter notre script
 
 # ── INITIALISATION DU MOTEUR DE RECOMMANDATIONS ──────────────
 
@@ -131,10 +134,40 @@ class RecommendationViewSet(viewsets.ViewSet):
         n = int(request.query_params.get('n', 10))
 
         try:
-            recommendations = reco_engine.recommander_par_user_id(
+            # Préparer un profil succinct à transmettre au moteur de recommandation
+            user_profile = {
+                'genres_preferes': getattr(user, 'genres_preferes', []) or [],
+                'niveau_etude': getattr(user, 'niveau_etude', None),
+                'date_naissance': getattr(user, 'date_naissance', None),
+                'intentions': getattr(user, 'intentions', []) or [],
+            }
+
+            raw_recommendations = reco_engine.recommander_par_user_id(
                 user_id=str(user.id),
                 n=n,
+                user_profile=user_profile,
             )
+
+            recommendations = []
+            for reco in raw_recommendations:
+                code_barres = reco.get('Code_barres')
+                if code_barres is None:
+                    continue
+
+                code_str = str(code_barres)
+                book = Book.objects.filter(
+                    Q(id=code_str) | Q(codes_barres__icontains=code_str)
+                ).first()
+
+                if not book:
+                    logger.debug(f"Recommendation skipped — Code_barres {code_barres} absent en base")
+                    continue
+
+                book_data = BookSerializer(book).data
+                book_data['recommendation_score'] = reco.get('Score', 0)
+                book_data['reco_source'] = 'IA'
+                recommendations.append(book_data)
+
             return Response({
                 'user_id': str(user.id),
                 'recommendations': recommendations,
@@ -184,7 +217,22 @@ class UserViewSet(viewsets.ModelViewSet):
     def me(self, request):
         """Renvoie le profil complet de l'utilisateur actuellement connecté."""
         serializer = self.get_serializer(request.user)
-        return Response(serializer.data)
+        data = serializer.data
+        
+        # Ajouter les statistiques personnalisées
+        user = request.user
+        books_read = Interaction.objects.filter(user=user, livre_lu=True).count()
+        reviews_posted = Review.objects.filter(user=user).count()
+        clubs_joined = ReadingClub.objects.filter(members=user).count()
+        
+        data['stats'] = {
+            'booksRead': books_read,
+            'reviewsPosted': reviews_posted,
+            'clubsJoined': clubs_joined,
+            'eventsAttended': ParticipationEvent.objects.filter(user=user).count()
+        }
+        
+        return Response(data)
 
     @action(detail=False, methods=['patch'], url_path='me/update')
     def update_me(self, request):
@@ -242,6 +290,13 @@ class UserViewSet(viewsets.ModelViewSet):
 
 # ── LIVRES ────────────────────────────────────────────────────
 
+from rest_framework.pagination import PageNumberPagination
+
+class LargeResultsSetPagination(PageNumberPagination):
+    page_size = 1000
+    page_size_query_param = 'page_size'
+    max_page_size = 5000
+
 class BookViewSet(viewsets.ModelViewSet):
     """
     CRUD complet pour le catalogue de livres.
@@ -251,6 +306,7 @@ class BookViewSet(viewsets.ModelViewSet):
     queryset           = Book.objects.all()
     serializer_class   = BookSerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class   = LargeResultsSetPagination
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def favorite(self, request, pk=None):
@@ -268,6 +324,56 @@ class BookViewSet(viewsets.ModelViewSet):
         user.save()
         return Response({'status': status_str, 'favorites': favorites})
 
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated], url_path='mark-as-read')
+    def mark_as_read(self, request, pk=None):
+        """Marquer un livre comme lu et créer/mettre à jour une interaction de marquage."""
+        import uuid
+        book = self.get_object()
+        user = request.user
+        is_read = request.data.get('is_read', True)
+
+        # Chercher une interaction marquage existante pour ce user+livre
+        existing = Interaction.objects.filter(
+            user=user, livre=book, type_action='marquage'
+        ).first()
+
+        if existing:
+            # Mise à jour
+            existing.livre_lu = bool(is_read)
+            existing.source = request.data.get('source', 'application')
+            existing.save(update_fields=['livre_lu', 'source'])
+            interaction = existing
+        else:
+            # Création avec un UUID généré côté serveur
+            interaction = Interaction.objects.create(
+                id=str(uuid.uuid4()),
+                user=user,
+                livre=book,
+                type_action='marquage',
+                livre_lu=bool(is_read),
+                source=request.data.get('source', 'application'),
+            )
+
+        return Response({
+            'status': 'marked_as_read' if interaction.livre_lu else 'unmarked',
+            'book_id': book.id,
+            'interaction_id': interaction.id,
+            'is_read': interaction.livre_lu,
+        })
+
+    @action(detail=True, methods=['delete', 'post'], permission_classes=[permissions.IsAuthenticated], url_path='unmark-as-read')
+    def unmark_as_read(self, request, pk=None):
+        """Retirer le marquage 'lu' d'un livre."""
+        book = self.get_object()
+        user = request.user
+        deleted_count, _ = Interaction.objects.filter(
+            user=user, livre=book, type_action='marquage'
+        ).delete()
+        return Response({
+            'status': 'unmarked',
+            'book_id': book.id,
+            'deleted': deleted_count > 0,
+        })
 
 # ── CHOIX DYNAMIQUES (pour les formulaires) ───────────────────
 
@@ -374,6 +480,7 @@ class BorrowViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """
         Enregistre l'emprunt physique en calculant la date_retour_prevue (date_sortie + 14 jours).
+        Associe automatiquement l'emprunt à l'utilisateur connecté.
         """
         from datetime import timedelta
         # Récupération ou initialisation de la date de sortie physique
@@ -384,7 +491,23 @@ class BorrowViewSet(viewsets.ModelViewSet):
             date_sortie = now().date()
             
         date_retour_prevue = date_sortie + timedelta(days=14)
-        serializer.save(date_retour_prevue=date_retour_prevue)
+        serializer.save(user=self.request.user, date_retour_prevue=date_retour_prevue)
+
+    def perform_update(self, serializer):
+        """
+        Gère le renouvellement (prolongation) d'un emprunt.
+        Si la prolongation est demandée et n'a pas encore été faite,
+        on ajoute 14 jours à la date de retour prévue.
+        """
+        instance = serializer.instance
+        prolonge = serializer.validated_data.get('renouvele')
+        
+        if prolonge and not instance.renouvele:
+            from datetime import timedelta
+            nouvelle_date = instance.date_retour_prevue + timedelta(days=14)
+            serializer.save(date_retour_prevue=nouvelle_date)
+        else:
+            serializer.save()
 
 
 # ── INTERACTIONS ──────────────────────────────────────────────
@@ -394,17 +517,33 @@ class InteractionViewSet(viewsets.ModelViewSet):
     Enregistrement des interactions utilisateur ↔ livre.
     Les interactions sont liées à l'utilisateur connecté et
     utilisées par Kossi pour affiner les recommandations.
+    Filtres disponibles via query params :
+      ?type_action=marquage  → ne retourne que les marquages
+      ?livre_lu=true         → ne retourne que les livres marqués comme lus
     """
     serializer_class   = InteractionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        """Ne renvoie que les interactions de l'utilisateur connecté."""
-        return Interaction.objects.filter(user=self.request.user)
+        """Ne renvoie que les interactions de l'utilisateur connecté, avec filtres optionnels."""
+        qs = Interaction.objects.filter(user=self.request.user).select_related('livre')
+        
+        # Filtre par type d'action (ex: vue, like, marquage, chat_ia)
+        type_action = self.request.query_params.get('type_action')
+        if type_action:
+            qs = qs.filter(type_action=type_action)
+        
+        # Filtre par statut lu
+        livre_lu = self.request.query_params.get('livre_lu')
+        if livre_lu is not None:
+            qs = qs.filter(livre_lu=(livre_lu.lower() == 'true'))
+        
+        return qs.order_by('-created_at')
 
     def perform_create(self, serializer):
-        """Associe automatiquement l'interaction à l'utilisateur connecté."""
-        serializer.save(user=self.request.user)
+        """Associe automatiquement l'interaction à l'utilisateur connecté et génère un UUID."""
+        import uuid
+        serializer.save(user=self.request.user, id=str(uuid.uuid4()))
 
 
 # ── NOTIFICATIONS ────────────────────────────────────────────
@@ -437,41 +576,59 @@ class ReadingClubViewSet(viewsets.ModelViewSet):
     def join(self, request, pk=None):
         """
         POST /clubs/{id}/join/
-        Inscrit l'utilisateur au club et incrémente le compteur de membres.
+        Inscrit l'utilisateur au club via la relation ManyToMany 'members'
+        et maintient la liste followed_clubs de l'utilisateur en synchronisation.
         """
         club = self.get_object()
         user = request.user
-        followed = user.followed_clubs or []
-        if club.id not in followed:
-            followed.append(club.id)
-            user.followed_clubs = followed
-            user.save()
-            club.member_count += 1
+        
+        # Vérification via la relation ManyToMany (source de vérité)
+        if not club.members.filter(pk=user.pk).exists():
+            # Ajout à la relation ManyToMany (persisté en BDD)
+            club.members.add(user)
+            club.member_count = club.members.count()  # Recalcule depuis la BDD
             club.save()
+            
+            # Synchronisation du cache JSON sur l'utilisateur
+            followed = user.followed_clubs or []
+            if club.id not in followed:
+                followed.append(club.id)
+                user.followed_clubs = followed
+                user.save(update_fields=['followed_clubs'])
+            
             msg = 'inscrit au club'
         else:
             msg = 'déjà membre'
-        return Response({'status': msg, 'memberCount': club.member_count})
+        
+        return Response({'status': msg, 'memberCount': club.member_count, 'isJoined': True})
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def leave(self, request, pk=None):
         """
         POST /clubs/{id}/leave/
-        Désinscrit l'utilisateur du club et décrémente le compteur de membres.
+        Désinscrit l'utilisateur du club via ManyToMany et met à jour followed_clubs.
         """
         club = self.get_object()
         user = request.user
-        followed = user.followed_clubs or []
-        if club.id in followed:
-            followed.remove(club.id)
-            user.followed_clubs = followed
-            user.save()
-            club.member_count = max(0, club.member_count - 1)
+        
+        if club.members.filter(pk=user.pk).exists():
+            # Suppression de la relation ManyToMany
+            club.members.remove(user)
+            club.member_count = club.members.count()  # Recalcule depuis la BDD
             club.save()
+            
+            # Synchronisation du cache JSON sur l'utilisateur
+            followed = user.followed_clubs or []
+            if club.id in followed:
+                followed.remove(club.id)
+                user.followed_clubs = followed
+                user.save(update_fields=['followed_clubs'])
+            
             msg = 'désinscrit du club'
         else:
             msg = 'pas membre'
-        return Response({'status': msg, 'memberCount': club.member_count})
+        
+        return Response({'status': msg, 'memberCount': club.member_count, 'isJoined': False})
 
     @action(
         detail=True,
@@ -675,6 +832,7 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
 
 # ── Custom Authentication Views (Cookies HttpOnly) ──
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -724,13 +882,27 @@ class CookieTokenRefreshView(TokenRefreshView):
         if refresh_token:
             # Injecter le refresh token dans les data pour que TokenRefreshView le valide
             request.data['refresh'] = refresh_token
-        
-        response = super().post(request, *args, **kwargs)
+
+        try:
+            response = super().post(request, *args, **kwargs)
+        except Exception as exc:
+            response = Response(
+                {"detail": "Token de rafraîchissement invalide ou utilisateur introuvable."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+            response.delete_cookie('access', path='/')
+            response.delete_cookie('refresh', path='/')
+            return response
+
         if response.status_code == 200:
             access_token = response.data.get('access')
             new_refresh = response.data.get('refresh', refresh_token)
             response.data['message'] = "Rafraîchissement réussi"
             response = set_jwt_cookies(response, access_token, new_refresh)
+        else:
+            if refresh_token:
+                response.delete_cookie('access', path='/')
+                response.delete_cookie('refresh', path='/')
         return response
 
 class LogoutView(APIView):

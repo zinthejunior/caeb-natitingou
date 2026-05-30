@@ -40,3 +40,4 @@ urlpatterns = [
     # Inclut toutes les URL générées par le router ci-dessus.
     path('', include(router.urls)),
 ]
+ 

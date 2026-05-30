@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Star, BookOpen, FileText, MessageCircle, ThumbsUp, Flag, Crown, Lock, ChevronLeft, Heart } from "lucide-react";
+import { Star, BookOpen, FileText, MessageCircle, ThumbsUp, Flag, Crown, Lock, ChevronLeft, Heart, CheckCircle2 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ApiImage } from "@/components/ApiImage";
 import { Button } from "@/components/ui/button";
@@ -7,13 +7,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Navbar } from "@/components/Navbar";
-import { reserverLivre, useReviews, useBook, postReview } from "@/hooks/useData";
+import { reserverLivre, useReviews, useBook, postReview, marquerCommeLu, marquerCommeNonLu, useLivresLus, appelAPI } from "@/hooks/useData";
 import { useSEO } from "@/lib/utils";
+import { useAuthentification } from "@/hooks/useAuthentification";
 export function BookDetailPage({ user, onToggleFavorite }) {
   const { bookId } = useParams();
   const navigate = useNavigate();
   const { book, isLoading: isBookLoading } = useBook(bookId);
   const { data: initialReviews, reload: reloadReviews } = useReviews(bookId);
+  const { recupererUtilisateur } = useAuthentification();
+  const { livresLusIds, recharger: rechargerLivresLus } = useLivresLus();
+  const [estLu, setEstLu] = useState(false);
+  const [marquagePending, setMarquagePending] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [activeTab, setActiveTab] = useState("details");
   const [userRating, setUserRating] = useState(0);
@@ -23,6 +28,22 @@ export function BookDetailPage({ user, onToggleFavorite }) {
   useEffect(() => {
     if (initialReviews) setReviews(initialReviews);
   }, [initialReviews]);
+  // Synchroniser l'état "lu" avec la liste des livres lus
+  useEffect(() => {
+    if (bookId && livresLusIds) {
+      setEstLu(livresLusIds.has(bookId));
+    }
+  }, [bookId, livresLusIds]);
+  useEffect(() => {
+    if (bookId && user) {
+      appelAPI('/interactions/', {
+        method: 'POST',
+        body: JSON.stringify({ livre: bookId, type_action: 'vue' })
+      }).catch((err) => {
+        console.error("Erreur lors de l'enregistrement de l'interaction vue:", err);
+      });
+    }
+  }, [bookId, user]);
   useSEO(book?.titre || "Détails du livre", book?.synopsis?.slice(0, 160));
   if (isBookLoading) return <div className="min-h-screen bg-library-bg flex items-center justify-center">
       <div className="w-10 h-10 border-4 border-accent border-t-transparent rounded-full animate-spin" />
@@ -52,6 +73,9 @@ export function BookDetailPage({ user, onToggleFavorite }) {
       setUserRating(0);
       setUserReview("");
       void reloadReviews();
+      if (recupererUtilisateur) {
+        void recupererUtilisateur();
+      }
     } catch (err) {
       toast.error("Erreur lors de la publication de l'avis");
     }
@@ -106,7 +130,7 @@ export function BookDetailPage({ user, onToggleFavorite }) {
     }}
     className="absolute top-4 right-4 w-12 h-12 glass-effect border border-white/20 rounded-full flex items-center justify-center shadow-elevated hover:scale-110 hover:shadow-glow transition-all tap-feedback z-20"
   >
-                  <Heart className={`w-6 h-6 transition-colors ${user.favoris?.includes(bookId) ? "text-red-500 fill-current" : "text-white/70"}`} />
+                  <Heart className={`w-6 h-6 transition-colors ${(user?.favoris?.includes(bookId) || user?.favorites?.includes(bookId)) ? "text-red-500 fill-current" : "text-white/70"}`} />
                 </button>
                 
                 {book.exemplaires <= 0 && <div className="absolute inset-0 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
@@ -171,11 +195,41 @@ export function BookDetailPage({ user, onToggleFavorite }) {
                 </Button>}
               <Button
     size="lg"
-    variant="ghost"
-    onClick={() => toast.success("Livre ajouté à votre historique !")}
-    className="h-14 px-8 rounded-2xl text-muted hover:text-accent font-bold gap-3 hover:bg-accent/5"
+    variant={estLu ? "default" : "ghost"}
+    disabled={marquagePending}
+    onClick={async () => {
+      if (marquagePending) return;
+      setMarquagePending(true);
+      try {
+        if (estLu) {
+          // Démarquer
+          await marquerCommeNonLu(bookId);
+          setEstLu(false);
+          toast.info("❌ Livre démarqué", { description: "Retiré de vos livres lus." });
+        } else {
+          // Marquer comme lu
+          await marquerCommeLu(bookId, true);
+          setEstLu(true);
+          toast.success("✅ Livre marqué comme lu !", { description: "Votre historique de lecture a été mis à jour." });
+        }
+        await rechargerLivresLus();
+      } catch (err) {
+        console.error("Erreur marquage:", err);
+        toast.error("Erreur lors de la mise à jour");
+      } finally {
+        setMarquagePending(false);
+      }
+    }}
+    className={`h-14 px-8 rounded-2xl font-bold gap-3 transition-all ${
+      estLu
+        ? "bg-green-500/15 border border-green-500/30 text-green-600 dark:text-green-400 hover:bg-green-500/25"
+        : "text-muted hover:text-accent hover:bg-accent/5"
+    }`}
   >
-                <FileText className="w-6 h-6" />Marquer comme lu
+                {estLu
+                  ? <><CheckCircle2 className="w-6 h-6" />Lu ✓</>
+                  : <><FileText className="w-6 h-6" />Marquer comme lu</>
+                }
               </Button>
             </div>
           </div>
@@ -300,21 +354,32 @@ export function BookDetailPage({ user, onToggleFavorite }) {
     </div>;
 }
 function ReviewCard({ review, isLiked, onLike, onReport }) {
-  const reviewDate = new Date(review.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+  if (!review) return null; // Sécurité : vérifier que review existe
+  
+  const user = review.user || {}; // Utiliser un objet vide par défaut
+  const firstName = user.firstName || user.prenom || "Utilisateur";
+  const lastName = user.lastName || user.nom || "";
+  const avatar = user.avatar || user.photo || "/avatar-1.jpg";
+  const rating = review.rating || review.note || 0;
+  const comment = review.comment || review.avis || "";
+  const likes = review.likes || 0;
+  
+  const reviewDate = new Date(review.createdAt || review.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+  
   return <div className="surface-alt rounded-xl p-4 border border-[var(--border-color)] hover:border-[var(--library-accent)]/20 transition-all">
       <div className="flex items-start gap-3">
         <img
-    src={review.user.avatar || "/avatar-1.jpg"}
-    alt={review.user.firstName}
+    src={avatar}
+    alt={firstName}
     className="w-10 h-10 rounded-full object-cover border-2 border-[var(--border-color)]"
   />
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1">
             <div>
-              <p className="font-semibold text-primary text-sm">{review.user.firstName} {review.user.lastName}</p>
+              <p className="font-semibold text-primary text-sm">{firstName} {lastName}</p>
               <div className="flex items-center gap-2 text-xs text-muted">
                 <div className="flex">
-                  {[1, 2, 3, 4, 5].map((star) => <Star key={star} className={`w-3 h-3 ${star <= review.rating ? "fill-[var(--library-accent)] text-[var(--library-accent)]" : "text-[var(--border-color)]"}`} />)}
+                  {[1, 2, 3, 4, 5].map((star) => <Star key={star} className={`w-3 h-3 ${star <= rating ? "fill-[var(--library-accent)] text-[var(--library-accent)]" : "text-[var(--border-color)]"}`} />)}
                 </div>
                 <span>{reviewDate}</span>
               </div>
@@ -323,13 +388,13 @@ function ReviewCard({ review, isLiked, onLike, onReport }) {
               <Flag className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-sm text-muted mt-2 leading-relaxed">{review.comment}</p>
+          <p className="text-sm text-muted mt-2 leading-relaxed">{comment}</p>
           <button
     onClick={onLike}
     className={`flex items-center gap-1.5 text-sm transition-colors mt-3 font-medium ${isLiked ? "text-accent" : "text-muted hover:text-primary"}`}
   >
             <ThumbsUp className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`} />
-            <span>{review.likes + (isLiked ? 1 : 0)}</span>
+            <span>{likes + (isLiked ? 1 : 0)}</span>
           </button>
         </div>
       </div>

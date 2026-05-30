@@ -3,7 +3,7 @@ import { Navbar } from "@/components/Navbar";
 import { ApiImage } from "@/components/ApiImage";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useEmprunts, useReservations } from "@/hooks/useData";
+import { useEmprunts, useReservations, appelAPI } from "@/hooks/useData";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useSEO } from "@/lib/utils";
@@ -85,8 +85,8 @@ function EmptyReservations() {
     </div>;
 }
 export function BorrowsPage({ user }) {
-  const { emprunts = [] } = useEmprunts();
-  const { reservations = [] } = useReservations();
+  const { emprunts = [], recharger: rechargerEmprunts } = useEmprunts();
+  const { reservations = [], recharger: rechargerReservations } = useReservations();
   const [activeTab, setActiveTab] = useState("borrows");
   useSEO("Mes Emprunts", "Gérez vos emprunts en cours et vos réservations de livres à la bibliothèque CAEB Natitingou.");
   if (!user) {
@@ -99,8 +99,29 @@ export function BorrowsPage({ user }) {
         </main>
       </div>;
   }
-  const handleRenew = () => toast.success("Livre renouvelé pour 14 jours supplémentaires");
-  const handleCancel = () => toast.info("Réservation annulée");
+  const handleRenew = async (empruntId) => {
+    try {
+      await appelAPI(`/emprunts/${empruntId}/`, {
+        method: "PATCH",
+        body: JSON.stringify({ prolonge: true })
+      });
+      toast.success("Livre renouvelé pour 14 jours supplémentaires");
+      if (rechargerEmprunts) void rechargerEmprunts();
+    } catch (err) {
+      toast.error("Erreur lors du renouvellement de l'emprunt");
+    }
+  };
+  const handleCancel = async (reservationId) => {
+    try {
+      await appelAPI(`/reservations/${reservationId}/`, {
+        method: "DELETE"
+      });
+      toast.info("Réservation annulée");
+      if (rechargerReservations) void rechargerReservations();
+    } catch (err) {
+      toast.error("Erreur lors de l'annulation de la réservation");
+    }
+  };
   const calculateDaysRemaining = (returnDate) => {
     const today = /* @__PURE__ */ new Date();
     const ret = new Date(returnDate);
@@ -212,7 +233,7 @@ export function BorrowsPage({ user }) {
 
                         <div className="flex gap-2">
                           {!emprunt.isExtended ? <Button
-      onClick={() => handleRenew()}
+      onClick={() => handleRenew(emprunt.id)}
       size="sm"
       variant="outline"
       className="gap-2 border-[var(--library-accent)]/30 text-accent hover:bg-[var(--library-accent)]/10 font-semibold tap-feedback"
@@ -246,7 +267,7 @@ export function BorrowsPage({ user }) {
                         Réservé le {new Date(reservation.reservedAt).toLocaleDateString("fr-FR")}
                       </p>
                       <Button
-    onClick={() => handleCancel()}
+    onClick={() => handleCancel(reservation.id)}
     size="sm"
     variant="destructive"
     className="font-semibold tap-feedback"

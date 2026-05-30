@@ -163,11 +163,15 @@ function normaliserUtilisateur(raw) {
     favoris: raw.favorites ?? [],        // Livres favoris (tableau d'IDs)
     intentions: raw.intentions ?? [],    // Intentions de lecture
     clubsSuivis: raw.followedClubs ?? [], // Clubs suivis
-    stats: raw.stats ?? {                 // Statistiques utilisateur avec valeurs par défaut
-      livresLus: 0,
-      avisPublies: 0,
-      clubsRejoints: 0,
-      evenementsParticipes: 0
+    stats: {
+      booksRead: raw.stats?.booksRead ?? raw.stats?.livresLus ?? 0,
+      reviewsPosted: raw.stats?.reviewsPosted ?? raw.stats?.avisPublies ?? 0,
+      clubsJoined: raw.stats?.clubsJoined ?? raw.stats?.clubsRejoints ?? 0,
+      eventsAttended: raw.stats?.eventsAttended ?? raw.stats?.evenementsParticipes ?? 0,
+      livresLus: raw.stats?.booksRead ?? raw.stats?.livresLus ?? 0,
+      avisPublies: raw.stats?.reviewsPosted ?? raw.stats?.avisPublies ?? 0,
+      clubsRejoints: raw.stats?.clubsJoined ?? raw.stats?.clubsRejoints ?? 0,
+      evenementsParticipes: raw.stats?.eventsAttended ?? raw.stats?.evenementsParticipes ?? 0
     }
   };
 }
@@ -245,7 +249,7 @@ function useProvideAuthentification() {
    */
   const [etat, setEtat] = useState({
     utilisateur: null,      // Données de l'utilisateur ou null si non connecté
-    estAuthentifie: false,  // Booléen : est-ce que quelqu'un est connecté ?
+    estAuthentifie: localStorage.getItem("caeb_logged_in") === "true",  // Persistance de l'état
     chargement: true        // Booléen : est-ce qu'une opération est en cours ?
     // Note : chargement commence à true car on vérifie le token au montage
   });
@@ -254,6 +258,7 @@ function useProvideAuthentification() {
    * Réinitialise l'état d'authentification local sans requêtes réseau supplémentaires.
    */
   const reinitialiserEtatLocal = useCallback(() => {
+    localStorage.setItem("caeb_logged_in", "false");
     setEtat({ 
       utilisateur: null,      // Plus d'utilisateur
       estAuthentifie: false,  // Plus connecté
@@ -300,20 +305,31 @@ function useProvideAuthentification() {
       
       if (response.ok) { // Code HTTP 2xx
         const raw = await response.json(); // Parse le JSON de la réponse
+        localStorage.setItem("caeb_logged_in", "true");
         setEtat({ 
           utilisateur: normaliserUtilisateur(raw), // Normalise les données
           estAuthentifie: true, 
           chargement: false 
         });
         return true; // Succès
+      } else {
+        localStorage.setItem("caeb_logged_in", "false");
+        setEtat({
+          utilisateur: null,
+          estAuthentifie: false,
+          chargement: false
+        });
       }
     } catch (erreur) {
       // Log l'erreur pour le débogage (visible dans la console du navigateur)
       console.error("Échec de la récupération de l'utilisateur:", erreur);
+      localStorage.setItem("caeb_logged_in", "false");
+      setEtat({
+        utilisateur: null,
+        estAuthentifie: false,
+        chargement: false
+      });
     }
-    
-    // En cas d'erreur, on garde l'état actuel mais on arrête le chargement
-    setEtat((prev) => ({ ...prev, chargement: false }));
     return false; // Échec
   }, []); // Pas de dépendances = fonction constante
   
@@ -602,7 +618,8 @@ function useProvideAuthentification() {
     verifierEmail,
     deconnexion,
     mettreAJourUtilisateur,
-    changerMotDePasse
+    changerMotDePasse,
+    recupererUtilisateur
   };
 }
 

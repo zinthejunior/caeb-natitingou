@@ -136,10 +136,12 @@ function BookCard({ book, user, onClick, onToggleFavorite, size = "md" }) {
       className="w-full text-left group relative flex flex-col h-full book-card-3d cursor-pointer"
     >
       {/* Zone de la couverture du livre */}
-      <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden shadow-card mb-3 surface-weak">
+      <div className="relative aspect-[2/3] rounded-[2rem] overflow-hidden shadow-card mb-4 glass-effect border border-white/5 group-hover:border-accent/30 transition-all duration-500">
         <ApiImage
-          src={book.couverture} alt={book.titre}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          src={book.couverture || book.cover}
+          alt={book.titre || book.title}
+          fallback="/default_cover.png"
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
         />
         
         {/* Bouton favori (cœur) */}
@@ -214,10 +216,9 @@ function FeaturedBookCard({ book, user, onClick, onToggleFavorite }) {
       className="group relative flex gap-4 surface rounded-2xl p-4 border border-[var(--border-color)] hover:border-[var(--library-accent)]/30 hover:shadow-card-hover transition-all duration-300 cursor-pointer"
     >
       {/* Miniature de la couverture */}
-      <div className="relative w-20 h-28 flex-shrink-0 rounded-xl overflow-hidden shadow-card">
-        <ApiImage src={book.couverture} alt={book.titre} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+      <div className="relative w-20 h-28 flex-shrink-0 rounded-lg overflow-hidden surface-weak">
+          <ApiImage src={book.couverture || book.cover} alt={book.titre || book.title} fallback="/default_cover.png" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
       </div>
-      
       {/* Informations */}
       <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
         <div>
@@ -396,13 +397,16 @@ export function HomePage({ user }) {
    * @param {Object} params - Paramètres supplémentaires (ex: ID d'un livre)
    */
   const onNavigate = (route, params) => {
-    if (route === "profile")      navigate("/profile");
-    if (route === "news")         navigate("/news");
-    if (route === "news-detail")  navigate(`/news/${params.newsId}`);
-    if (route === "catalog")      navigate("/catalog");
-    if (route === "book-detail")  navigate(`/catalog/${params.bookId}`);
-    if (route === "events")       navigate("/events");
-    if (route === "event-detail") navigate(`/events/${params.eventId}`);
+    if (route === "profile")          navigate("/profile");
+    if (route === "news")             navigate("/news");
+    if (route === "news-detail")      navigate(`/news/${params.newsId}`);
+    if (route === "catalog")          navigate("/catalog");
+    if (route === "catalog-new")      navigate("/catalog?view=new");
+    if (route === "catalog-popular")  navigate("/catalog?view=popular");
+    if (route === "book-detail")      navigate(`/catalog/${params.bookId}`);
+    if (route === "events")           navigate("/events");
+    if (route === "event-detail")     navigate(`/events/${params.eventId}`);
+    if (route === "recommendations")  navigate("/recommendations");
   };
 
   // Salutation dynamique selon l'heure de la journée
@@ -644,7 +648,7 @@ export function HomePage({ user }) {
 
           {/* Nouveautés */}
           <section className="animate-slide-up" style={{ animationDelay: "150ms" }}>
-            <SectionHeader title="Nouveautés" icon={TrendingUp} onSeeAll={() => onNavigate("catalog")} />
+            <SectionHeader title="Nouveautés" icon={TrendingUp} onSeeAll={() => onNavigate("catalog-new")} />
             {!dataReady ? (
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-4">
                 {[0, 1, 2, 3].map((i) => <SkeletonBookCard key={i} />)}
@@ -667,7 +671,7 @@ export function HomePage({ user }) {
 
                     {/* Livres populaires */}
           <section className="animate-slide-up" style={{ animationDelay: "200ms" }}>
-            <SectionHeader title="Les plus populaires" icon={Flame} onSeeAll={() => onNavigate("catalog")} />
+            <SectionHeader title="Les plus populaires" icon={Flame} onSeeAll={() => onNavigate("catalog-popular")} />
             {!dataReady ? (
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-4">
                 {[0, 1, 2, 3].map((i) => <SkeletonBookCard key={i} />)}

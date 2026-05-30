@@ -19,7 +19,8 @@ class User(AbstractUser):
         ('membre', 'Membre'),
     ]
 
-    id = models.CharField(max_length=40, primary_key=True)
+    import uuid
+    id = models.CharField(max_length=40, primary_key=True, default=uuid.uuid4, editable=False)
     
     # type_compte : l'accès à la plateforme nécessite un compte. Pas de type 'anonyme'.
     type_compte = models.CharField(
@@ -38,7 +39,8 @@ class User(AbstractUser):
     telephone = models.CharField(max_length=20, null=True, blank=True, help_text="Numéro de téléphone de contact (optionnel).")
     
     # Suivi d'inscription et profil
-    date_inscription = models.DateTimeField(auto_now_add=True, help_text="Date et heure de création du compte sur la plateforme.")
+    from django.utils.timezone import now
+    date_inscription = models.DateTimeField(default=now, help_text="Date et heure de création du compte sur la plateforme.")
     favorites = models.JSONField(blank=True, default=list, help_text="Liste des identifiants des livres favoris de l'utilisateur.")
     intentions = models.JSONField(blank=True, default=list, help_text="Objectifs/intentions de lecture déclarés à l'inscription.")
     
@@ -105,7 +107,7 @@ class Book(models.Model):
     # Contenu et descriptif
     resume = models.TextField(null=True, blank=True, help_text="Résumé détaillé de l'œuvre.")
     description = models.TextField(null=True, blank=True, help_text="Description littéraire ou technique additionnelle pour l'IA.")
-    couverture_url = models.CharField(max_length=300, null=True, blank=True, help_text="URL de l'image de couverture.")
+    couverture_url = models.CharField(default="https://www.cosmopolitan.fr/les-5-plus-beaux-livres-de-colleen-hoover-pour-decouvrir-la-new-romance,2120559.asp", max_length=300, null=True, blank=True, help_text="URL de l'image de couverture.")
     mots_cles = models.TextField(null=True, blank=True, help_text="Mots-clés associés séparés par des virgules.")
     
     # Statistiques d'usage agrégées (mises à jour par signaux)
@@ -393,6 +395,10 @@ class Interaction(models.Model):
         ('like', "J'aime"),
         ('chat_ia', 'Chat IA'),
         ('marquage', 'Marquage'),
+        ('recommandation_impression', 'Impression recommandation'),
+        ('recommandation_clic', 'Clic recommandation'),
+        ('favori_ajout', 'Ajout favori'),
+        ('favori_suppression', 'Suppression favori'),
     ]
     SOURCE_CHOICES = [
         ('application', 'Application'),
@@ -400,10 +406,11 @@ class Interaction(models.Model):
         ('recherche', 'Recherche'),
     ]
 
-    id = models.CharField(max_length=20, primary_key=True)
+    import uuid as _uuid
+    id = models.CharField(max_length=40, primary_key=True, default=_uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='interactions')
     livre = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='interactions')
-    type_action = models.CharField(max_length=20, choices=TYPE_ACTION_CHOICES)
+    type_action = models.CharField(max_length=30, choices=TYPE_ACTION_CHOICES)
     notation = models.IntegerField(null=True, blank=True, help_text="Note éventuelle de 1 à 5.")
     duree_secondes = models.IntegerField(null=True, blank=True, help_text="Temps passé sur la page du livre.")
     livre_lu = models.BooleanField(default=False, help_text="Indique si le livre a été marqué comme lu.")

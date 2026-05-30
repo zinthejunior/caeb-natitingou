@@ -26,7 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Navbar } from "@/components/Navbar";
 import { ApiImage } from "@/components/ApiImage";
-import { useBorrows, useReservations, useParticipationsEvenements, useGlobalStats } from "@/hooks/useData";
+import { useBorrows, useReservations, useParticipationsEvenements, useGlobalStats, useLivresLus } from "@/hooks/useData";
 import { Badge } from "@/components/ui/badge";
 import { useSEO } from "@/lib/utils";
 function StatCard({ icon: Icon, value, label }) {
@@ -149,6 +149,7 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
   const { borrows = [] } = useBorrows();
   const { reservations = [] } = useReservations();
   const { participations = [] } = useParticipationsEvenements();
+  const { livresLus = [] } = useLivresLus();
   const stats = user?.stats ?? { booksRead: 0, reviewsPosted: 0, clubsJoined: 0, eventsAttended: 0 };
   const handleLogout = () => {
     if (confirm("Êtes-vous sûr de vouloir vous déconnecter ?")) onLogout();
@@ -444,6 +445,32 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                     </div>}
                 </section>
 
+                {livresLus.length > 0 && <section>
+                  <h3 className="font-display font-semibold text-lg text-primary mb-4 flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-accent" />
+                    Livres marqués comme lus ({livresLus.length})
+                  </h3>
+                  <div className="grid gap-3">
+                    {livresLus.map((interaction) => {
+                      const livre = interaction.livre;
+                      return <div key={interaction.id} className="surface rounded-xl border border-[var(--border-color)] shadow-card hover:shadow-card-hover transition-shadow p-4 flex items-start gap-4">
+                        {livre && <>
+                          <ApiImage
+    src={livre.couverture?.startsWith("/") || livre.couverture?.startsWith("http") ? livre.couverture : void 0}
+    alt={livre.titre}
+    fallback="/default_cover.png"
+    className="w-16 h-24 rounded-lg object-cover flex-shrink-0"
+  />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-primary line-clamp-1">{livre.titre}</h4>
+                            <p className="text-sm text-muted">{livre.auteur}</p>
+                            <Badge className="mt-2 bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Lu</Badge>
+                          </div>
+                        </>}
+                      </div>;
+                    })}
+                  </div>
+                </section>}
 
               </TabsContent>
 

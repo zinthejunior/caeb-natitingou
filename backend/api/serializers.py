@@ -149,10 +149,32 @@ class BorrowSerializer(serializers.ModelSerializer):
         ]
 
 
+class LivreMiniSerializer(serializers.ModelSerializer):
+    """Sérialisation légère du livre pour l'embedding dans une interaction."""
+    couverture = serializers.CharField(source='couverture_url', allow_null=True)
+
+    class Meta:
+        model  = Book
+        fields = ['id', 'titre', 'auteur', 'couverture', 'genre']
+
+
 class InteractionSerializer(serializers.ModelSerializer):
+    livre_detail = LivreMiniSerializer(source='livre', read_only=True)
+    # Alias écriture : le frontend envoie { livre: "<book_id>" }
+    livre = serializers.PrimaryKeyRelatedField(
+        queryset=Book.objects.all(),
+        write_only=True,
+        source='livre'
+    )
+
     class Meta:
         model  = Interaction
-        fields = '__all__'
+        fields = [
+            'id', 'user', 'livre', 'livre_detail', 'type_action',
+            'notation', 'duree_secondes', 'livre_lu', 'commentaire',
+            'position', 'source', 'created_at',
+        ]
+        read_only_fields = ['id', 'user', 'created_at', 'livre_detail']
 
 
 class NotificationSerializer(serializers.ModelSerializer):

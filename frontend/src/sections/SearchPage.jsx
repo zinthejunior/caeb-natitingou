@@ -42,21 +42,30 @@ export function SearchPage({ user, onNavigate }) {
   }
         <div className="mb-12">
           <div className="relative group">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-accent pointer-events-none group-focus-within:scale-110 transition-transform duration-300" />
-            <input
-    type="text"
+            <form
+    onSubmit={(e) => e.preventDefault()}
+    className="relative"
+  >
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-accent pointer-events-none group-focus-within:scale-110 transition-transform duration-300" />
+                <input
+    type="search"
+    autoComplete="off"
     placeholder="Cherchez l'excellence : livres, clubs, événements..."
+    aria-label="Recherche globale"
     value={query}
     onChange={(e) => setQuery(e.target.value)}
     className="w-full h-16 pl-14 pr-14 glass-effect border border-white/10 rounded-[2rem] text-primary placeholder:text-muted focus:outline-none focus:border-accent/40 focus:ring-4 focus:ring-accent/10 shadow-glow transition-all text-lg font-medium"
   />
-            {query && <button
+                {query && <button
+    type="button"
     onClick={() => setQuery("")}
     className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 text-muted hover:text-accent rounded-lg transition-colors focus:outline-none"
-    aria-label="Effacer"
+    aria-label="Effacer la recherche"
   >
                 <X className="w-5 h-5" />
               </button>}
+              </form>
+            <p className="mt-3 text-sm text-muted">Trouvez en un instant un livre, un club, un événement ou une actualité.</p>
           </div>
         </div>
 
