@@ -1,0 +1,91 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# requirements.txt — Dependances du service FastAPI Kossi AI
+# 
+# Ce fichier liste toutes les bibliotheques necessaires pour faire fonctionner
+# le service IA multi-agents de la Bibliotheque CAEB de Natitingou.
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── FastAPI & Serveur ─────────────────────────────────────────────────────────
+# FastAPI : Framework web moderne et rapide pour construire les APIs
+fastapi>=0.111.0
+
+# Uvicorn : Serveur ASGI haute performance pour executer FastAPI
+uvicorn[standard]>=0.29.0
+
+# ── Client HTTP asynchrone ────────────────────────────────────────────────────
+# HTTPX : Client HTTP moderne avec support async pour appeler OpenRouter, 
+# HuggingFace et le backend Django
+httpx>=0.27.0
+
+# ── Validation des donnees ────────────────────────────────────────────────────
+# Pydantic : Validation de donnees et serialisation automatique des modeles
+pydantic>=2.7.0
+
+# ── Variables d'environnement ─────────────────────────────────────────────────
+# python-dotenv : Charge les variables depuis .env au demarrage
+python-dotenv>=1.0.0
+
+# ── Calcul vectoriel (similarite cosinus pour RAG) ────────────────────────────
+# NumPy : Operations mathematiques optimisees pour le calcul de similarite
+numpy>=1.26.0
+
+# ── Securite & Rate Limiting ──────────────────────────────────────────────────
+# SlowAPI : Rate limiting pour proteger l'API contre les abus
+slowapi>=0.1.9
+
+# Python-Jose : Gestion des tokens JWT pour l'authentification API
+python-jose[cryptography]>=3.3.0
+
+# Passlib : Hashage securise des mots de passe (bcrypt)
+passlib[bcrypt]>=1.7.4
+
+# ── Cache & Performance ───────────────────────────────────────────────────────
+# Cachetools : Cache en memoire avec TTL pour les embeddings et reponses
+cachetools>=5.3.0
+
+# ── Retry & Resilience ────────────────────────────────────────────────────────
+# Tenacity : Retry intelligent avec backoff exponentiel pour les appels API
+tenacity>=8.2.0
+
+# ── Base de Donnees SQLite ────────────────────────────────────────────────────
+# SQLAlchemy : ORM puissant pour acceder a la BD SQLite
+sqlalchemy>=2.0.0
+
+# Alembic : Gestion des migrations de schema de BD
+alembic>=1.13.0
+
+# ── Streaming SSE ─────────────────────────────────────────────────────────────
+# SSE-Starlette : Support Server-Sent Events pour le streaming des reponses
+sse-starlette>=2.0.0
+
+# ── Monitoring & Observabilite ────────────────────────────────────────────────
+# Prometheus-FastAPI-Instrumentator : Metriques Prometheus pour monitoring
+prometheus-fastapi-instrumentator>=6.1.0
+
+# Structlog : Logging structure JSON pour une meilleure observabilite
+structlog>=24.1.0
+
+# ── Tests (developpement) ─────────────────────────────────────────────────────
+# pytest : Framework de tests unitaires
+pytest>=8.0.0
+
+# pytest-asyncio : Support async pour les tests pytest
+pytest-asyncio>=0.23.0
+
+# HTTPX : Utilise aussi pour les tests d'integration (TestClient)
+# (deja installe ci-dessus)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# NOTES D'INSTALLATION
+# ══════════════════════════════════════════════════════════════════════════════
+# 
+# Installation standard :
+#   pip install -r requirements.txt
+#
+# Installation developpement (avec tests) :
+#   pip install -r requirements.txt
+#   pip install pytest pytest-asyncio
+#
+# Pour les embeddings locaux (optionnel, necessite GPU/CPU puissant) :
+#   pip install sentence-transformers>=2.7.0
+# ══════════════════════════════════════════════════════════════════════════════
