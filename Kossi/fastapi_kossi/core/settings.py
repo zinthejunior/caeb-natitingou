@@ -11,14 +11,26 @@ necessaires au fonctionnement du service multi-agents. Il inclut :
 """
 
 import os
+from pathlib import Path
 from typing import List
 from dotenv import load_dotenv
 
 # ══════════════════════════════════════════════════════════════════════════════
 # CHARGEMENT DES VARIABLES D'ENVIRONNEMENT
 # ══════════════════════════════════════════════════════════════════════════════
-# Charge les variables depuis le fichier .env a la racine du projet
-load_dotenv()
+# Charge les variables depuis les fichiers .env locaux et le fichier backend/.env de l'application mère.
+BASE_DIR = Path(__file__).resolve().parent.parent
+WORKSPACE_ROOT = BASE_DIR.parent
+ENV_FILES = [
+    BASE_DIR / ".env",
+    WORKSPACE_ROOT / "backend" / ".env",
+    WORKSPACE_ROOT / ".env",
+]
+for env_path in ENV_FILES:
+    if env_path.is_file():
+        load_dotenv(env_path, override=False)
+# Fallback par défaut si le fichier .env est trouvé dans le dossier de travail courant.
+load_dotenv(override=False)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

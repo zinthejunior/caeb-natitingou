@@ -23,12 +23,29 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION DE LA BASE DE DONNEES
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Chemin vers la BD SQLite (au niveau du dossier fastapi_kossi)
+# Chemin vers la BD locale SQLite (fallback)
 DATABASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATABASE_PATH = os.path.join(DATABASE_DIR, "kossi.db")
 
-# URL SQLite
-DATABASE_URL = f"sqlite:///{DATABASE_PATH.replace(chr(92), '/')}"  # Echapper les backslashes Windows
+# Utiliser la même base de données que l'application mère si les variables PostgreSQL sont définies.
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    db_name = os.environ.get("DB_NAME")
+    if db_name:
+        db_user = os.environ.get("DB_USER", "postgres")
+        db_password = os.environ.get("DB_PASSWORD", "")
+        db_host = os.environ.get("DB_HOST", "localhost")
+        db_port = os.environ.get("DB_PORT", "5432")
+        if db_password:
+            DATABASE_URL = (
+                f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+            )
+        else:
+            DATABASE_URL = (
+                f"postgresql+psycopg2://{db_user}@{db_host}:{db_port}/{db_name}"
+            )
+    else:
+        DATABASE_URL = f"sqlite:///{DATABASE_PATH.replace(chr(92), '/')}"  # Echapper les backslashes Windows
 
 # ══════════════════════════════════════════════════════════════════════════════
 # INITIALISATION SQLALCHEMY
