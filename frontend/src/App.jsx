@@ -175,17 +175,14 @@ import { SettingsPage } from "@/sections/SettingsPage";
  */
 import { SearchPage } from "@/sections/SearchPage";
 
-/**
- * AIChatPage : Assistant IA
- * Interface de discussion avec l'assistant virtuel.
- */
-import { AIChatPage } from "@/sections/AIChatPage";
+// AIChatPage removed: now using Kossi integration via backend API (Kossi folder)
 
 /**
  * NotFoundPage : Page 404
  * Affichée quand l'URL demandée n'existe pas.
  */
 import { NotFoundPage } from "@/sections/NotFoundPage";
+import { KossiRedirect } from "@/sections/KossiRedirect";
 
 // ─── COMPOSANTS PARTAGÉS ─────────────────────────────────────────────────────
 // Ces composants sont utilisés dans plusieurs pages
@@ -464,14 +461,15 @@ function AppRoutes() {
             <AppLayout><SearchPage user={user} onNavigate={handleNavigate} /></AppLayout>
           </ProtectedRoute>} />
 
+        {/* Chat avec l'assistant géré via Kossi (intégration backend). */}
         <Route path="/chat" element={<ProtectedRoute>
-            <AppLayout><AIChatPage user={user} /></AppLayout>
+            <AppLayout><KossiRedirect /></AppLayout>
           </ProtectedRoute>} />
 
         {/* ══════════════════════════════════════════════════════════════════
-            PAGE 404 - Route catch-all pour les URLs non reconnues
-            ══════════════════════════════════════════════════════════════════ */}
-        <Route path="*" element={<NotFoundPage />} />
+          PAGE 404 - Route catch-all pour les URLs non reconnues
+          ══════════════════════════════════════════════════════════════════ */}
+        <Route path="*" element={<NotFoundPage user={user} onNavigate={handleNavigate} />} />
       </Routes>
 
       {/* ─── SYSTÈME DE NOTIFICATIONS ─────────────────────────────────────────

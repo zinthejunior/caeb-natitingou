@@ -276,6 +276,8 @@ function useProvideAuthentification() {
    * Effectue un appel POST à l'API /logout/ pour effacer et blacklister les cookies.
    */
   const deconnexion = useCallback(async () => {
+    // Marquer IMMÉDIATEMENT comme déconnecté pour bloquer tout rafraîchissement 401
+    localStorage.setItem("caeb_logged_in", "false");
     try {
       await fetchWithAuth("/logout/", { method: "POST" });
     } catch (err) {
@@ -299,6 +301,14 @@ function useProvideAuthentification() {
    * Elle utilise le token JWT stocké pour s'authentifier auprès du serveur.
    */
   const recupererUtilisateur = useCallback(async () => {
+    // Si l'utilisateur s'est explicitement déconnecté, ne pas tenter d'appel réseau.
+    // Cela évite la boucle 401 → rafraîchissement → reconnexion involontaire.
+    const estMarqueDeconnecte = localStorage.getItem("caeb_logged_in") === "false";
+    if (estMarqueDeconnecte) {
+      setEtat({ utilisateur: null, estAuthentifie: false, chargement: false });
+      return false;
+    }
+
     try {
       // Appel à l'API avec authentification automatique
       const response = await fetchWithAuth("/utilisateurs/me/");

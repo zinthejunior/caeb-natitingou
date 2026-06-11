@@ -2,6 +2,24 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+import psycopg2
+
+# Monkeypatch psycopg2.connect to handle UnicodeDecodeError on Windows systems with non-UTF-8 local character encoding (e.g. French).
+original_connect = psycopg2.connect
+
+def safe_connect(*args, **kwargs):
+    try:
+        return original_connect(*args, **kwargs)
+    except UnicodeDecodeError as e:
+        try:
+            decoded_msg = e.object.decode('cp1252', errors='replace')
+        except Exception:
+            decoded_msg = str(e)
+        raise psycopg2.OperationalError(
+            f"Database connection failed (decoded from CP1252): {decoded_msg}"
+        ) from e
+
+psycopg2.connect = safe_connect
 
 
 def main():

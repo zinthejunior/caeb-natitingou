@@ -163,8 +163,7 @@ class InteractionSerializer(serializers.ModelSerializer):
     # Alias écriture : le frontend envoie { livre: "<book_id>" }
     livre = serializers.PrimaryKeyRelatedField(
         queryset=Book.objects.all(),
-        write_only=True,
-        source='livre'
+        write_only=True
     )
 
     class Meta:
@@ -179,7 +178,7 @@ class InteractionSerializer(serializers.ModelSerializer):
 
 class NotificationSerializer(serializers.ModelSerializer):
     utilisateur_id = serializers.CharField(source='user_id')
-    livre_id       = serializers.CharField(source='livre_id', required=False, allow_null=True)
+    livre_id       = serializers.CharField(required=False, allow_null=True)
     date_creation  = serializers.DateTimeField(source='envoyee_le')
     type           = serializers.CharField(source='type_notif')
     lu             = serializers.BooleanField(source='lue')
@@ -282,7 +281,9 @@ class ReviewSerializer(serializers.ModelSerializer):
     utilisateur_id   = serializers.CharField(source='user_id', read_only=True)
     nom_utilisateur  = serializers.CharField(source='user.username', read_only=True)
     prenom_utilisateur = serializers.CharField(source='user.first_name', read_only=True)
+    userName         = serializers.SerializerMethodField(read_only=True)
     date_creation    = serializers.DateTimeField(source='created_at', read_only=True)
+    createdAt        = serializers.DateTimeField(source='created_at', read_only=True)
 
     # Champs écriture — accepte alias frontend ET noms Django
     livre_id         = serializers.CharField(required=False, write_only=True)
@@ -294,11 +295,16 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Review
         fields = [
-            'id', 'utilisateur_id', 'livre_id', 'nom_utilisateur', 'prenom_utilisateur',
-            'note', 'commentaire', 'date_creation',
+            'id', 'utilisateur_id', 'livre_id', 'nom_utilisateur', 'prenom_utilisateur', 'userName',
+            'note', 'commentaire', 'date_creation', 'createdAt',
             # write-only aliases
             'book', 'bookId', 'rating', 'comment',
         ]
+
+    def get_userName(self, obj):
+        first = obj.user.first_name or obj.user.username or "Utilisateur"
+        last = obj.user.last_name or ""
+        return f"{first} {last}".strip()
         read_only_fields = ['id', 'utilisateur_id', 'nom_utilisateur', 'prenom_utilisateur', 'date_creation']
 
 
@@ -317,7 +323,7 @@ class ReservationSerializer(serializers.ModelSerializer):
 
 
 class ClubContactMessageSerializer(serializers.ModelSerializer):
-    club_id = serializers.CharField(source='club_id')
+    club_id = serializers.CharField()
 
     class Meta:
         model  = ClubContactMessage

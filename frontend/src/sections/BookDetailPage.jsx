@@ -356,27 +356,26 @@ export function BookDetailPage({ user, onToggleFavorite }) {
 function ReviewCard({ review, isLiked, onLike, onReport }) {
   if (!review) return null; // Sécurité : vérifier que review existe
   
-  const user = review.user || {}; // Utiliser un objet vide par défaut
-  const firstName = user.firstName || user.prenom || "Utilisateur";
-  const lastName = user.lastName || user.nom || "";
-  const avatar = user.avatar || user.photo || "/avatar-1.jpg";
-  const rating = review.rating || review.note || 0;
-  const comment = review.comment || review.avis || "";
-  const likes = review.likes || 0;
+  const user = review.user || {};
+  const userName = review.userName || `${user.firstName || user.prenom || review.prenom_utilisateur || "Utilisateur"} ${user.lastName || user.nom || review.nom_utilisateur || ""}`.trim();
+  const avatar = user.avatar || user.photo || review.avatar || "/avatar-1.jpg";
+  const rating = review.rating ?? review.note ?? 0;
+  const comment = review.comment || review.commentaire || review.avis || "";
+  const likes = review.likes ?? 0;
   
-  const reviewDate = new Date(review.createdAt || review.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+  const reviewDate = new Date(review.createdAt || review.date_creation || review.created_at || review.date || Date.now()).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
   
   return <div className="surface-alt rounded-xl p-4 border border-[var(--border-color)] hover:border-[var(--library-accent)]/20 transition-all">
       <div className="flex items-start gap-3">
         <img
     src={avatar}
-    alt={firstName}
+    alt={userName}
     className="w-10 h-10 rounded-full object-cover border-2 border-[var(--border-color)]"
   />
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1">
             <div>
-              <p className="font-semibold text-primary text-sm">{firstName} {lastName}</p>
+              <p className="font-semibold text-primary text-sm">{userName}</p>
               <div className="flex items-center gap-2 text-xs text-muted">
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((star) => <Star key={star} className={`w-3 h-3 ${star <= rating ? "fill-[var(--library-accent)] text-[var(--library-accent)]" : "text-[var(--border-color)]"}`} />)}

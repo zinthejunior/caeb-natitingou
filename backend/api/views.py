@@ -838,19 +838,25 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 
+def _cookie_security(settings):
+    """Retourne (secure, samesite) selon l'environnement."""
+    if settings.DEBUG:
+        # En développement HTTP, SameSite=Lax sans Secure pour que le navigateur
+        # accepte de créer ET supprimer les cookies correctement.
+        return False, 'Lax'
+    # En production HTTPS, SameSite=None;Secure est requis pour le cross-origin.
+    return True, 'None'
+
+
 def set_jwt_cookies(response, access_token, refresh_token):
     from django.conf import settings
-    # SameSite=None est requis pour que les cookies soient envoyés par les requêtes
-    # cross-origin (frontend localhost:5173 -> backend localhost:8080) via fetch.
-    # Secure est activé pour respecter les navigateurs modernes qui exigent
-    # Secure avec SameSite=None.
-    secure = True
+    secure, samesite = _cookie_security(settings)
     response.set_cookie(
         key='access',
         value=access_token,
         httponly=True,
         secure=secure,
-        samesite='None',
+        samesite=samesite,
         path='/',
         max_age=3600 * 24
     )
@@ -860,7 +866,7 @@ def set_jwt_cookies(response, access_token, refresh_token):
             value=refresh_token,
             httponly=True,
             secure=secure,
-            samesite='None',
+            samesite=samesite,
             path='/',
             max_age=3600 * 24 * 7
         )
@@ -878,10 +884,13 @@ class CookieTokenObtainPairView(TokenObtainPairView):
 
 class CookieTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
+        from django.conf import settings
         refresh_token = request.COOKIES.get('refresh')
         if refresh_token:
             # Injecter le refresh token dans les data pour que TokenRefreshView le valide
             request.data['refresh'] = refresh_token
+
+        secure, samesite = _cookie_security(settings)
 
         try:
             response = super().post(request, *args, **kwargs)
@@ -890,8 +899,8 @@ class CookieTokenRefreshView(TokenRefreshView):
                 {"detail": "Token de rafraîchissement invalide ou utilisateur introuvable."},
                 status=status.HTTP_401_UNAUTHORIZED
             )
-            response.delete_cookie('access', path='/')
-            response.delete_cookie('refresh', path='/')
+            response.delete_cookie('access', path='/', samesite=samesite, secure=secure)
+            response.delete_cookie('refresh', path='/', samesite=samesite, secure=secure)
             return response
 
         if response.status_code == 200:
@@ -901,8 +910,8 @@ class CookieTokenRefreshView(TokenRefreshView):
             response = set_jwt_cookies(response, access_token, new_refresh)
         else:
             if refresh_token:
-                response.delete_cookie('access', path='/')
-                response.delete_cookie('refresh', path='/')
+                response.delete_cookie('access', path='/', samesite=samesite, secure=secure)
+                response.delete_cookie('refresh', path='/', samesite=samesite, secure=secure)
         return response
 
 class LogoutView(APIView):
@@ -911,16 +920,19 @@ class LogoutView(APIView):
     permission_classes = []
 
     def post(self, request):
+        from django.conf import settings
         refresh_token = request.COOKIES.get('refresh')
-        response = Response({"message": "Deconnexion reussie"}, status=200)
-        response.delete_cookie('access', path='/')
-        response.delete_cookie('refresh', path='/')
 
+        # Blacklister le token AVANT d'envoyer la réponse
         if refresh_token:
             try:
                 token = RefreshToken(refresh_token)
                 token.blacklist()
             except Exception:
-                pass  # Token deja expire ou invalide
+                pass  # Token déjà expiré ou invalide
 
+        secure, samesite = _cookie_security(settings)
+        response = Response({"message": "Deconnexion reussie"}, status=200)
+        response.delete_cookie('access', path='/', samesite=samesite, secure=secure)
+        response.delete_cookie('refresh', path='/', samesite=samesite, secure=secure)
         return response

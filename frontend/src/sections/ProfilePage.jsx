@@ -412,7 +412,6 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                       {(stats.booksRead || 0) > 0 && <ActivityItem
     icon={BookOpen}
     title={`${stats.booksRead || 0} livre${(stats.booksRead || 0) > 1 ? "s" : ""} marqué${(stats.booksRead || 0) > 1 ? "s" : ""} comme lu`}
-    description="Ces signaux alimentent votre vecteur de profil"
     color="accent"
   />}
                       {(stats.reviewsPosted || 0) > 0 && <ActivityItem
@@ -450,23 +449,18 @@ export function ProfilePage({ user, onLogout, onToggleMemberStatus, onNavigate, 
                     <BookOpen className="w-5 h-5 text-accent" />
                     Livres marqués comme lus ({livresLus.length})
                   </h3>
-                  <div className="grid gap-3">
+                  <div className="grid gap-2">
                     {livresLus.map((interaction) => {
-                      const livre = interaction.livre;
-                      return <div key={interaction.id} className="surface rounded-xl border border-[var(--border-color)] shadow-card hover:shadow-card-hover transition-shadow p-4 flex items-start gap-4">
-                        {livre && <>
-                          <ApiImage
-    src={livre.couverture?.startsWith("/") || livre.couverture?.startsWith("http") ? livre.couverture : void 0}
-    alt={livre.titre}
-    fallback="/default_cover.png"
-    className="w-16 h-24 rounded-lg object-cover flex-shrink-0"
-  />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-primary line-clamp-1">{livre.titre}</h4>
-                            <p className="text-sm text-muted">{livre.auteur}</p>
-                            <Badge className="mt-2 bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Lu</Badge>
-                          </div>
-                        </>}
+                      const livre = interaction.livre_detail || interaction.livre;
+                      const rawDate = interaction.createdAt || interaction.created_at || interaction.date || interaction.date_action || interaction.timestamp || interaction.date_creation || interaction.date_inscription || null;
+                      const heure = rawDate ? new Date(rawDate).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "heure inconnue";
+                      const titre = livre?.titre || livre?.titre_book || livre?.title || livre || "Titre inconnu";
+                      return <div key={interaction.id} className="surface rounded-xl border border-[var(--border-color)] p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <BookOpen className="w-5 h-5 text-accent" />
+                          <span className="font-medium text-primary line-clamp-1">{titre}</span>
+                        </div>
+                        <div className="text-sm text-muted">{heure}</div>
                       </div>;
                     })}
                   </div>

@@ -10,6 +10,25 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+import psycopg2
+
+# Monkeypatch psycopg2.connect to handle UnicodeDecodeError on Windows systems with non-UTF-8 local character encoding (e.g. French).
+original_connect = psycopg2.connect
+
+def safe_connect(*args, **kwargs):
+    try:
+        return original_connect(*args, **kwargs)
+    except UnicodeDecodeError as e:
+        try:
+            decoded_msg = e.object.decode('cp1252', errors='replace')
+        except Exception:
+            decoded_msg = str(e)
+        raise psycopg2.OperationalError(
+            f"Database connection failed (decoded from CP1252): {decoded_msg}"
+        ) from e
+
+psycopg2.connect = safe_connect
+
 from dotenv import load_dotenv
 
 # ── Chargement des variables d'environnement depuis le fichier .env ───────────
@@ -105,7 +124,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Les variables d'environnement suivantes peuvent être définies dans .env :
 #   - DB_NAME : nom de la base (par défaut: 'caeb_db')
 #   - DB_USER : utilisateur PostgreSQL (par défaut: 'postgres')
-#   - DB_PASSWORD : mot de passe PostgreSQL (par défaut: 'postgres')
+#   - DB_PASSWORD : mot de passe PostgreSQL (par défaut: 'root')
 #   - DB_HOST : host PostgreSQL (par défaut: 'localhost')
 #   - DB_PORT : port PostgreSQL (par défaut: '5432')
 
@@ -114,7 +133,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('DB_NAME', 'caeb_db'),
         'USER': os.environ.get('DB_USER', 'postgres'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'root@2026'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'root'),
         'HOST': os.environ.get('DB_HOST', 'localhost'),
         'PORT': os.environ.get('DB_PORT', '5432'),
          'OPTIONS': {

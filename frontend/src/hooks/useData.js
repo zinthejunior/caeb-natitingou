@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchWithAuth } from "@/lib/api";
+import { fetchWithAuth, fetchPublic } from "@/lib/api";
 export async function appelAPI(endpoint, options = {}) {
   try {
     const response = await fetchWithAuth(endpoint, options);
@@ -19,6 +19,32 @@ export async function appelAPI(endpoint, options = {}) {
     // Retourner une structure vide pour éviter que l'app se casse
     return { results: [] };
   }
+}
+
+function normaliserReview(raw = {}) {
+  const comment = raw.comment || raw.commentaire || raw.avis || "";
+  const rating = raw.rating ?? raw.note ?? 0;
+  const createdAt = raw.createdAt || raw.date_creation || raw.created_at || raw.date || "";
+  const prenom = raw.prenom_utilisateur || raw.user?.firstName || raw.user?.prenom || "";
+  const nom = raw.nom_utilisateur || raw.user?.lastName || raw.user?.nom || "";
+  const username = raw.user?.username || raw.username || "";
+  const userName = raw.userName || `${prenom || username || "Utilisateur"} ${nom}`.trim();
+  const normalizedUser = {
+    ...raw.user,
+    firstName: raw.user?.firstName || raw.user?.prenom || raw.prenom_utilisateur || "",
+    lastName: raw.user?.lastName || raw.user?.nom || raw.nom_utilisateur || "",
+    username: raw.user?.username || username || userName,
+    avatar: raw.user?.avatar || raw.user?.photo || raw.avatar || ""
+  };
+
+  return {
+    ...raw,
+    comment,
+    rating,
+    createdAt,
+    userName,
+    user: normalizedUser
+  };
 }
 export function useLivres() {
   const [livres, setLivres] = useState([]);
@@ -187,7 +213,8 @@ export function useAvis(livreId) {
       setChargement(true);
       const pointEntree = livreId ? `/avis/?book=${livreId}` : "/avis/";
       const donnees = await appelAPI(pointEntree);
-      setAvis(donnees.results || donnees);
+      const source = Array.isArray(donnees.results) ? donnees.results : Array.isArray(donnees) ? donnees : [];
+      setAvis(source.map(normaliserReview));
     } catch {
       setErreur("Erreur lors du chargement des avis");
     } finally {
@@ -455,7 +482,8 @@ export function useGlobalStats() {
     (async () => {
       try {
         setIsLoading(true);
-        const rawData = await appelAPI("/stats/").catch(() => ({}));
+        const response = await fetchPublic("/stats/");
+        const rawData = response.ok ? await response.json() : {};
         setStats({
           books_count: rawData.books_count ?? rawData.total_books ?? 0,
           members_count: rawData.members_count ?? rawData.total_users ?? 0,
@@ -465,6 +493,18 @@ export function useGlobalStats() {
           lab_count: rawData.lab_count ?? rawData.total_labs ?? rawData.total_lab_stations ?? 0,
           years: rawData.years ?? rawData.expertise_years ?? null,
           active_readers: rawData.active_readers ?? rawData.members_count ?? rawData.total_users ?? 0
+        });
+      } catch (err) {
+        console.error("Erreur useGlobalStats fetchPublic:/stats/", err);
+        setStats({
+          books_count: 0,
+          members_count: 0,
+          events_count: 0,
+          news_count: 0,
+          clubs_count: 0,
+          lab_count: 0,
+          years: new Date().getFullYear() - 1978,
+          active_readers: 0
         });
       } finally {
         setIsLoading(false);

@@ -81,6 +81,24 @@ async function rafraichirToken() {
   return false;
 }
 
+export async function fetchPublic(endpoint, options = {}) {
+  const url = endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`;
+  const headers = {
+    "Content-Type": "application/json",
+    ...options.headers
+  };
+  try {
+    return await fetch(url, {
+      ...options,
+      headers,
+      credentials: "omit"
+    });
+  } catch (error) {
+    console.error(`[api.js] Erreur fetchPublic ${endpoint}:`, error);
+    throw error;
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // FONCTION PRINCIPALE : fetchWithAuth
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -131,7 +149,10 @@ export async function fetchWithAuth(endpoint, options = {}, retries = 1) {
   // ─────────────────────────────────────────────────────────────────────────────
   // GESTION DE L'ERREUR 401 (Token expiré)
   // ─────────────────────────────────────────────────────────────────────────────
-  if (response && response.status === 401 && !endpoint.includes("logout")) {
+  // Ne pas rafraîchir si l'utilisateur s'est explicitement déconnecté
+  const estDeconnecteVolontairement = localStorage.getItem("caeb_logged_in") === "false";
+  
+  if (response && response.status === 401 && !endpoint.includes("logout") && !estDeconnecteVolontairement) {
     console.log("[api.js] Erreur 401 reçue. Tentative de rafraîchissement...");
     const succesRafraichissement = await rafraichirToken();
     
@@ -139,6 +160,9 @@ export async function fetchWithAuth(endpoint, options = {}, retries = 1) {
       // Réessai une seule fois avec le nouveau cookie
       return fetchWithAuth(endpoint, { ...options }, 0);
     }
+
+    // Si le refresh échoue, on informe l'application pour qu'elle mette à jour l'état.
+    window.dispatchEvent(new CustomEvent("app:logout"));
   }
   
   return response;

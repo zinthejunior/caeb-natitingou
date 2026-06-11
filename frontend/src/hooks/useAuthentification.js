@@ -345,8 +345,14 @@ function useProvideAuthentification() {
    * - Écouter l'événement de déconnexion forcée (token expiré)
    */
   useEffect(() => {
-    // Tente de récupérer l'utilisateur connecté via les cookies de session.
-    void recupererUtilisateur();
+    const estConnecteLocalement = localStorage.getItem("caeb_logged_in") === "true";
+
+    if (estConnecteLocalement) {
+      // Tente de récupérer l'utilisateur connecté via les cookies de session.
+      void recupererUtilisateur();
+    } else {
+      setEtat((prev) => ({ ...prev, chargement: false }));
+    }
     
     // ─── ÉCOUTE DE L'ÉVÉNEMENT DE DÉCONNEXION ────────────────────────────────
     // Cet événement est émis par api.js quand le refresh token a expiré
