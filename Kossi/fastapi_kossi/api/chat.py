@@ -613,8 +613,13 @@ async def chat_stream(request: ChatRequest, req: Request):
             
         except Exception as e:
             logger.error(f"[/chat/stream] Erreur: {e}", exc_info=True)
+            # Utiliser le message d'exception lisible si fourni par la couche LLM
+            if isinstance(e, RuntimeError):
+                error_msg = str(e)
+            else:
+                error_msg = "Le service de génération rencontre un problème technique. Veuillez réessayer."
             error_data = json.dumps({
-                "error": "Kossi rencontre un probleme technique.",
+                "error": error_msg,
                 "done": True
             }, ensure_ascii=False)
             yield f"data: {error_data}\n\n"

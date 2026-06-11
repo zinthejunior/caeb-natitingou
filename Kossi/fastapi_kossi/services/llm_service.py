@@ -476,15 +476,7 @@ class LLMService:
         """
         messages = cls._validate_messages(messages)
         if not OPENROUTER_API_KEY:
-            error_data = json.dumps(
-                {
-                    "error": "Le service IA n'est pas configuré. Vérifiez votre clé API OpenRouter.",
-                    "done": True,
-                },
-                ensure_ascii=False,
-            )
-            yield f"data: {error_data}\n\n"
-            return
+            raise RuntimeError("Le service de génération rencontre un problème technique. Veuillez réessayer.")
         
         headers = {
             **OPENROUTER_BASE_HEADERS,
@@ -558,34 +550,14 @@ class LLMService:
                         return
 
                 logger.error("Streaming failed for all configured models.")
-                error_data = json.dumps(
-                    {
-                        "error": "Le service de génération est temporairement indisponible. Veuillez réessayer dans quelques instants.",
-                        "done": True,
-                    },
-                    ensure_ascii=False,
-                )
-                yield f"data: {error_data}\n\n"
+                raise RuntimeError("Le service de génération rencontre un problème technique. Veuillez réessayer.")
         except asyncio.TimeoutError:
             logger.error("Streaming timeout - returning error event", exc_info=True)
-            error_data = json.dumps(
-                {
-                    "error": "Le service de génération est temporairement indisponible. Veuillez réessayer dans quelques instants.",
-                    "done": True,
-                },
-                ensure_ascii=False,
-            )
-            yield f"data: {error_data}\n\n"
+            raise RuntimeError("Le service de génération rencontre un problème technique. Veuillez réessayer.")
         except Exception as e:
             logger.error(f"Erreur de streaming: {repr(e)}", exc_info=True)
-            error_data = json.dumps(
-                {
-                    "error": "Le service de génération rencontre un problème technique. Veuillez réessayer.",
-                    "done": True,
-                },
-                ensure_ascii=False,
-            )
-            yield f"data: {error_data}\n\n"
+            # Relever une RuntimeError avec message utilisateur lisible si possible
+            raise RuntimeError("Le service de génération rencontre un problème technique. Veuillez réessayer.") from e
     
     @classmethod
     def get_stats(cls) -> Dict[str, int]:

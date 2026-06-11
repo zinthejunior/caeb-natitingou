@@ -471,24 +471,10 @@ export function ChatContainer() {
                 )}
 
                 {error && (
-                  <div className="flex w-full gap-4 py-6 animate-message-in border-t border-rose-100/50 dark:border-rose-950/20 bg-rose-50/10 p-4 rounded-xl">
-                    <div className="flex-shrink-0">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-500 text-white shadow-sm font-mono text-sm font-bold">
-                        !
-                      </div>
-                    </div>
-                    <div className="flex-1 flex flex-col gap-2 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-rose-800 dark:text-rose-400">Erreur de communication</span>
-                      </div>
-                      <p className="text-sm text-rose-700 dark:text-rose-350 leading-relaxed">{error}</p>
-                      <button
-                        onClick={() => setError(null)}
-                        className="self-start text-xs font-semibold text-rose-800 dark:text-rose-400 hover:underline transition-colors"
-                      >
-                        Masquer l'erreur
-                      </button>
-                    </div>
+                  <div className="w-full py-4 animate-message-in bg-rose-50/10 p-4 rounded-xl">
+                    <p className="text-sm text-rose-700 dark:text-rose-350 leading-relaxed">
+                      {error}
+                    </p>
                   </div>
                 )}
 

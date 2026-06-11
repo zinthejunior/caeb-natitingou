@@ -1,100 +1,129 @@
-# Projet Bibliothéque CAEB Natitingou
+# CAEB Natitingou
 
-Application web de la Bibliothéque CAEB de Natitingou, composée de :
-- un backend Django REST (`backend/`),
-- un frontend React + TypeScript + Vite (`frontend/`),
-- un service d'IA conversationnelle FastAPI (`fastapi_kossi/`).
+Application web de la Bibliothèque CAEB de Natitingou.
 
-## Architecture
+## Structure du projet
 
 - `backend/` : API Django + Django REST Framework.
-- `frontend/` : interface utilisateur React (contenant `src/`, `public/`, `package.json`...).
-- `fastapi_kossi/` : service IA local pour l'assistant Kossi.
+- `frontend/` : interface utilisateur React + Vite.
+- `Kossi/` : interface de chat Next.js pour le service IA.
+- `Kossi/fastapi_kossi/` : service IA FastAPI local pour l’assistant Kossi.
 
 ## Objectif
 
-Ce projet vise à gérer un catalogue de livres, des réservations, des clubs de lecture, des événements, des avis et un laboratoire IA. Les statistiques publiques sont calculées dynamiquement à partir des données réelles du backend.
+Ce projet permet de gérer :
+- un catalogue de livres,
+- des clubs de lecture,
+- des événements,
+- des réservations,
+- des avis,
+- des utilisateurs,
+- un assistant IA conversationnel.
 
-## Installation locale
+## Installation
 
-### 1. Backend
+### Prérequis
 
-1. Ouvrez une console dans `backend/`.
-2. Créez et activez un environnement Python :
-   - Windows PowerShell : `python -m venv .venv ; .\.venv\Scripts\Activate.ps1`
+- Python 3.11+ (ou version compatible avec le projet)
+- Node.js 18+ / npm
+- PostgreSQL ou autre base configurée via Django
+
+### 1. Backend Django
+
+1. Ouvrez un terminal dans `backend/`.
+2. Créez et activez un environnement virtuel :
+   - PowerShell : `python -m venv .venv ; .\.venv\Scripts\Activate.ps1`
 3. Installez les dépendances :
    - `pip install -r requirements.txt`
-4. Configurez la base de données si nécessaire dans `backend/backend/settings.py` ou via un fichier `.env`.
+4. Configurez la base de données dans `backend/backend/settings.py` ou via `.env`.
 5. Appliquez les migrations :
    - `python manage.py migrate`
-6. Chargez des données de test si vous en disposez :
-   - `python manage.py loaddata <fichier>` ou `python seed_db.py`
+6. Chargez des données si nécessaire :
+   - `python seed_db.py`
 
-### 2. Frontend
+### 2. Frontend React
 
-1. Ouvrez une console dans le dossier `frontend/`.
+1. Ouvrez un terminal dans `frontend/`.
 2. Installez les dépendances :
    - `npm install`
-3. Lancez le serveur de développement :
+3. Lancez le frontend :
    - `npm run dev`
-4. Le frontend s'exécute généralement sur `http://localhost:5173`.
+4. Par défaut, l’application sera accessible sur `http://localhost:5173`.
 
-### 3. Service IA (Kossi)
+### 3. Service IA Kossi
 
-1. Ouvrez une console dans `fastapi_kossi/`.
-2. Activez le mème environnement Python ou un autre.
-3. Lancez le service :
-   - `uvicorn main:app --reload --port 8001`
-4. Ce service expose un endpoint de chat local pour l'assistant Kossi.
+1. Ouvrez un terminal dans `Kossi/`.
+2. Installez les dépendances si nécessaire :
+   - `npm install`
+3. Lancez l’interface Next.js et le backend FastAPI :
+   - `npm run dev`
 
-## Points clés du projet
+Le service FastAPI s’exécute sur `http://localhost:8001`.
 
-### API publique
+## Lancement des services
 
-- Base API : `http://localhost:8000/api/`
-- Endpoints principaux :
-  - `api/livres/`
-  - `api/clubs/`
-  - `api/evenements/`
-  - `api/avis/`
-  - `api/reservations/`
-  - `api/stats/`
+### Lancement individuel
 
-### Statistiques dynamiques
+- Backend Django :
+  - `cd backend && python manage.py runserver 8000`
+- Frontend React :
+  - `cd frontend && npm run dev`
+- Service IA Kossi :
+  - `cd Kossi && npm run dev`
 
-Le point final `GET /api/stats/` renvoie désormais des données calculées en temps réel :
-- `books_count` / `total_books`
-- `members_count` / `total_users`
-- `years` / `expertise_years`
-- `clubs_count`
-- `news_count`
-- `lab_count`
-- `active_readers`
+### Lancement global depuis la racine
 
-Le champ `years` est calculé automatiquement comme `année actuelle - 1978`, ce qui rend l'ancienneté de la CAEB dynamique et ne dépend plus d'une valeur codée en dur.
+Ce monorepo propose des scripts npm pour démarrer les applications ensemble.
 
-### Alignement frontend/backend
+- `npm run dev:frontend` : démarre le frontend React.
+- `npm run dev:backend` : démarre le backend Django.
+- `npm run dev:ia` : démarre l’interface Kossi + le service IA.
+- `npm run dev` : lance les trois services en parallèle.
 
-- Le backend expose des alias français/anglais pour les champs des livres et des statistiques.
-- Le frontend `frontend/src/hooks/useData.ts` consomme `/stats/` et normalise les clés reçues, ce qui évite les incohérences entre anciens et nouveaux noms de champs.
+## API backend
 
-## Lancer le projet
+Le backend expose les routes Django REST sous `http://localhost:8000/api/`.
 
-### Option 1 : Lancement global (Recommandé)
-Depuis la racine du projet, lancez tous les services d'un coup (Frontend, Backend et IA) avec :
-```bash
-npm run dev
-```
+Routes principales :
 
-### Option 2 : Lancement individuel
-- **Backend (Django)** : `python backend/manage.py runserver 8000`
-- **Frontend (Vite/React)** : `cd frontend && npm run dev`
-- **Service IA (FastAPI)** : `uvicorn fastapi_kossi.main:app --reload --port 8001`
+- `GET /api/livres/`
+- `GET /api/utilisateurs/`
+- `GET /api/clubs/`
+- `GET /api/evenements/`
+- `GET /api/actualites/`
+- `GET /api/avis/`
+- `GET /api/reservations/`
+- `GET /api/stats/`
 
-> Note : en local, le frontend attend le backend sur `http://localhost:8000/api` et le service IA sur `http://localhost:8001`.
+Auth JWT :
 
-## Bonnes pratiques
+- `POST /api/token/`
+- `POST /api/token/refresh/`
+- `POST /api/logout/`
 
-- Utilisez les routes Django DRF définies dans `backend/api/urls.py`.
-- Les champs de données des livres sont définis dans `backend/api/models.py` et sérialisés dans `backend/api/serializers.py`.
-- Pour ajouter un nouveau champ de statistiques, mettez à jour `backend/api/views.py` et `frontend/src/hooks/useData.ts` en parallèle.
+## Service IA Kossi
+
+Endpoints FastAPI principaux :
+
+- `POST /chat` : dialogue avec l’assistant Kossi.
+- `POST /chat/stream` : réponse en streaming SSE.
+- `POST /vectorize` : génération d’embeddings.
+- `GET /` : vérification de santé.
+- `GET /health` : état détaillé.
+- `GET /metrics` : métriques Prometheus (si activées).
+
+## Notes importantes
+
+- Le frontend React consomme l’API backend et peut être configuré pour pointer vers `http://localhost:8000/api`.
+- Le service IA est indépendant du backend Django, mais il peut être utilisé par les interfaces frontales.
+- Les statistiques globales sont disponibles via l’endpoint `GET /api/stats/`.
+
+## Aide et maintenance
+
+- Backend Django : `backend/api/` contient les modèles, serializers, vues et routes.
+- Frontend React : `frontend/src/` contient les composants et hooks.
+- Service Kossi : `Kossi/fastapi_kossi/` contient le coeur FastAPI, la configuration et les agents.
+
+---
+
+*README généré pour le projet CAEB Natitingou.*
