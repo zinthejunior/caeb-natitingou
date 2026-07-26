@@ -1,0 +1,192 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   KOSSI AI - Design System (ChatGPT-inspired)
+   Theme: ChatGPT Premium + CAEB Custom Identity
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  :root {
+    /* Fond et texte */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+
+    /* Cartes et conteneurs */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    /* Popovers et menus */
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    /* Couleurs primaires (Premium Blue) */
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 100% 100%;
+
+    /* Couleurs secondaires (Gris clair chaleureux) */
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    /* Accents (Doré ambré / Soleil d'Afrique) */
+    --accent: 37.7 92.1% 50.2%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Muted */
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    /* Destructive */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Bordures et inputs */
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 221.2 83.2% 53.3%;
+
+    /* Rayon de bordure */
+    --radius: 0.85rem;
+
+    /* Sidebar (White sidebar in light mode, matching ChatGPT) */
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 240 10% 3.9%;
+    --sidebar-border: 240 5.9% 90%;
+    --sidebar-hover: 240 4.8% 95.9%;
+  }
+
+  /* Mode sombre complet */
+  .dark {
+    --background: 0 0% 13%; /* #212121 de ChatGPT */
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 13%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 240 3.7% 18%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 18%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --border: 240 3.7% 18%;
+    --input: 240 3.7% 18%;
+    --ring: 217.2 91.2% 59.8%;
+
+    --sidebar: 240 5.9% 9%; /* #171717 de ChatGPT */
+    --sidebar-foreground: 240 5% 90%;
+    --sidebar-border: 240 5.9% 15%;
+    --sidebar-hover: 240 5.9% 15%;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar moderne et fine */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 dark:bg-slate-700 rounded-full transition-colors;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400 dark:bg-slate-600;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   COMPOSANTS & DÉCORATIONS
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+@layer components {
+  /* Curseur d'écriture dynamique (Streaming cursor) */
+  .streaming-cursor::after {
+    content: "▋";
+    display: inline-block;
+    vertical-align: bottom;
+    color: hsl(var(--primary));
+    animation: blinkCursor 0.8s infinite;
+    margin-left: 2px;
+  }
+
+  /* Rendu Tableaux Markdown */
+  .markdown-table-wrapper {
+    @apply my-4 overflow-x-auto rounded-xl border border-border shadow-sm;
+  }
+
+  .markdown-table {
+    @apply w-full border-collapse text-left text-sm;
+  }
+
+  .markdown-table th {
+    @apply bg-muted px-4 py-2.5 font-bold text-foreground border-b border-border;
+  }
+
+  .markdown-table td {
+    @apply px-4 py-2 border-b border-border/60 hover:bg-muted/30 transition-colors;
+  }
+
+  .markdown-table tr:last-child td {
+    @apply border-b-0;
+  }
+
+  /* Glassmorphism Classes */
+  .glass-panel {
+    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50;
+  }
+
+  .glass-card {
+    @apply bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-slate-200/40 dark:border-slate-800/40;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   KEYFRAMES & ANIMATIONS
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+@keyframes blinkCursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Animations de transition fluides */
+.transition-all-300 {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-transform-300 {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(120, 120, 120, 0.2);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(120, 120, 120, 0.4);
+}
