@@ -190,7 +190,7 @@ import { NotFoundPage } from "@/sections/NotFoundPage";
  * On utilise window.location.href pour quitter l'app React et ouvrir Kossi.
  */
 function KossiRedirect() {
-  const KOSSI_UI_URL = import.meta.env.VITE_KOSSI_UI_URL || import.meta.env.VITE_KOSSI_URL || "http://localhost:3000";
+  const KOSSI_UI_URL = import.meta.env.VITE_KOSSI_UI_URL || import.meta.env.VITE_KOSSI_URL;
   useEffect(() => {
     window.location.href = KOSSI_UI_URL;
   }, [KOSSI_UI_URL]);

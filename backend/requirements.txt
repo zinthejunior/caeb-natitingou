@@ -12,6 +12,7 @@ nltk
 fastapi
 uvicorn
 pandas
+openpyxl
 httpx
 gunicorn
 whitenoise

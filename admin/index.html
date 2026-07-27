@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CAEB Natitingou — Portail d'Administration</title>
+  <meta name="description" content="Panneau d'administration de la bibliothèque CAEB Natitingou — Gestion complète des livres, membres, emprunts, événements et publications.">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,9 +12,9 @@
 </head>
 <body>
   <div id="app" class="admin-layout">
-    
+
     <!-- BARRE LATÉRALE DE NAVIGATION -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <div class="sidebar-brand">
         <div class="brand-logo">📚</div>
         <div class="brand-text">
@@ -30,82 +31,117 @@
           <span class="icon">📖</span> Gestion des Livres
         </button>
         <button class="nav-item" data-tab="users">
-          <span class="icon">👥</span> Utilisateurs & Membres
+          <span class="icon">👥</span> Utilisateurs &amp; Membres
         </button>
         <button class="nav-item" data-tab="borrows">
           <span class="icon">🔄</span> Gestion des Emprunts
         </button>
         <button class="nav-item" data-tab="news">
-          <span class="icon">📰</span> Publications & News
+          <span class="icon">📰</span> Publications &amp; News
         </button>
         <button class="nav-item" data-tab="events">
-          <span class="icon">📅</span> Événements & Clubs
+          <span class="icon">📅</span> Événements &amp; Clubs
+        </button>
+        <button class="nav-item" data-tab="stats">
+          <span class="icon">📈</span> Statistiques
+        </button>
+        <button class="nav-item" data-tab="settings">
+          <span class="icon">⚙️</span> Paramètres
         </button>
       </nav>
 
       <div class="sidebar-footer">
         <div class="api-status">
-          <span class="status-dot online"></span>
-          <span id="api-status-text">API Connectée</span>
+          <span class="status-dot online" id="status-dot"></span>
+          <span id="api-status-text">Vérification...</span>
+        </div>
+        <div style="margin-top:8px; font-size:11px; color:#94a3b8;">
+          v2.1.0 — CAEB Natitingou
         </div>
       </div>
     </aside>
 
     <!-- CONTENU PRINCIPAL -->
     <main class="main-content">
-      
+
       <!-- ENTÊTE SUPÉRIEUR -->
       <header class="top-header">
-        <div class="header-title">
-          <h1 id="page-title">Tableau de bord</h1>
-          <p id="page-subtitle">Vue d'ensemble et statistiques de la bibliothèque</p>
+        <div class="header-left">
+          <button id="btn-toggle-sidebar" class="btn btn-icon" title="Menu">☰</button>
+          <div class="header-title">
+            <h1 id="page-title">Tableau de bord</h1>
+            <p id="page-subtitle">Vue d'ensemble et statistiques globales</p>
+          </div>
         </div>
         <div class="header-actions">
-          <button id="btn-refresh" class="btn btn-secondary">🔄 Rafraîchir</button>
+          <button id="btn-refresh" class="btn btn-secondary" title="Rafraîchir les données">🔄 Rafraîchir</button>
           <button id="btn-new-item" class="btn btn-primary">+ Nouveau Livre</button>
         </div>
       </header>
 
-      <!-- ZONE DE CONTENU DYNAMIQUE -->
+      <!-- NOTIFICATIONS TOAST -->
+      <div id="toast-container" class="toast-container"></div>
+
+      <!-- ZONE DE CONTENU -->
       <div class="content-body">
-        
-        <!-- SECTION 1: DASHBOARD (STATISTIQUES) -->
+
+        <!-- ══════════════════════════════════════════════════════════
+             SECTION 1 : TABLEAU DE BORD
+        ══════════════════════════════════════════════════════════ -->
         <section id="tab-dashboard" class="tab-content active">
+          <!-- Cartes de statistiques -->
           <div class="stats-grid">
-            <div class="stat-card">
+            <div class="stat-card" style="cursor:pointer" onclick="switchTab('books')">
               <div class="stat-icon books">📖</div>
               <div class="stat-data">
-                <h3 id="stat-books-count">0</h3>
+                <h3 id="stat-books-count">—</h3>
                 <p>Livres au Catalogue</p>
               </div>
+              <div class="stat-trend" id="trend-books"></div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" style="cursor:pointer" onclick="switchTab('users')">
               <div class="stat-icon users">👥</div>
               <div class="stat-data">
-                <h3 id="stat-users-count">0</h3>
+                <h3 id="stat-users-count">—</h3>
                 <p>Membres Inscrits</p>
               </div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" style="cursor:pointer" onclick="switchTab('borrows')">
               <div class="stat-icon borrows">🔄</div>
               <div class="stat-data">
-                <h3 id="stat-borrows-count">0</h3>
+                <h3 id="stat-borrows-count">—</h3>
                 <p>Emprunts Actifs</p>
               </div>
             </div>
-            <div class="stat-card">
-              <div class="stat-icon warning">⚠️</div>
+            <div class="stat-card warning-card" style="cursor:pointer" onclick="switchTab('users')">
+              <div class="stat-icon warning">⏳</div>
               <div class="stat-data">
-                <h3 id="stat-late-count">0</h3>
-                <p>Demandes en Attente</p>
+                <h3 id="stat-late-count">—</h3>
+                <p>Adhésions en Attente</p>
+              </div>
+            </div>
+            <div class="stat-card" style="cursor:pointer" onclick="switchTab('borrows')">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#dc2626,#ef4444)">⚠️</div>
+              <div class="stat-data">
+                <h3 id="stat-overdue-count">—</h3>
+                <p>Emprunts en Retard</p>
+              </div>
+            </div>
+            <div class="stat-card" style="cursor:pointer" onclick="switchTab('news')">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6)">📰</div>
+              <div class="stat-data">
+                <h3 id="stat-news-count">—</h3>
+                <p>Publications</p>
               </div>
             </div>
           </div>
 
+          <!-- Tableaux récents -->
           <div class="dashboard-tables">
             <div class="card">
               <div class="card-header">
                 <h3>📖 Derniers Livres Ajoutés</h3>
+                <button class="btn btn-sm btn-secondary" onclick="switchTab('books')">Voir tout →</button>
               </div>
               <div class="table-responsive">
                 <table class="data-table" id="recent-books-table">
@@ -125,15 +161,36 @@
 
             <div class="card">
               <div class="card-header">
-                <h3>👥 Nouveaux Utilisateurs</h3>
+                <h3>👥 Nouveaux Membres</h3>
+                <button class="btn btn-sm btn-secondary" onclick="switchTab('users')">Voir tout →</button>
               </div>
               <div class="table-responsive">
                 <table class="data-table" id="recent-users-table">
                   <thead>
                     <tr>
-                      <th>Nom d'utilisateur</th>
+                      <th>Utilisateur</th>
                       <th>Nom complet</th>
-                      <th>Type de compte</th>
+                      <th>Type</th>
+                      <th>Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody><!-- Injecté par JS --></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3>🔄 Emprunts Actifs</h3>
+                <button class="btn btn-sm btn-secondary" onclick="switchTab('borrows')">Voir tout →</button>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table" id="recent-borrows-table">
+                  <thead>
+                    <tr>
+                      <th>Membre</th>
+                      <th>Livre</th>
+                      <th>Retour Prévu</th>
                       <th>Statut</th>
                     </tr>
                   </thead>
@@ -144,14 +201,27 @@
           </div>
         </section>
 
-        <!-- SECTION 2: GESTION DES LIVRES -->
+        <!-- ══════════════════════════════════════════════════════════
+             SECTION 2 : GESTION DES LIVRES
+        ══════════════════════════════════════════════════════════ -->
         <section id="tab-books" class="tab-content">
           <div class="card">
             <div class="toolbar">
-              <input type="text" id="search-books" class="search-input" placeholder="🔍 Rechercher par titre, auteur, genre...">
-              <select id="filter-genre" class="select-filter">
-                <option value="">Tous les genres</option>
-              </select>
+              <div class="toolbar-left">
+                <input type="text" id="search-books" class="search-input" placeholder="🔍 Titre, auteur, genre, code-barres...">
+                <select id="filter-genre" class="select-filter">
+                  <option value="">Tous les genres</option>
+                </select>
+                <select id="filter-disponibilite" class="select-filter">
+                  <option value="">Toute disponibilité</option>
+                  <option value="dispo">Disponibles</option>
+                  <option value="indispo">Indisponibles</option>
+                </select>
+              </div>
+              <div class="toolbar-right">
+                <button class="btn btn-secondary" id="btn-export-books">📥 Exporter CSV</button>
+                <button class="btn btn-primary" onclick="openBookModal()">+ Ajouter un Livre</button>
+              </div>
             </div>
             <div class="table-responsive">
               <table class="data-table" id="books-table">
@@ -163,26 +233,45 @@
                     <th>Genre</th>
                     <th>Stock</th>
                     <th>Cote</th>
+                    <th>Note</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody><!-- Injecté par JS --></tbody>
               </table>
             </div>
+            <div class="table-footer">
+              <span id="books-count-label">0 livres</span>
+            </div>
           </div>
         </section>
 
-        <!-- SECTION 3: GESTION DES UTILISATEURS -->
+        <!-- ══════════════════════════════════════════════════════════
+             SECTION 3 : GESTION DES UTILISATEURS
+        ══════════════════════════════════════════════════════════ -->
         <section id="tab-users" class="tab-content">
           <div class="card">
             <div class="toolbar">
-              <input type="text" id="search-users" class="search-input" placeholder="🔍 Rechercher un utilisateur...">
-              <select id="filter-user-type" class="select-filter">
-                <option value="">Tous les types</option>
-                <option value="non_membre">Non-membre</option>
-                <option value="en_attente">En attente</option>
-                <option value="membre">Membre</option>
-              </select>
+              <div class="toolbar-left">
+                <input type="text" id="search-users" class="search-input" placeholder="🔍 Nom, email, username...">
+                <select id="filter-user-type" class="select-filter">
+                  <option value="">Tous les types</option>
+                  <option value="non_membre">Non-membre</option>
+                  <option value="en_attente">En attente d'adhésion</option>
+                  <option value="membre">Membre validé</option>
+                </select>
+              </div>
+              <div class="toolbar-right">
+                <button class="btn btn-secondary" id="btn-export-users">📥 Exporter CSV</button>
+                <button class="btn btn-primary" onclick="openUserModal()">+ Ajouter Utilisateur</button>
+              </div>
+            </div>
+            <!-- Onglets Adhésions en attente -->
+            <div class="sub-tabs">
+              <button class="sub-tab active" data-subtab="all-users">Tous les membres</button>
+              <button class="sub-tab" data-subtab="pending-users">
+                ⏳ En attente <span id="pending-badge" class="badge badge-warning">0</span>
+              </button>
             </div>
             <div class="table-responsive">
               <table class="data-table" id="users-table">
@@ -200,30 +289,42 @@
                 <tbody><!-- Injecté par JS --></tbody>
               </table>
             </div>
+            <div class="table-footer">
+              <span id="users-count-label">0 membres</span>
+            </div>
           </div>
         </section>
 
-        <!-- SECTION 4: GESTION DES EMPRUNTS -->
+        <!-- ══════════════════════════════════════════════════════════
+             SECTION 4 : GESTION DES EMPRUNTS
+        ══════════════════════════════════════════════════════════ -->
         <section id="tab-borrows" class="tab-content">
           <div class="card">
             <div class="toolbar">
-              <input type="text" id="search-borrows" class="search-input" placeholder="🔍 Rechercher un emprunt...">
-              <select id="filter-borrow-status" class="select-filter">
-                <option value="">Tous les statuts</option>
-                <option value="en_cours">En cours</option>
-                <option value="rendu">Rendu</option>
-                <option value="perdu">Perdu</option>
-              </select>
+              <div class="toolbar-left">
+                <input type="text" id="search-borrows" class="search-input" placeholder="🔍 Membre, titre du livre...">
+                <select id="filter-borrow-status" class="select-filter">
+                  <option value="">Tous les statuts</option>
+                  <option value="en_cours">En cours</option>
+                  <option value="rendu">Rendu</option>
+                  <option value="perdu">Perdu</option>
+                  <option value="en_retard">En retard</option>
+                </select>
+              </div>
+              <div class="toolbar-right">
+                <button class="btn btn-secondary" id="btn-export-borrows">📥 Exporter CSV</button>
+                <button class="btn btn-primary" onclick="openBorrowModal()">+ Enregistrer Emprunt</button>
+              </div>
             </div>
             <div class="table-responsive">
               <table class="data-table" id="borrows-table">
                 <thead>
                   <tr>
-                    <th>ID</th>
                     <th>Emprunteur</th>
                     <th>Livre</th>
                     <th>Date Sortie</th>
                     <th>Retour Prévu</th>
+                    <th>Retour Effectif</th>
                     <th>Statut</th>
                     <th>Actions</th>
                   </tr>
@@ -231,15 +332,31 @@
                 <tbody><!-- Injecté par JS --></tbody>
               </table>
             </div>
+            <div class="table-footer">
+              <span id="borrows-count-label">0 emprunts</span>
+            </div>
           </div>
         </section>
 
-        <!-- SECTION 5: PUBLICATIONS & NEWS -->
+        <!-- ══════════════════════════════════════════════════════════
+             SECTION 5 : PUBLICATIONS & NEWS
+        ══════════════════════════════════════════════════════════ -->
         <section id="tab-news" class="tab-content">
           <div class="card">
             <div class="toolbar">
-              <input type="text" id="search-news" class="search-input" placeholder="🔍 Rechercher une publication...">
-              <button class="btn btn-primary" id="btn-add-news">+ Nouvelle Publication</button>
+              <div class="toolbar-left">
+                <input type="text" id="search-news" class="search-input" placeholder="🔍 Rechercher une publication...">
+                <select id="filter-news-category" class="select-filter">
+                  <option value="">Toutes catégories</option>
+                  <option value="announcement">Annonce</option>
+                  <option value="event">Événement</option>
+                  <option value="culture">Culture</option>
+                  <option value="general">Général</option>
+                </select>
+              </div>
+              <div class="toolbar-right">
+                <button class="btn btn-primary" onclick="openNewsModal()">+ Nouvelle Publication</button>
+              </div>
             </div>
             <div class="table-responsive">
               <table class="data-table" id="news-table">
@@ -256,15 +373,24 @@
                 <tbody><!-- Injecté par JS --></tbody>
               </table>
             </div>
+            <div class="table-footer">
+              <span id="news-count-label">0 publications</span>
+            </div>
           </div>
         </section>
 
-        <!-- SECTION 6: ÉVÉNEMENTS & CLUBS -->
+        <!-- ══════════════════════════════════════════════════════════
+             SECTION 6 : ÉVÉNEMENTS & CLUBS
+        ══════════════════════════════════════════════════════════ -->
         <section id="tab-events" class="tab-content">
           <div class="card">
-            <div class="card-header">
-              <h3>📅 Événements & Activités</h3>
-              <button class="btn btn-primary" id="btn-add-event">+ Nouvel Événement</button>
+            <div class="toolbar">
+              <div class="toolbar-left">
+                <input type="text" id="search-events" class="search-input" placeholder="🔍 Rechercher un événement...">
+              </div>
+              <div class="toolbar-right">
+                <button class="btn btn-primary" onclick="openEventModal()">+ Nouvel Événement</button>
+              </div>
             </div>
             <div class="table-responsive">
               <table class="data-table" id="events-table">
@@ -274,11 +400,125 @@
                     <th>Date</th>
                     <th>Lieu</th>
                     <th>Places</th>
+                    <th>Statut</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody><!-- Injecté par JS --></tbody>
               </table>
+            </div>
+            <div class="table-footer">
+              <span id="events-count-label">0 événements</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             SECTION 7 : STATISTIQUES AVANCÉES
+        ══════════════════════════════════════════════════════════ -->
+        <section id="tab-stats" class="tab-content">
+          <div class="stats-advanced-grid">
+            <div class="card">
+              <div class="card-header">
+                <h3>📚 Répartition par Genre</h3>
+              </div>
+              <div id="genres-chart" class="chart-container"></div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>📊 Activité des Emprunts</h3>
+              </div>
+              <div id="borrows-chart" class="chart-container"></div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>⭐ Top 10 Livres les Plus Empruntés</h3>
+              </div>
+              <div id="top-books-chart" class="chart-container"></div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>👥 Types de Comptes Membres</h3>
+              </div>
+              <div id="users-chart" class="chart-container"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             SECTION 8 : PARAMÈTRES
+        ══════════════════════════════════════════════════════════ -->
+        <section id="tab-settings" class="tab-content">
+          <div class="settings-grid">
+            <div class="card">
+              <div class="card-header">
+                <h3>🔗 Connexion API</h3>
+              </div>
+              <div class="settings-body">
+                <div class="form-group">
+                  <label>URL de l'API Backend</label>
+                  <input type="text" id="setting-api-url" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                  <label>Statut</label>
+                  <div class="api-status-full">
+                    <span class="status-dot online" id="settings-status-dot"></span>
+                    <span id="settings-api-text">Vérification...</span>
+                  </div>
+                </div>
+                <button class="btn btn-secondary" onclick="checkApiHealth()">🔄 Tester la connexion</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3>📦 Import / Export des Données</h3>
+              </div>
+              <div class="settings-body">
+                <p class="text-muted-small">Exportez les données au format CSV pour une analyse externe ou une sauvegarde.</p>
+                <div class="settings-actions">
+                  <button class="btn btn-secondary" onclick="exportAllData('books')">📥 Exporter les Livres</button>
+                  <button class="btn btn-secondary" onclick="exportAllData('users')">📥 Exporter les Membres</button>
+                  <button class="btn btn-secondary" onclick="exportAllData('borrows')">📥 Exporter les Emprunts</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3>🎨 Apparence du Panneau</h3>
+              </div>
+              <div class="settings-body">
+                <div class="form-group">
+                  <label class="toggle-label">
+                    <span>Thème sombre</span>
+                    <input type="checkbox" id="toggle-dark-mode" class="toggle-input">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="form-group">
+                  <label class="toggle-label">
+                    <span>Barre latérale compacte</span>
+                    <input type="checkbox" id="toggle-compact" class="toggle-input">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3>ℹ️ À propos du système</h3>
+              </div>
+              <div class="settings-body">
+                <table class="info-table">
+                  <tr><td>Application</td><td><strong>CAEB Natitingou Admin</strong></td></tr>
+                  <tr><td>Version</td><td><strong>2.1.0</strong></td></tr>
+                  <tr><td>Base de données</td><td><strong>PostgreSQL (Supabase)</strong></td></tr>
+                  <tr><td>Backend</td><td><strong>Django REST Framework</strong></td></tr>
+                  <tr><td>Hébergement</td><td><strong>Render.com</strong></td></tr>
+                </table>
+              </div>
             </div>
           </div>
         </section>
@@ -287,12 +527,14 @@
     </main>
   </div>
 
-  <!-- MODAL DE FORMULAIRE (AJOUT / ÉDITION) -->
-  <div id="modal-container" class="modal-overlay">
-    <div class="modal-card">
+  <!-- ══════════════════════════════════════════════════════════════
+       MODAL UNIVERSEL
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="modal-container" class="modal-overlay" onclick="handleModalOverlayClick(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-header">
         <h3 id="modal-title">Formulaire</h3>
-        <button id="modal-close" class="btn-close">&times;</button>
+        <button id="modal-close" class="btn-close" onclick="closeModal()">&times;</button>
       </div>
       <div class="modal-body" id="modal-body">
         <!-- Contenu dynamique du formulaire -->
