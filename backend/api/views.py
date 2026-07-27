@@ -196,20 +196,20 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
 
     def get_permissions(self):
-        """Inscription ouverte à tous ; le reste nécessite un token JWT valide."""
-        if self.action in ['create', 'check_email']:
+        """Inscription et réinitialisation de mot de passe ouvertes à tous ; le reste nécessite un token JWT valide."""
+        if self.action in ['create', 'check_email', 'forgot_password', 'reset_password']:
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
     def get_throttles(self):
         """
         Applique un throttling renforcé sur les actions publiques sensibles :
-        - create       : inscription d'un nouveau compte (max 5/min par IP)
-        - check_email  : vérification d'existence d'email (max 10/min par IP)
+        - create                          : inscription d'un nouveau compte (max 5/min par IP)
+        - check_email, forgot, reset      : vérification et réinitialisation (max 10/min par IP)
         """
         if self.action == 'create':
             return [InscriptionRateThrottle()]
-        if self.action == 'check_email':
+        if self.action in ['check_email', 'forgot_password', 'reset_password']:
             return [AuthRateThrottle()]
         return super().get_throttles()
 
@@ -242,8 +242,6 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.save()
         return Response(serializer.data)
 
-
-
     def create(self, request, *args, **kwargs):
         """
         Inscription d'un nouvel utilisateur.
@@ -264,7 +262,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='me/change-password')
     def change_password(self, request):
         """
-        Changement de mot de passe.
+        Changement de mot de passe pour l'utilisateur connecté.
         Vérifie l'ancien mot de passe avant d'appliquer le nouveau.
         """
         serializer = UserPasswordSerializer(data=request.data, context={'request': request})
@@ -272,6 +270,55 @@ class UserViewSet(viewsets.ModelViewSet):
         request.user.set_password(serializer.validated_data['new_password'])
         request.user.save()
         return Response({'detail': 'Mot de passe mis à jour avec succès.'})
+
+    @action(detail=False, methods=['post'], url_path='forgot-password', permission_classes=[permissions.AllowAny])
+    def forgot_password(self, request):
+        """
+        Demande de réinitialisation de mot de passe.
+        Reçoit {"email": "..."} et envoie un email contenant un lien sécurisé avec token.
+        """
+        email = request.data.get('email', '').strip()
+        if not email:
+            return Response({'error': 'L\'adresse email est requise.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = User.objects.filter(Q(email__iexact=email) | Q(username__iexact=email)).first()
+        if user and user.email:
+            from django.contrib.auth.tokens import default_token_generator
+            token = default_token_generator.make_token(user)
+            mail_service.envoyer_email_reset_password(user, token)
+        
+        # Réponse générique pour éviter d'énumérer les adresses d'utilisateurs
+        return Response({
+            'detail': 'Si cette adresse email est associée à un compte, un lien de réinitialisation vous a été envoyé par email.'
+        })
+
+    @action(detail=False, methods=['post'], url_path='reset-password', permission_classes=[permissions.AllowAny])
+    def reset_password(self, request):
+        """
+        Réinitialisation du mot de passe via le token reçu par email.
+        Reçoit {"email": "...", "token": "...", "new_password": "..."}
+        """
+        email = request.data.get('email', '').strip()
+        token = request.data.get('token', '').strip()
+        new_password = request.data.get('new_password', '')
+
+        if not email or not token or not new_password:
+            return Response({'error': 'Tous les champs (email, token, mot de passe) sont requis.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if len(new_password) < 6:
+            return Response({'error': 'Le nouveau mot de passe doit contenir au moins 6 caractères.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(Q(email__iexact=email) | Q(username__iexact=email)).first()
+        if not user:
+            return Response({'error': 'Lien de réinitialisation invalide ou utilisateur introuvable.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        from django.contrib.auth.tokens import default_token_generator
+        if not default_token_generator.check_token(user, token):
+            return Response({'error': 'Le lien de réinitialisation est invalide ou a expiré (durée de validité : 24h).'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+        return Response({'detail': 'Votre mot de passe a été réinitialisé avec succès ! Vous pouvez maintenant vous connecter.'})
 
     @action(detail=False, methods=['post'], url_path='check-email', permission_classes=[permissions.AllowAny])
     def check_email(self, request):

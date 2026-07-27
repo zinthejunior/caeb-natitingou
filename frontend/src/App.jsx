@@ -89,6 +89,7 @@ import { LoginPage } from "@/sections/LoginPage";
  * Formulaire multi-étapes pour créer un nouveau compte.
  */
 import { RegisterPage } from "@/sections/RegisterPage";
+import { ResetPasswordPage } from "@/sections/ResetPasswordPage";
 
 /**
  * HomePage : Tableau de bord utilisateur
@@ -390,6 +391,7 @@ function AppRoutes() {
       <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+      <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
 
       {/* ══════════════════════════════════════════════════════════════════
             ROUTES PROTÉGÉES (nécessitent une connexion)

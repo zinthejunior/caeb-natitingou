@@ -596,35 +596,59 @@ function useProvideAuthentification() {
       const response = await fetchWithAuth("/utilisateurs/me/change-password/", {
         method: "POST",
         body: JSON.stringify({ 
-          old_password: ancienMotDePasse, // Django attend old_password
-          new_password: nouveauMotDePasse  // Django attend new_password
+          old_password: ancienMotDePasse,
+          new_password: nouveauMotDePasse
         })
       });
-      return response.ok; // true si code 2xx, false sinon
+      return response.ok;
     } catch (err) {
       console.error("Erreur changement mot de passe:", err);
       return false;
     }
-  }, []); // Pas de dépendances
-  
-  // ─────────────────────────────────────────────────────────────────────────────
-  // VALEUR DE RETOUR DU HOOK
-  // ─────────────────────────────────────────────────────────────────────────────
-  
-  /**
-   * Retourne un objet avec toutes les données et fonctions du hook.
-   * 
-   * L'opérateur spread "...etat" copie toutes les propriétés de l'état
-   * (utilisateur, estAuthentifie, chargement) dans l'objet retourné.
-   */
+  }, []);
+
+  const demandeResetMotDePasse = useCallback(async (email) => {
+    try {
+      const response = await fetchWithAuth("/utilisateurs/forgot-password/", {
+        method: "POST",
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok) {
+        return { success: true, message: data.detail };
+      }
+      return { success: false, message: data.error || "Erreur lors de la demande." };
+    } catch (err) {
+      return { success: false, message: "Erreur réseau." };
+    }
+  }, []);
+
+  const reinitialiserMotDePasse = useCallback(async (email, token, newPassword) => {
+    try {
+      const response = await fetchWithAuth("/utilisateurs/reset-password/", {
+        method: "POST",
+        body: JSON.stringify({ email, token, new_password: newPassword })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok) {
+        return { success: true, message: data.detail };
+      }
+      return { success: false, message: data.error || "Lien invalide ou expiré." };
+    } catch (err) {
+      return { success: false, message: "Erreur réseau." };
+    }
+  }, []);
+
   return {
-    ...etat, // utilisateur, estAuthentifie, chargement
+    ...etat,
     connexion,
     inscription,
     verifierEmail,
     deconnexion,
     mettreAJourUtilisateur,
     changerMotDePasse,
+    demandeResetMotDePasse,
+    reinitialiserMotDePasse,
     recupererUtilisateur
   };
 }
