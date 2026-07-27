@@ -25,9 +25,14 @@ from typing import AsyncGenerator
 
 # ══════════════════════════════════════════════════════════════════════════════
 # CONFIGURATION DU PATH
-# Assure que le dossier parent est dans sys.path pour les imports relatifs
+# Assure que le dossier parent et le dossier courant sont dans sys.path pour les imports
 # ══════════════════════════════════════════════════════════════════════════════
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_parent_dir = os.path.dirname(_current_dir)
+if _current_dir not in sys.path:
+    sys.path.insert(0, _current_dir)
+if _parent_dir not in sys.path:
+    sys.path.insert(0, _parent_dir)
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
