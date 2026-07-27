@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAEB Natitingou — Portail d'Administration</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app" class="admin-layout">
+    
+    <!-- BARRE LATÉRALE DE NAVIGATION -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo">📚</div>
+        <div class="brand-text">
+          <h2>CAEB Admin</h2>
+          <span>Natitingou Management</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="dashboard">
+          <span class="icon">📊</span> Tableau de bord
+        </button>
+        <button class="nav-item" data-tab="books">
+          <span class="icon">📖</span> Gestion des Livres
+        </button>
+        <button class="nav-item" data-tab="users">
+          <span class="icon">👥</span> Utilisateurs & Membres
+        </button>
+        <button class="nav-item" data-tab="borrows">
+          <span class="icon">🔄</span> Gestion des Emprunts
+        </button>
+        <button class="nav-item" data-tab="news">
+          <span class="icon">📰</span> Publications & News
+        </button>
+        <button class="nav-item" data-tab="events">
+          <span class="icon">📅</span> Événements & Clubs
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="api-status">
+          <span class="status-dot online"></span>
+          <span id="api-status-text">API Connectée</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CONTENU PRINCIPAL -->
+    <main class="main-content">
+      
+      <!-- ENTÊTE SUPÉRIEUR -->
+      <header class="top-header">
+        <div class="header-title">
+          <h1 id="page-title">Tableau de bord</h1>
+          <p id="page-subtitle">Vue d'ensemble et statistiques de la bibliothèque</p>
+        </div>
+        <div class="header-actions">
+          <button id="btn-refresh" class="btn btn-secondary">🔄 Rafraîchir</button>
+          <button id="btn-new-item" class="btn btn-primary">+ Nouveau Livre</button>
+        </div>
+      </header>
+
+      <!-- ZONE DE CONTENU DYNAMIQUE -->
+      <div class="content-body">
+        
+        <!-- SECTION 1: DASHBOARD (STATISTIQUES) -->
+        <section id="tab-dashboard" class="tab-content active">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon books">📖</div>
+              <div class="stat-data">
+                <h3 id="stat-books-count">0</h3>
+                <p>Livres au Catalogue</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon users">👥</div>
+              <div class="stat-data">
+                <h3 id="stat-users-count">0</h3>
+                <p>Membres Inscrits</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon borrows">🔄</div>
+              <div class="stat-data">
+                <h3 id="stat-borrows-count">0</h3>
+                <p>Emprunts Actifs</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon warning">⚠️</div>
+              <div class="stat-data">
+                <h3 id="stat-late-count">0</h3>
+                <p>Demandes en Attente</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-tables">
+            <div class="card">
+              <div class="card-header">
+                <h3>📖 Derniers Livres Ajoutés</h3>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table" id="recent-books-table">
+                  <thead>
+                    <tr>
+                      <th>Couverture</th>
+                      <th>Titre</th>
+                      <th>Auteur</th>
+                      <th>Genre</th>
+                      <th>Exemplaires</th>
+                    </tr>
+                  </thead>
+                  <tbody><!-- Injecté par JS --></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3>👥 Nouveaux Utilisateurs</h3>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table" id="recent-users-table">
+                  <thead>
+                    <tr>
+                      <th>Nom d'utilisateur</th>
+                      <th>Nom complet</th>
+                      <th>Type de compte</th>
+                      <th>Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody><!-- Injecté par JS --></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 2: GESTION DES LIVRES -->
+        <section id="tab-books" class="tab-content">
+          <div class="card">
+            <div class="toolbar">
+              <input type="text" id="search-books" class="search-input" placeholder="🔍 Rechercher par titre, auteur, genre...">
+              <select id="filter-genre" class="select-filter">
+                <option value="">Tous les genres</option>
+              </select>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="books-table">
+                <thead>
+                  <tr>
+                    <th>Couverture</th>
+                    <th>Titre</th>
+                    <th>Auteur</th>
+                    <th>Genre</th>
+                    <th>Stock</th>
+                    <th>Cote</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody><!-- Injecté par JS --></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 3: GESTION DES UTILISATEURS -->
+        <section id="tab-users" class="tab-content">
+          <div class="card">
+            <div class="toolbar">
+              <input type="text" id="search-users" class="search-input" placeholder="🔍 Rechercher un utilisateur...">
+              <select id="filter-user-type" class="select-filter">
+                <option value="">Tous les types</option>
+                <option value="non_membre">Non-membre</option>
+                <option value="en_attente">En attente</option>
+                <option value="membre">Membre</option>
+              </select>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="users-table">
+                <thead>
+                  <tr>
+                    <th>Utilisateur</th>
+                    <th>Nom Complet</th>
+                    <th>Email</th>
+                    <th>Téléphone</th>
+                    <th>Type Compte</th>
+                    <th>Adhésion</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody><!-- Injecté par JS --></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 4: GESTION DES EMPRUNTS -->
+        <section id="tab-borrows" class="tab-content">
+          <div class="card">
+            <div class="toolbar">
+              <input type="text" id="search-borrows" class="search-input" placeholder="🔍 Rechercher un emprunt...">
+              <select id="filter-borrow-status" class="select-filter">
+                <option value="">Tous les statuts</option>
+                <option value="en_cours">En cours</option>
+                <option value="rendu">Rendu</option>
+                <option value="perdu">Perdu</option>
+              </select>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="borrows-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Emprunteur</th>
+                    <th>Livre</th>
+                    <th>Date Sortie</th>
+                    <th>Retour Prévu</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody><!-- Injecté par JS --></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 5: PUBLICATIONS & NEWS -->
+        <section id="tab-news" class="tab-content">
+          <div class="card">
+            <div class="toolbar">
+              <input type="text" id="search-news" class="search-input" placeholder="🔍 Rechercher une publication...">
+              <button class="btn btn-primary" id="btn-add-news">+ Nouvelle Publication</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="news-table">
+                <thead>
+                  <tr>
+                    <th>Titre</th>
+                    <th>Catégorie</th>
+                    <th>Auteur</th>
+                    <th>Date Publication</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody><!-- Injecté par JS --></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 6: ÉVÉNEMENTS & CLUBS -->
+        <section id="tab-events" class="tab-content">
+          <div class="card">
+            <div class="card-header">
+              <h3>📅 Événements & Activités</h3>
+              <button class="btn btn-primary" id="btn-add-event">+ Nouvel Événement</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="events-table">
+                <thead>
+                  <tr>
+                    <th>Titre</th>
+                    <th>Date</th>
+                    <th>Lieu</th>
+                    <th>Places</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody><!-- Injecté par JS --></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL DE FORMULAIRE (AJOUT / ÉDITION) -->
+  <div id="modal-container" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-title">Formulaire</h3>
+        <button id="modal-close" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <!-- Contenu dynamique du formulaire -->
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
