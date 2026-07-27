@@ -121,49 +121,63 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 
 # ── Base de données ───────────────────────────────────────────────────────────
-# Configuration PostgreSQL locale uniquement.
-# Les variables d'environnement suivantes peuvent être définies dans .env :
-#   - DB_NAME : nom de la base (par défaut: 'caeb_db')
-#   - DB_USER : utilisateur PostgreSQL (par défaut: 'postgres')
-#   - DB_PASSWORD : mot de passe PostgreSQL (par défaut: 'root')
-#   - DB_HOST : host PostgreSQL (par défaut: 'localhost')
-#   - DB_PORT : port PostgreSQL (par défaut: '5432')
+# En production (Render/Supabase), la variable DATABASE_URL est prioritaire.
+# En local, on détecte PostgreSQL automatiquement, avec SQLite en fallback.
+# Variables d'environnement locales :
+#   - DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 
-def check_postgres_available(host, port):
-    import socket
-    try:
-        target_host = '127.0.0.1' if host in ('localhost', '127.0.0.1') else host
-        s = socket.create_connection((target_host, int(port)), timeout=0.2)
-        s.close()
-        return True
-    except Exception:
-        return False
+import dj_database_url
 
-_use_sqlite = os.environ.get('USE_SQLITE', '').lower() in ('true', '1')
-_pg_host = os.environ.get('DB_HOST', 'localhost')
-_pg_port = os.environ.get('DB_PORT', '5432')
+_database_url = os.environ.get('DATABASE_URL')
 
-if not _use_sqlite and check_postgres_available(_pg_host, _pg_port):
+if _database_url:
+    # ── Production (Render + Supabase) ────────────────────────────────────────
+    # Render fournit DATABASE_URL automatiquement. On ajoute conn_max_age pour
+    # activer le pooling des connexions et réduire la latence.
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'caeb_db'),
-            'USER': os.environ.get('DB_USER', 'postgres'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', 'root'),
-            'HOST': _pg_host,
-            'PORT': _pg_port,
-            'OPTIONS': {
-                'client_encoding': 'UTF8',
-            },
-        }
+        'default': dj_database_url.config(
+            default=_database_url,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
 else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+    # ── Développement local ────────────────────────────────────────────────────
+    def check_postgres_available(host, port):
+        import socket
+        try:
+            target_host = '127.0.0.1' if host in ('localhost', '127.0.0.1') else host
+            s = socket.create_connection((target_host, int(port)), timeout=0.2)
+            s.close()
+            return True
+        except Exception:
+            return False
+
+    _use_sqlite = os.environ.get('USE_SQLITE', '').lower() in ('true', '1')
+    _pg_host = os.environ.get('DB_HOST', 'localhost')
+    _pg_port = os.environ.get('DB_PORT', '5432')
+
+    if not _use_sqlite and check_postgres_available(_pg_host, _pg_port):
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': os.environ.get('DB_NAME', 'caeb_db'),
+                'USER': os.environ.get('DB_USER', 'postgres'),
+                'PASSWORD': os.environ.get('DB_PASSWORD', 'root'),
+                'HOST': _pg_host,
+                'PORT': _pg_port,
+                'OPTIONS': {
+                    'client_encoding': 'UTF8',
+                },
+            }
         }
-    }
+    else:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
 
 
 # ── CORS (Cross-Origin Resource Sharing) ──────────────────────────────────────
