@@ -1,21 +1,11 @@
 import { useState, useEffect } from "react";
+import { buildMediaUrl } from "@/lib/config";
+
 export function ApiImage({ imageKey, src, fallback = "/avatar-1.jpg", alt, ...rest }) {
-  const [url, setUrl] = useState(() => {
-    if (src) {
-      if (src.startsWith("/media/") || src.startsWith("/static/")) {
-        return `http://localhost:8000${src}`;
-      }
-      return src;
-    }
-    return void 0;
-  });
+  const [url, setUrl] = useState(() => (src ? buildMediaUrl(src) : void 0));
   useEffect(() => {
     if (src) {
-      if (src.startsWith("/media/") || src.startsWith("/static/")) {
-        setUrl(`http://localhost:8000${src}`);
-      } else {
-        setUrl(src);
-      }
+      setUrl(buildMediaUrl(src));
     }
   }, [src]);
   const handleError = (e) => {
