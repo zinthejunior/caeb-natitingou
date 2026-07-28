@@ -185,7 +185,7 @@ else:
 # Format dans .env : CORS_ALLOWED_ORIGINS=http://localhost:5173,https://caeb-natitingou.org
 _cors_origins_env = os.environ.get(
     'CORS_ALLOWED_ORIGINS',
-    'http://localhost:5173,http://localhost:5174,http://localhost:3000,https://caeb-natitingou.vercel.app,https://kossi-chat.vercel.app'
+    'http://localhost:5173,http://localhost:5174,http://localhost:3000,https://caeb-frontend.vercel.app,https://kossi-chat.vercel.app'
 )
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_origins_env.split(',') if o.strip()]
 CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'False').lower() in ('true', '1', 't')
@@ -308,7 +308,7 @@ if not DEBUG:
 # URL de base du frontend pour les redirections (ex: liens de réinitialisation de mot de passe)
 FRONTEND_URL = os.environ.get(
     'FRONTEND_URL',
-    'http://localhost:5173' if DEBUG else 'https://caeb-natitingou.vercel.app'
+    'http://localhost:5173' if DEBUG else 'https://caeb-frontend.vercel.app'
 )
 
 # ── Configuration du service Email (SMTP) ────────────────────────────────────
