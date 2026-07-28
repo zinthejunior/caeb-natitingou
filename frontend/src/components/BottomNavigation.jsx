@@ -1,6 +1,7 @@
 import { Home, BookOpen, Users, Newspaper, Bot } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { KOSSI_URL } from "@/lib/config";
 
 export function BottomNavigation() {
   const location = useLocation();
@@ -34,8 +35,7 @@ export function BottomNavigation() {
     else if (view === "clubs") navigate("/clubs");
     else if (view === "news") navigate("/news");
     else if (view === "ai-chat") {
-      const kossiUrl = import.meta.env.VITE_KOSSI_UI_URL || import.meta.env.VITE_KOSSI_URL || "http://localhost:3000";
-      window.open(kossiUrl, "_blank", "noopener,noreferrer");
+      window.open(KOSSI_URL, "_blank", "noopener,noreferrer");
     }
   };
 

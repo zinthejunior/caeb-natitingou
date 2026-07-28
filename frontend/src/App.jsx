@@ -65,7 +65,8 @@ import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-
  * Le Toaster est le conteneur qui affiche ces messages en haut de l'écran.
  */
 import { Toaster } from "sonner";
-import { useEffect } from "react";
+  import { useEffect } from "react";
+import { KOSSI_URL } from "@/lib/config";
 
 // ─── IMPORT DES PAGES ────────────────────────────────────────────────────────
 // Chaque page est un composant React dans le dossier sections/
@@ -191,10 +192,9 @@ import { NotFoundPage } from "@/sections/NotFoundPage";
  * On utilise window.location.href pour quitter l'app React et ouvrir Kossi.
  */
 function KossiRedirect() {
-  const KOSSI_UI_URL = import.meta.env.VITE_KOSSI_UI_URL || import.meta.env.VITE_KOSSI_URL;
   useEffect(() => {
-    window.location.href = KOSSI_UI_URL;
-  }, [KOSSI_UI_URL]);
+    window.location.href = KOSSI_URL;
+  }, []);
   return (
     <div className="min-h-screen bg-library-bg flex flex-col items-center justify-center gap-4">
       <div className="w-14 h-14 rounded-2xl bg-[var(--library-accent)] flex items-center justify-center shadow-elevated">
