@@ -55,7 +55,7 @@
           <span class="status-dot online" id="status-dot"></span>
           <span id="api-status-text">Vérification...</span>
         </div>
-        <div style="margin-top:8px; font-size:11px; color:#94a3b8;">
+        <div class="version-text">
           v2.1.0 — CAEB Natitingou
         </div>
       </div>
@@ -91,7 +91,7 @@
         <section id="tab-dashboard" class="tab-content active">
           <!-- Cartes de statistiques -->
           <div class="stats-grid">
-            <div class="stat-card" style="cursor:pointer" onclick="switchTab('books')">
+            <div class="stat-card stat-card-clickable" onclick="switchTab('books')">
               <div class="stat-icon books">📖</div>
               <div class="stat-data">
                 <h3 id="stat-books-count">—</h3>
@@ -99,36 +99,36 @@
               </div>
               <div class="stat-trend" id="trend-books"></div>
             </div>
-            <div class="stat-card" style="cursor:pointer" onclick="switchTab('users')">
+            <div class="stat-card stat-card-clickable" onclick="switchTab('users')">
               <div class="stat-icon users">👥</div>
               <div class="stat-data">
                 <h3 id="stat-users-count">—</h3>
                 <p>Membres Inscrits</p>
               </div>
             </div>
-            <div class="stat-card" style="cursor:pointer" onclick="switchTab('borrows')">
+            <div class="stat-card stat-card-clickable" onclick="switchTab('borrows')">
               <div class="stat-icon borrows">🔄</div>
               <div class="stat-data">
                 <h3 id="stat-borrows-count">—</h3>
                 <p>Emprunts Actifs</p>
               </div>
             </div>
-            <div class="stat-card warning-card" style="cursor:pointer" onclick="switchTab('users')">
+            <div class="stat-card warning-card stat-card-clickable" onclick="switchTab('users')">
               <div class="stat-icon warning">⏳</div>
               <div class="stat-data">
                 <h3 id="stat-late-count">—</h3>
                 <p>Adhésions en Attente</p>
               </div>
             </div>
-            <div class="stat-card" style="cursor:pointer" onclick="switchTab('borrows')">
-              <div class="stat-icon" style="background:linear-gradient(135deg,#dc2626,#ef4444)">⚠️</div>
+            <div class="stat-card stat-card-clickable" onclick="switchTab('borrows')">
+              <div class="stat-icon overdue">⚠️</div>
               <div class="stat-data">
                 <h3 id="stat-overdue-count">—</h3>
                 <p>Emprunts en Retard</p>
               </div>
             </div>
-            <div class="stat-card" style="cursor:pointer" onclick="switchTab('news')">
-              <div class="stat-icon" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6)">📰</div>
+            <div class="stat-card stat-card-clickable" onclick="switchTab('news')">
+              <div class="stat-icon news">📰</div>
               <div class="stat-data">
                 <h3 id="stat-news-count">—</h3>
                 <p>Publications</p>
@@ -209,10 +209,10 @@
             <div class="toolbar">
               <div class="toolbar-left">
                 <input type="text" id="search-books" class="search-input" placeholder="🔍 Titre, auteur, genre, code-barres...">
-                <select id="filter-genre" class="select-filter">
+                <select id="filter-genre" class="select-filter" title="Filtrer par genre" aria-label="Filtrer par genre">
                   <option value="">Tous les genres</option>
                 </select>
-                <select id="filter-disponibilite" class="select-filter">
+                <select id="filter-disponibilite" class="select-filter" title="Filtrer par disponibilité" aria-label="Filtrer par disponibilité">
                   <option value="">Toute disponibilité</option>
                   <option value="dispo">Disponibles</option>
                   <option value="indispo">Indisponibles</option>
@@ -254,7 +254,7 @@
             <div class="toolbar">
               <div class="toolbar-left">
                 <input type="text" id="search-users" class="search-input" placeholder="🔍 Nom, email, username...">
-                <select id="filter-user-type" class="select-filter">
+                <select id="filter-user-type" class="select-filter" title="Filtrer par type de membre" aria-label="Filtrer par type de membre">
                   <option value="">Tous les types</option>
                   <option value="non_membre">Non-membre</option>
                   <option value="en_attente">En attente d'adhésion</option>
@@ -303,7 +303,7 @@
             <div class="toolbar">
               <div class="toolbar-left">
                 <input type="text" id="search-borrows" class="search-input" placeholder="🔍 Membre, titre du livre...">
-                <select id="filter-borrow-status" class="select-filter">
+                <select id="filter-borrow-status" class="select-filter" title="Filtrer par statut d'emprunt" aria-label="Filtrer par statut d'emprunt">
                   <option value="">Tous les statuts</option>
                   <option value="en_cours">En cours</option>
                   <option value="rendu">Rendu</option>
@@ -346,7 +346,7 @@
             <div class="toolbar">
               <div class="toolbar-left">
                 <input type="text" id="search-news" class="search-input" placeholder="🔍 Rechercher une publication...">
-                <select id="filter-news-category" class="select-filter">
+                <select id="filter-news-category" class="select-filter" title="Filtrer par catégorie" aria-label="Filtrer par catégorie">
                   <option value="">Toutes catégories</option>
                   <option value="announcement">Annonce</option>
                   <option value="event">Événement</option>
@@ -456,8 +456,8 @@
               </div>
               <div class="settings-body">
                 <div class="form-group">
-                  <label>URL de l'API Backend</label>
-                  <input type="text" id="setting-api-url" class="form-control" readonly>
+                  <label for="setting-api-url">URL de l'API Backend</label>
+                  <input type="text" id="setting-api-url" class="form-control" title="URL de l'API Backend" aria-label="URL de l'API Backend" readonly>
                 </div>
                 <div class="form-group">
                   <label>Statut</label>

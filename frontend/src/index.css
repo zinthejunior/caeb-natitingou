@@ -243,8 +243,8 @@
 
   /* ── Glass effect ── */
   .glass-effect {
-    backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
   }
 
   html:not(.dark) .glass-effect {
@@ -325,9 +325,10 @@
   .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 
   /* ── Text balance ── */
-  .text-balance { text-wrap: balance; }
+  .text-balance { overflow-wrap: break-word; text-wrap: balance; }
 
   /* ── Scrollbar hide ── */
+  /* scrollbar-width is a progressive enhancement; -webkit-scrollbar covers Webkit/Safari below */
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
 
@@ -464,7 +465,8 @@
    E/ BASE — Typographie & Corps
    ============================================================ */
 @layer base {
-  * { @apply border-border; }
+  /* border-border → fallback to CSS variable (replaces @apply directive for linter compatibility) */
+  * { border-color: var(--border-color, hsl(var(--border, 214.3 31.8% 91.4%))); }
 
   html {
     scroll-behavior: smooth;
@@ -761,6 +763,7 @@
 
 /* ── Backdrop modal ── */
 .modal-backdrop {
+  -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   animation: fade-in 0.25s ease-out;
 }
@@ -810,8 +813,8 @@ html.dark [data-sonner-toast] {
 
 /* ── Typography effects ── */
 .text-gradient {
-  background-clip: text;
   -webkit-background-clip: text;
+  background-clip: text;
   color: transparent;
   background-image: var(--gradient-accent);
 }
@@ -1115,12 +1118,19 @@ html.dark .caeb-brand {
 
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#FFD700] via-[#FDB931] to-[#E2A62C];
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(to right, #FFD700, #FDB931, #E2A62C);
     text-shadow: 0 0 30px rgba(181, 149, 107, 0.2);
   }
 
   .glass-effect {
-    @apply backdrop-blur-xl bg-white/5 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)];
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   }
 
   .shadow-glow {

@@ -35,7 +35,7 @@ export function BottomNavigation() {
     else if (view === "clubs") navigate("/clubs");
     else if (view === "news") navigate("/news");
     else if (view === "ai-chat") {
-      window.open(KOSSI_URL, "_blank", "noopener,noreferrer");
+      window.location.href = KOSSI_URL;
     }
   };
 

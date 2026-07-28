@@ -183,8 +183,12 @@ else:
 # ── CORS (Cross-Origin Resource Sharing) ──────────────────────────────────────
 # Liste des origines autorisées à appeler l'API, lue depuis .env.
 # Format dans .env : CORS_ALLOWED_ORIGINS=http://localhost:5173,https://caeb-natitingou.org
-_cors_origins_env = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:5174')
+_cors_origins_env = os.environ.get(
+    'CORS_ALLOWED_ORIGINS',
+    'http://localhost:5173,http://localhost:5174,http://localhost:3000,https://caeb-natitingou.vercel.app,https://kossi-chat.vercel.app'
+)
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_origins_env.split(',') if o.strip()]
+CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'False').lower() in ('true', '1', 't')
 
 # Requis pour autoriser le passage de cookies HttpOnly entre le frontend (port 5173) et l'API (port 8000)
 CORS_ALLOW_CREDENTIALS = True
@@ -301,5 +305,24 @@ if not DEBUG:
 
 
 # ── URL du Frontend ──────────────────────────────────────────────────────────
-# URL de base du frontend pour les redirections et liens
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+# URL de base du frontend pour les redirections (ex: liens de réinitialisation de mot de passe)
+FRONTEND_URL = os.environ.get(
+    'FRONTEND_URL',
+    'http://localhost:5173' if DEBUG else 'https://caeb-natitingou.vercel.app'
+)
+
+# ── Configuration du service Email (SMTP) ────────────────────────────────────
+# En développement sans SMTP configuré : affiche les emails dans la console.
+# En production ou si EMAIL_HOST est défini : envoie via le serveur SMTP.
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.smtp.EmailBackend'
+    if (os.environ.get('EMAIL_HOST_USER') or not DEBUG)
+    else 'django.core.mail.backends.console.EmailBackend'
+)
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 't')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'CAEB Natitingou <no-reply@caeb-natitingou.org>')

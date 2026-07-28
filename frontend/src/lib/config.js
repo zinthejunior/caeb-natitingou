@@ -27,29 +27,39 @@ const PROD_KOSSI_URL = "https://kossi-chat.vercel.app";
 const DEV_API_URL = "http://localhost:8080/api";
 const DEV_KOSSI_URL = "http://localhost:3000";
 
-/**
- * URL de base de l'API backend (Django).
- * Exemple : https://caeb-backend.onrender.com/api
- */
-export const API_BASE_URL =
-  import.meta.env.VITE_API_URL || (IS_PROD ? PROD_API_URL : DEV_API_URL);
+function sanitizeUrl(envVal, defaultProd, defaultDev) {
+  if (envVal) {
+    if (IS_PROD && (envVal.includes("localhost") || envVal.includes("127.0.0.1"))) {
+      return defaultProd;
+    }
+    return envVal;
+  }
+  return IS_PROD ? defaultProd : defaultDev;
+}
 
 /**
- * Origine du backend (sans le suffixe « /api »), utilisée pour servir les
- * fichiers média/statiques (/media/..., /static/...).
- * On la dérive de API_BASE_URL pour rester cohérent, sauf surcharge explicite.
+ * URL de base de l'API backend (Django).
+ */
+export const API_BASE_URL = sanitizeUrl(
+  import.meta.env.VITE_API_URL,
+  PROD_API_URL,
+  DEV_API_URL
+);
+
+/**
+ * Origine du backend pour les média/statiques.
  */
 export const MEDIA_BASE_URL =
   import.meta.env.VITE_MEDIA_URL || API_BASE_URL.replace(/\/api\/?$/, "");
 
 /**
- * URL de l'interface de l'assistant IA Kossi (application Next.js séparée).
- * Exemple : https://kossi-chat.vercel.app
+ * URL de l'interface de l'assistant IA Kossi.
  */
-export const KOSSI_URL =
-  import.meta.env.VITE_KOSSI_UI_URL ||
-  import.meta.env.VITE_KOSSI_URL ||
-  (IS_PROD ? PROD_KOSSI_URL : DEV_KOSSI_URL);
+export const KOSSI_URL = sanitizeUrl(
+  import.meta.env.VITE_KOSSI_UI_URL || import.meta.env.VITE_KOSSI_URL,
+  PROD_KOSSI_URL,
+  DEV_KOSSI_URL
+);
 
 /**
  * Construit une URL complète vers un fichier média du backend.

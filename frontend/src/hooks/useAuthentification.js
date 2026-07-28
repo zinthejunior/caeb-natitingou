@@ -92,15 +92,7 @@ import { fetchWithAuth } from "@/lib/api";
 // SECTION CONFIGURATION - Constantes et paramètres
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/**
- * URL de base de l'API backend.
- * 
- * En développement : http://localhost:8080/api (Django local)
- * En production : URL du serveur de production
- * 
- * La valeur peut être définie via la variable d'environnement VITE_API_URL.
- */
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+import { API_BASE_URL } from "@/lib/config";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECTION FONCTIONS UTILITAIRES - Helpers pour transformer les données

@@ -711,6 +711,11 @@ body {
 .stat-icon.users   { background: linear-gradient(135deg,#065f46,#10b981); }
 .stat-icon.borrows { background: linear-gradient(135deg,#7c3aed,#8b5cf6); }
 .stat-icon.warning { background: linear-gradient(135deg,#92400e,#f59e0b); }
+.stat-icon.overdue { background: linear-gradient(135deg,#dc2626,#ef4444); }
+.stat-icon.news    { background: linear-gradient(135deg,#7c3aed,#8b5cf6); }
+
+.stat-card-clickable { cursor: pointer; }
+.version-text { margin-top: 8px; font-size: 11px; color: #94a3b8; }
 
 /* Responsive admin */
 @media (max-width: 768px) {
