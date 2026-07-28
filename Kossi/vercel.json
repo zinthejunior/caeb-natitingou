@@ -3,8 +3,5 @@
   "builds": [
     { "src": "package.json", "use": "@vercel/next" }
   ],
-  "env": [
-    "NEXT_PUBLIC_KOSSI_API",
-    "NEXT_PUBLIC_CAEB_API"
-  ]
+  "name": "kossi-chat"
 }
